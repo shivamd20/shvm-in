@@ -6,6 +6,7 @@ import { getSystemPrompt } from "./lib/system-prompt";
 
 // Re-export the MessageStore Durable Object for wrangler binding
 export { MessageStore } from "./mcp/message-store";
+export { VoiceSessionDO } from "./vani/server/VoiceSessionDO";
 
 export default {
     async fetch(request: Request, env: Env, ctx: ExecutionContext) {
@@ -14,6 +15,17 @@ export default {
         // Route /mcp to the MCP server
         if (url.pathname === "/mcp") {
             return handleMcpRequest(request, env, ctx);
+        }
+
+        // Voice session websocket route
+        const wsMatch = url.pathname.match(/^\/ws\/([^/]+)$/);
+        if (wsMatch) {
+            const sessionId = wsMatch[1];
+            // Get the Durable Object stub
+            const id = env.VOICE_SESSIONS.idFromName(sessionId);
+            const stub = env.VOICE_SESSIONS.get(id);
+            // Forward the request
+            return stub.fetch(request);
         }
 
         if (url.pathname === "/api/chat") {

@@ -25,6 +25,10 @@
 			{
 				"name": "MESSAGE_STORE",
 				"class_name": "MessageStore"
+			},
+			{
+				"name": "VOICE_SESSIONS",
+				"class_name": "VoiceSessionDO"
 			}
 		]
 	},
@@ -36,6 +40,12 @@
 			"tag": "v1",
 			"new_classes": [
 				"MessageStore"
+			]
+		},
+		{
+			"tag": "v2",
+			"new_sqlite_classes": [
+				"VoiceSessionDO"
 			]
 		}
 	]
