@@ -208,7 +208,7 @@ export function useVoiceSession({ onError }: UseVoiceSessionProps = {}) {
                 console.warn('[Voice] Processing timeout - resetting to idle');
                 dispatch({ type: 'SET_ERROR', error: 'Server timed out' });
                 dispatch({ type: 'SERVER_STATE_CHANGE', status: 'idle' }); // Force reset
-            }, 30000); // 30s timeout
+            }, 60000); // 60s timeout
         } else {
             if (processingTimeoutRef.current) {
                 clearTimeout(processingTimeoutRef.current);
