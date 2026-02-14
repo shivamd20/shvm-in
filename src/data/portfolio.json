@@ -1,0 +1,170 @@
+{
+    "profile": {
+        "name": "Shivam Dwivedi",
+        "title": "AI + Distributed Systems Engineer",
+        "location": "Pune, India",
+        "tagline": "Builds AI systems and edge-native infrastructure",
+        "email": "shivamd20@gmail.com",
+        "website": "https://shvm.in",
+        "github": "https://github.com/shivamd20",
+        "linkedin": "https://linkedin.com/in/shvm-in"
+    },
+    "experience": [
+        {
+            "company": "Druva",
+            "role": "Senior Staff Engineer",
+            "period": "May 2025 – Present",
+            "highlights": [
+                "Spec-engineering workflow from LLD/Swagger/Figma",
+                "Figma-to-code pipeline reducing integration time by 50%"
+            ]
+        },
+        {
+            "company": "Mindtickle",
+            "role": "Software Development Engineer II",
+            "period": "May 2022 – May 2025",
+            "highlights": [
+                "AI analytics assistant shipped in 3 days",
+                "100+ page migration framework",
+                "zero production bugs for 3 months"
+            ]
+        },
+        {
+            "company": "Neptune Ubicom Pvt Ltd",
+            "role": "Software Engineer",
+            "period": "Aug 2018 – May 2022",
+            "highlights": [
+                "Component library for 6 developer team",
+                "Route performance and caching improvements"
+            ]
+        }
+    ],
+    "projects": [
+        {
+            "name": "shvm-db",
+            "url": "https://db.shvm.in",
+            "repo": "https://github.com/shivamd20/shvm-db",
+            "type": "database",
+            "stack": [
+                "Cloudflare Durable Objects",
+                "SQLite"
+            ],
+            "summary": "DynamoDB-like database built on Durable Objects",
+            "problem": "Edge-native strongly consistent storage",
+            "architecture": "Partitioned data using DO instances with local SQLite",
+            "tradeoffs": "Consistency over global availability",
+            "status": "experimental"
+        },
+        {
+            "name": "Liva",
+            "url": "https://liva.shvm.in",
+            "repo": "https://github.com/shivamd20/liva",
+            "type": "application",
+            "stack": [
+                "Cloudflare Workers",
+                "Durable Objects",
+                "Vite",
+                "React",
+                "Excalidraw"
+            ],
+            "summary": "Real-time collaborative whiteboard and note-taking app",
+            "problem": "Serverless real-time collab without WebSocket servers",
+            "architecture": "Each board is a Durable Object acting as a mini-server for state and broadcast",
+            "tradeoffs": "State held in memory but persisted to DO storage; specific to CF infrastructure",
+            "status": "production"
+        },
+        {
+            "name": "Liva System Shots",
+            "url": "https://liva.shvm.in/app/system-shots",
+            "repo": "https://github.com/shivamd20/liva",
+            "type": "feature",
+            "stack": [
+                "Cloudflare R2",
+                "Puppeteer"
+            ],
+            "summary": "Automatic screenshot generation for Liva boards",
+            "problem": "Providing visual previews for whiteboards securely",
+            "architecture": "Puppeteer instance captures board state and uploads to R2",
+            "tradeoffs": "Latency in generation vs storage cost",
+            "status": "production"
+        },
+        {
+            "name": "Din",
+            "url": "https://din.shvm.in",
+            "repo": "https://github.com/shivamd20/din",
+            "type": "application",
+            "stack": [
+                "PWA",
+                "TanStack AI",
+                "Cloudflare Workers",
+                "Dexie",
+                "tRPC"
+            ],
+            "summary": "Offline-first PWA note-taking app with AI",
+            "problem": "Reliable offline notes with AI capabilities",
+            "architecture": "Local-first with Dexie, sync via tRPC to Workers, edge AI inference",
+            "tradeoffs": "Complexity of sync conflict resolution",
+            "status": "development"
+        },
+        {
+            "name": "Krishna",
+            "url": "https://github.com/shivamd20/krishna",
+            "repo": "https://github.com/shivamd20/krishna",
+            "type": "application",
+            "stack": [
+                "Next.js",
+                "Postgres",
+                "Gemini AI"
+            ],
+            "summary": "Library Seat Booking & Management System",
+            "problem": "Managing complex shift-based subscriptions for physical seats",
+            "architecture": "Shift and subscription model, AI-powered analytics chatbot instead of dashboards",
+            "tradeoffs": "Strict shift rules reduce flexibility but ensure integrity",
+            "status": "mvp"
+        }
+    ],
+    "open_source": [
+        {
+            "name": "excalidraw-live-sync",
+            "repo": "https://github.com/shivamd20/liva/tree/main/libs/excalidraw-live-sync",
+            "summary": "Standalone library for Excalidraw live sync extracted from Liva",
+            "stack": [
+                "React",
+                "Excalidraw",
+                "WebSockets"
+            ]
+        },
+        {
+            "name": "monorail",
+            "repo": "https://github.com/shivamd20/liva/tree/main/libs/monorail",
+            "summary": "Monorail recording library for DOM/Canvas interactions",
+            "stack": [
+                "Typescript",
+                "Vite"
+            ]
+        },
+        {
+            "name": "ng-rerouter",
+            "repo": "https://github.com/shivamd20/ng-rerouter",
+            "summary": "Angular routing utility",
+            "stack": [
+                "Angular"
+            ]
+        }
+    ],
+    "links": [
+        "https://liva.shvm.in/",
+        "https://liva.shvm.in/app/system-shots",
+        "https://liva.shvm.in/app/videos",
+        "https://din.shvm.in/",
+        "https://liva.shvm.in/practice",
+        "https://github.com/shivamd20/liva/tree/main/libs/excalidraw-live-sync",
+        "https://github.com/shivamd20/liva/tree/main/libs/monorail",
+        "https://github.com/shivamd20/shvm-db",
+        "https://github.com/shivamd20/ng-rerouter",
+        "https://infinnit.eu/",
+        "https://github.com/shivamd20",
+        "https://linkedin.com/in/shvm-in",
+        "https://shvm.in"
+    ]
+}

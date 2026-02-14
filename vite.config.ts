@@ -5,6 +5,7 @@ import viteReact from '@vitejs/plugin-react'
 import viteTsConfigPaths from 'vite-tsconfig-paths'
 import { fileURLToPath, URL } from 'url'
 import { cloudflare } from '@cloudflare/vite-plugin'
+import tailwindcss from '@tailwindcss/vite'
 
 const config = defineConfig({
   resolve: {
@@ -22,6 +23,7 @@ const config = defineConfig({
 
     tanstackStart(),
     viteReact(),
+    tailwindcss(),
   ],
 })
 

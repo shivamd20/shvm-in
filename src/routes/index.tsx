@@ -1,37 +1,27 @@
 import { createFileRoute } from '@tanstack/react-router'
-import '../App.css'
+import { Hero } from '@/components/Hero'
+import { ChatShell } from '@/components/ChatShell'
+import { ProjectPills } from '@/components/ProjectPills'
 
-export const Route = createFileRoute('/')({ component: App })
+export const Route = createFileRoute('/')({
+  component: Index,
+})
 
-function App() {
+function Index() {
   return (
-    <div className="App">
-      <header className="App-header">
-        <img
-          src="/tanstack-circle-logo.png"
-          className="App-logo"
-          alt="TanStack Logo"
-        />
-        <p>
-          Edit <code>src/routes/index.tsx</code> and save to reload.
-        </p>
-        <a
-          className="App-link"
-          href="https://reactjs.org"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Learn React
-        </a>
-        <a
-          className="App-link"
-          href="https://tanstack.com"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Learn TanStack
-        </a>
-      </header>
+    <div className="min-h-screen bg-black text-zinc-100 font-sans selection:bg-zinc-800 flex flex-col items-center justify-center p-4 relative overflow-hidden">
+      {/* Background gradients for subtle depth */}
+      <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[800px] h-[400px] bg-zinc-900/20 blur-[100px] rounded-full pointer-events-none" />
+
+      <div className="w-full max-w-4xl space-y-8 z-10">
+        <Hero />
+        <ChatShell />
+        <ProjectPills />
+      </div>
+
+      <div className="fixed bottom-4 right-4 text-[10px] text-zinc-600 font-mono opacity-50 hover:opacity-100 transition-opacity">
+        v1.0.0 • AI-Native Portfolio
+      </div>
     </div>
   )
 }
