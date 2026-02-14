@@ -52,7 +52,11 @@ export function MessageList({ messages, loading, onFollowUp }: { messages: Messa
                             {msg.uiType === 'cards' && (
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 w-full">
                                     {msg.uiData.map((project: any) => (
-                                        <ProjectCard key={project.name} project={project} />
+                                        <ProjectCard
+                                            key={project.name}
+                                            project={project}
+                                            onSelect={onFollowUp}
+                                        />
                                     ))}
                                 </div>
                             )}

@@ -1,3 +1,5 @@
+import { MouseEvent } from 'react';
+
 interface ProjectCardProps {
     project: {
         name: string;
@@ -8,17 +10,26 @@ interface ProjectCardProps {
         type?: string;
         problem?: string;
     };
+    onSelect?: (projectName: string) => void;
 }
 
-export function ProjectCard({ project }: ProjectCardProps) {
+export function ProjectCard({ project, onSelect }: ProjectCardProps) {
     const link = project.url || project.repo || '#';
+
+    const handleClick = (e: MouseEvent) => {
+        if (onSelect) {
+            e.preventDefault();
+            onSelect(`Tell me more about ${project.name}`);
+        }
+    };
 
     return (
         <a
             href={link}
+            onClick={handleClick}
             target="_blank"
             rel="noopener noreferrer"
-            className="group block p-6 rounded-2xl glass-panel hover:bg-white/5 transition-all duration-300 border border-white/5 hover:border-white/10 relative overflow-hidden flex flex-col h-full"
+            className="group block p-6 rounded-2xl glass-panel hover:bg-white/5 transition-all duration-300 border border-white/5 hover:border-accent/40 relative overflow-hidden flex flex-col h-full cursor-pointer"
         >
             <div className="absolute inset-0 bg-gradient-to-br from-accent/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
 
