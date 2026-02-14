@@ -1,122 +1,86 @@
 import { SearchResult } from './retrieve';
 import { Mode } from '../components/ModeToggle';
 
-export function formatResponse(query: string, results: SearchResult[], mode: Mode = 'engineer'): string {
+export interface FormattedResponse {
+    text: string;
+    uiType?: 'cards' | 'timeline' | 'profile' | 'tech_stack' | 'none';
+    uiData?: any;
+    followUps?: string[];
+}
+
+export function formatResponse(query: string, results: SearchResult[], mode: Mode = 'engineer'): FormattedResponse {
     if (results.length === 0) {
-        return "I don't have specific details on that yet. Try asking about my projects (Liva, Shvm-DB, Din), work experience (Druva, Mindtickle), or tech stack.";
+        return {
+            text: "I don't have specific details on that yet. Try asking about my **Engineering Philosophy**, **Flagship Projects**, or **System Designs**.",
+            uiType: 'none',
+            followUps: ["Show flagship projects", "Explain engineering philosophy", "View work history"]
+        };
     }
 
     const topResult = results[0];
     const data = topResult.data;
 
-    // Handle Project List (Stack match)
-    if (topResult.type === 'stack') {
-        const { name, projects } = data;
-        let response = `Here are the projects where I used **${name}**:\n\n`;
-        projects.forEach((p: any) => {
-            if (mode === 'recruiter') {
-                response += `- **[${p.name}](${p.url})**: ${p.summary} (Status: ${p.status})\n`;
-            } else if (mode === 'architect') {
-                response += `- **[${p.name}](${p.url})**: ${p.architecture || p.summary}\n`;
-            } else {
-                response += `- **[${p.name}](${p.url})**: ${p.summary} (${p.stack.join(', ')})\n`;
-            }
-        });
-        return response;
+    // Handle Flagship / Stack List
+    if (topResult.type === 'flagship' || topResult.type === 'stack') {
+        const isStack = topResult.type === 'stack';
+        const projects = isStack ? data.projects : data;
+        const title = isStack ? data.name : "Flagship Systems";
+
+        let intro = `Here are the **${title}** projects relevant to your query.`;
+        if (mode === 'architect') intro = `analyzing **${title}** from a system design perspective:`;
+
+        return {
+            text: intro,
+            uiType: 'cards',
+            uiData: projects, // Array of projects for card rendering
+            followUps: projects.map((p: any) => `Tell me about ${p.name}`)
+        };
     }
 
     // Handle Single Project / Open Source
     if (topResult.type === 'project' || topResult.type === 'open_source') {
         const p = data;
+        const isRecruiter = mode === 'recruiter';
 
-        if (mode === 'recruiter') {
-            return `### ${p.name}
-${p.summary}
-
-**Problem Solved:**
-${p.problem || "Addressed scalable real-time needs."}
-
-**Key Tech:**
-${p.stack.slice(0, 3).join(', ')}
-
-[View Demo](${p.url}) | [Source Code](${p.repo})
-`;
-        }
+        let responseText = "";
 
         if (mode === 'architect') {
-            return `### ${p.name} - System Architecture
-
-**Core Problem:**
-${p.problem}
-
-**Architecture Decision:**
-${p.architecture}
-
-**Trade-offs:**
-${p.tradeoffs}
-
-**Tech Stack:**
-${p.stack.join(', ')}
-`;
+            responseText = `### ${p.name} System Architecture\n\n**Core Problem:** ${p.problem}\n\n**Architecture Decision:**\n${p.architecture}\n\n**Trade-offs:**\n${p.tradeoffs}`;
+        } else {
+            responseText = `### ${p.name}\n${p.summary}\n\n**Tech Stack:** ${p.stack.join(', ')}`;
         }
 
-        // Engineer Mode (Default)
-        return `### ${p.name}
-${p.summary}
-
-**Stack:**
-${p.stack.map((s: string) => `\`${s}\``).join(', ')}
-
-**Architecture Note:**
-${p.architecture}
-
-[Live Demo](${p.url}) | [GitHub Repo](${p.repo})
-`;
+        return {
+            text: responseText,
+            uiType: 'cards',
+            uiData: [p], // Single card
+            followUps: ["View code", "Architecture deep dive", "Show similar projects"]
+        };
     }
 
     // Handle Experience
     if (topResult.type === 'experience') {
         const exps = Array.isArray(data) ? data : [data];
-        return exps.map((e: any) => {
-            let content = `### ${e.role} @ ${e.company}\n*${e.period}*`;
-
-            if (mode === 'recruiter') {
-                content += `\n\n**Key Achievements:**\n${e.highlights.map((h: string) => `- ${h}`).join('\n')}`;
-            } else if (mode === 'architect') {
-                // Filter for system design highlights if possible, else all
-                content += `\n\n**System Contributions:**\n${e.highlights.map((h: string) => `- ${h} (Scalability/Efficiency)`).join('\n')}`;
-            } else {
-                content += `\n\n${e.highlights.map((h: string) => `- ${h}`).join('\n')}`;
-            }
-            return content;
-        }).join('\n\n---\n\n');
+        return {
+            text: `Here is the **Experience Timeline** highlighting key engineering impacts.`,
+            uiType: 'timeline',
+            uiData: exps,
+            followUps: ["Show skills", "Download resume", "Contact for roles"]
+        };
     }
 
     // Handle Profile
     if (topResult.type === 'profile') {
-        const p = data;
-        if (mode === 'recruiter') {
-            return `**${p.name}**
-${p.title} based in ${p.location}.
-
-${p.tagline}
-
-**Contact:** [${p.email}](mailto:${p.email})
-**LinkedIn:** [${p.linkedin}](${p.linkedin})
-**GitHub:** [${p.github}](${p.github})
-`;
-        }
-        return `**${p.name}**
-${p.title}
-${p.location}
-
-${p.tagline}
-
-- Email: [${p.email}](mailto:${p.email})
-- GitHub: [${p.github}](${p.github})
-- LinkedIn: [${p.linkedin}](${p.linkedin})
-`;
+        return {
+            text: `**${data.name}**\n${data.title} • ${data.location}\n\n${data.tagline}`,
+            uiType: 'profile',
+            uiData: data,
+            followUps: ["View GitHub", "Connect on LinkedIn", "Email me"]
+        };
     }
 
-    return "I found some info but I'm not sure how to format it.";
+    return {
+        text: "I found some info but I'm not sure how to render it perfectly.",
+        uiType: 'none'
+    };
 }

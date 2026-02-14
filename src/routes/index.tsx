@@ -1,27 +1,169 @@
-import { createFileRoute } from '@tanstack/react-router'
+import { createFileRoute, useNavigate } from '@tanstack/react-router'
 import { Hero } from '@/components/Hero'
-import { ChatShell } from '@/components/ChatShell'
-import { ProjectPills } from '@/components/ProjectPills'
+import { HeroInput } from '@/components/HeroInput'
+import { PromptChips } from '@/components/PromptChips'
+import { SectionHeader } from '@/components/SectionHeader'
+import { ProjectCard } from '@/components/ProjectCard'
+import { ExperienceItem } from '@/components/ExperienceItem'
+import portfolio from '@/data/portfolio.json'
 
 export const Route = createFileRoute('/')({
   component: Index,
 })
 
 function Index() {
-  return (
-    <div className="min-h-screen bg-black text-zinc-100 font-sans selection:bg-zinc-800 flex flex-col items-center justify-center p-4 relative overflow-hidden">
-      {/* Background gradients for subtle depth */}
-      <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[800px] h-[400px] bg-zinc-900/20 blur-[100px] rounded-full pointer-events-none" />
+  const navigate = useNavigate();
 
-      <div className="w-full max-w-4xl space-y-8 z-10">
-        <Hero />
-        <ChatShell />
-        <ProjectPills />
+  const handlePromptSelect = (text: string) => {
+    // @ts-ignore
+    navigate({ to: '/chat', state: { query: text } });
+  };
+
+  return (
+    <div className="min-h-screen bg-black text-zinc-100 selection:bg-accent/20 selection:text-white overflow-x-hidden">
+
+      {/* Background Ambience */}
+      <div className="fixed inset-0 pointer-events-none">
+        <div className="absolute top-[10%] left-1/2 -translate-x-1/2 w-[80vw] h-[50vh] bg-accent/5 blur-[120px] rounded-full opacity-20 animate-pulse-slow" />
       </div>
 
-      <div className="fixed bottom-4 right-4 text-[10px] text-zinc-600 font-mono opacity-50 hover:opacity-100 transition-opacity">
-        v1.0.0 • AI-Native Portfolio
+      <div className="relative z-10 w-full max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 pb-24">
+
+        {/* Full Screen Entry Point */}
+        <div className="min-h-[100vh] flex flex-col items-center justify-center -mt-16 sm:-mt-0 relative">
+
+          <Hero />
+
+          <div className="w-full max-w-2xl mt-8 mb-12 animate-fade-up px-2 z-20">
+            <HeroInput />
+          </div>
+
+          <div className="w-full max-w-lg animate-fade-in-delayed px-4 z-10">
+            <PromptChips onSelect={handlePromptSelect} />
+          </div>
+
+          <div className="absolute bottom-8 left-0 right-0 text-center animate-bounce opacity-30 pointer-events-none">
+            <span className="text-[10px] font-mono text-zinc-500 uppercase tracking-widest">Scroll specifically for context</span>
+            <div className="w-px h-8 bg-gradient-to-b from-zinc-500 to-transparent mx-auto mt-2" />
+          </div>
+        </div>
+
+        {/* Narrative Scroll Section */}
+        <div className="space-y-40 pt-24">
+
+          {/* Identity & Philosophy */}
+          <section className="max-w-2xl mx-auto text-center space-y-6 animate-on-scroll">
+            <h2 className="text-3xl md:text-5xl font-display font-medium leading-tight">
+              Engineering intelligence into <span className="text-accent">every interaction.</span>
+            </h2>
+            <div className="h-1 w-20 bg-accent/50 mx-auto rounded-full" />
+            <p className="text-lg md:text-xl text-muted-foreground font-light leading-relaxed">
+              I build distributed systems that scale and AI products that feel magic.
+              From optimizing edge infrastructure to shipping zero-to-one conversational interfaces.
+            </p>
+            <div className="pt-8">
+              <button
+                onClick={() => handlePromptSelect("What is your engineering philosophy?")}
+                className="text-sm font-mono text-white border-b border-accent hover:border-white transition-colors pb-1"
+              >
+                Ask about my philosophy →
+              </button>
+            </div>
+          </section>
+
+          {/* Featured Projects Grid */}
+          <section id="projects">
+            <SectionHeader
+              title="Featured Systems"
+              subtitle="Selected work in distributed systems, AI infrastructure, and edge computing."
+            />
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+              {portfolio.projects.slice(0, 4).map((p) => (
+                <ProjectCard key={p.name} project={p} />
+              ))}
+            </div>
+            <div className="text-center mt-12">
+              <button onClick={() => handlePromptSelect("Show all projects")} className="btn-secondary">View All via Chat</button>
+            </div>
+          </section>
+
+          {/* Experience */}
+          <section id="experience" className="max-w-3xl mx-auto">
+            <SectionHeader
+              title="Experience"
+              subtitle="A timeline of technical leadership and product impact."
+              className="text-center mb-16"
+            />
+            <div className="space-y-12 pl-4 border-l border-white/5 ml-4 md:ml-0 relative">
+              {portfolio.experience.map((exp) => (
+                <ExperienceItem
+                  key={exp.company}
+                  role={exp.role}
+                  company={exp.company}
+                  period={exp.period}
+                  highlights={exp.highlights}
+                />
+              ))}
+            </div>
+          </section>
+
+          {/* Open Source */}
+          <section id="opensource">
+            <SectionHeader
+              title="Open Source"
+              subtitle="Contributions to the developer ecosystem."
+            />
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              {portfolio.open_source.map((p) => (
+                <ProjectCard key={p.name} project={{ ...p, type: 'Library', problem: '' }} />
+              ))}
+            </div>
+          </section>
+
+          {/* Contact / Footer */}
+          <footer className="border-t border-white/5 pt-24 pb-24">
+            <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-12">
+              <div className="space-y-4">
+                <h2 className="text-4xl font-display font-medium text-white">Let's build together.</h2>
+                <a
+                  href={`mailto:${portfolio.profile.email}`}
+                  className="text-muted-foreground hover:text-white transition-colors text-xl font-mono block underline decoration-zinc-800 underline-offset-8"
+                >
+                  {portfolio.profile.email}
+                </a>
+              </div>
+
+              <div className="flex flex-col gap-4 text-right">
+                <SocialLink href={portfolio.profile.github} label="GitHub" />
+                <SocialLink href={portfolio.profile.linkedin} label="LinkedIn" />
+                <SocialLink href={portfolio.profile.x} label="X.com" />
+              </div>
+            </div>
+
+            <div className="mt-24 pt-8 border-t border-white/5 flex flex-col md:flex-row justify-between items-center text-xs font-mono text-zinc-600 gap-4">
+              <span>© {new Date().getFullYear()} Shivam Dwivedi. All rights reserved.</span>
+              <span className="opacity-50 flex items-center gap-2">
+                <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
+                System Operational v2.0
+              </span>
+            </div>
+          </footer>
+
+        </div>
       </div>
     </div>
+  )
+}
+
+function SocialLink({ href, label }: { href: string; label: string }) {
+  return (
+    <a
+      href={href}
+      target="_blank"
+      rel="noopener noreferrer"
+      className="text-sm font-mono text-zinc-500 hover:text-accent transition-colors uppercase tracking-wider block"
+    >
+      {label}
+    </a>
   )
 }

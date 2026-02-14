@@ -1,13 +1,15 @@
 {
     "profile": {
         "name": "Shivam Dwivedi",
-        "title": "AI + Distributed Systems Engineer",
+        "title": "Senior Staff Engineer",
         "location": "Pune, India",
-        "tagline": "Builds AI systems and edge-native infrastructure",
+        "tagline": "Systems-level engineering & AI-native product architecture",
         "email": "shivamd20@gmail.com",
         "website": "https://shvm.in",
         "github": "https://github.com/shivamd20",
-        "linkedin": "https://linkedin.com/in/shvm-in"
+        "linkedin": "https://linkedin.com/in/shvm-in",
+        "x": "https://x.com/final_const",
+        "phone": "+91-9999999999"
     },
     "experience": [
         {
@@ -15,41 +17,105 @@
             "role": "Senior Staff Engineer",
             "period": "May 2025 – Present",
             "highlights": [
-                "Spec-engineering workflow from LLD/Swagger/Figma",
-                "Figma-to-code pipeline reducing integration time by 50%"
-            ]
+                "Spec-engineering workflow enabling code generation from LLD, Swagger, and Figma.",
+                "Figma-to-Code pipeline improving frontend integration speed by 50%."
+            ],
+            "impact": "Transforming engineering velocity through AI-driven workflows."
         },
         {
             "company": "Mindtickle",
             "role": "Software Development Engineer II",
             "period": "May 2022 – May 2025",
             "highlights": [
-                "AI analytics assistant shipped in 3 days",
-                "100+ page migration framework",
-                "zero production bugs for 3 months"
-            ]
+                "Built AI analytics assistant in 3 days using Next.js + Vercel AI SDK.",
+                "Reduced production bugs from 10 to zero; maintained for 3 months.",
+                "Reduced OData migration time from 1 day to under 1 hour.",
+                "Migrated 100+ pages to modern architecture with full data integrity.",
+                "Built reliable AWS Lambda + Snowflake export workflow.",
+                "Led complex scheduling system with zero post-production issues.",
+                "Improved page performance by 3 seconds."
+            ],
+            "impact": "High-reliability system architecture and aggressive performance optimization."
         },
         {
             "company": "Neptune Ubicom Pvt Ltd",
             "role": "Software Engineer",
             "period": "Aug 2018 – May 2022",
             "highlights": [
-                "Component library for 6 developer team",
-                "Route performance and caching improvements"
-            ]
+                "Led 6-person frontend team.",
+                "Built component library reducing UI consistency bugs by 90%.",
+                "Reduced post-sprint defects by 40% via CI/CD improvements.",
+                "Cut route load times by 50% with custom caching.",
+                "Re-architected financial simulation for correctness."
+            ],
+            "impact": "Frontend infrastructure and team leadership."
+        },
+        {
+            "company": "Hasura",
+            "role": "Product Development Fellow",
+            "period": "May 2017 – May 2018",
+            "highlights": [
+                "Built full-stack coding competition platform for 200+ users.",
+                "Received Distinguished Fellow Award."
+            ],
+            "impact": "Early full-stack product development."
         }
     ],
     "projects": [
         {
+            "name": "SHVM.in",
+            "url": "https://shvm.in",
+            "repo": "https://github.com/shivamd20/shvm-in",
+            "type": "flagship",
+            "stack": [
+                "TanStack Start",
+                "Cloudflare Workers",
+                "AI SDK"
+            ],
+            "summary": "AI-first portfolio acting as a digital twin.",
+            "problem": "Traditional portfolios are static; this is an interactive engineering brain.",
+            "architecture": "Edge-native React application with retrieval-augmented generation.",
+            "status": "production"
+        },
+        {
+            "name": "Backflare",
+            "url": "#",
+            "repo": "#",
+            "type": "flagship",
+            "stack": [
+                "Cloudflare R2",
+                "Durable Objects",
+                "Encryption"
+            ],
+            "summary": "Privacy-first edge backup platform.",
+            "problem": "Secure, user-owned data backup at the edge.",
+            "architecture": "Uses Durable Objects for coordination and R2 for encrypted storage.",
+            "status": "beta"
+        },
+        {
+            "name": "Ludo-Elm",
+            "url": "#",
+            "repo": "#",
+            "type": "flagship",
+            "stack": [
+                "Elm",
+                "WebSockets"
+            ],
+            "summary": "Real-time multiplayer game engine.",
+            "problem": "State consistency in distributed multiplayer games.",
+            "architecture": "Functional core with Elm, ensuring zero runtime exceptions.",
+            "status": "production"
+        },
+        {
             "name": "shvm-db",
             "url": "https://db.shvm.in",
             "repo": "https://github.com/shivamd20/shvm-db",
-            "type": "database",
+            "type": "system",
             "stack": [
                 "Cloudflare Durable Objects",
                 "SQLite"
             ],
-            "summary": "DynamoDB-like database built on Durable Objects",
+            "summary": "DynamoDB-like database built on Durable Objects.",
             "problem": "Edge-native strongly consistent storage",
             "architecture": "Partitioned data using DO instances with local SQLite",
             "tradeoffs": "Consistency over global availability",
@@ -67,7 +133,7 @@
                 "React",
                 "Excalidraw"
             ],
-            "summary": "Real-time collaborative whiteboard and note-taking app",
+            "summary": "Real-time collaborative whiteboard and note-taking app.",
             "problem": "Serverless real-time collab without WebSocket servers",
             "architecture": "Each board is a Durable Object acting as a mini-server for state and broadcast",
             "tradeoffs": "State held in memory but persisted to DO storage; specific to CF infrastructure",
@@ -100,7 +166,7 @@
                 "Dexie",
                 "tRPC"
             ],
-            "summary": "Offline-first PWA note-taking app with AI",
+            "summary": "Offline-first PWA note-taking app with AI.",
             "problem": "Reliable offline notes with AI capabilities",
             "architecture": "Local-first with Dexie, sync via tRPC to Workers, edge AI inference",
             "tradeoffs": "Complexity of sync conflict resolution",
@@ -156,6 +222,7 @@
         "https://liva.shvm.in/",
         "https://liva.shvm.in/app/system-shots",
         "https://liva.shvm.in/app/videos",
+        "https://liva.shvm.in/app/videos",
         "https://din.shvm.in/",
         "https://liva.shvm.in/practice",
         "https://github.com/shivamd20/liva/tree/main/libs/excalidraw-live-sync",
@@ -165,6 +232,7 @@
         "https://infinnit.eu/",
         "https://github.com/shivamd20",
         "https://linkedin.com/in/shvm-in",
-        "https://shvm.in"
+        "https://shvm.in",
+        "https://x.com/final_const"
     ]
 }

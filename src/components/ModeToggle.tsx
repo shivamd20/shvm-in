@@ -4,14 +4,14 @@ export function ModeToggle({ mode, setMode }: { mode: Mode, setMode: (m: Mode) =
     const modes: Mode[] = ['recruiter', 'engineer', 'architect'];
 
     return (
-        <div className="flex bg-zinc-900/50 p-1 rounded-lg border border-zinc-800/50 backdrop-blur-sm">
+        <div className="flex bg-black/40 p-1 rounded-full border border-white/5 backdrop-blur-md shadow-lg">
             {modes.map((m) => (
                 <button
                     key={m}
                     onClick={() => setMode(m)}
-                    className={`px-3 py-1.5 text-[10px] font-mono uppercase tracking-wider rounded-md transition-all ${mode === m
-                            ? 'bg-zinc-800 text-zinc-100 shadow-sm border border-zinc-700'
-                            : 'text-zinc-500 hover:text-zinc-300 hover:bg-zinc-800/30'
+                    className={`px-3 py-1.5 text-[10px] font-mono uppercase tracking-wider rounded-full transition-all duration-300 ${mode === m
+                            ? 'bg-zinc-800 text-white shadow-sm border border-white/10'
+                            : 'text-zinc-500 hover:text-zinc-300 hover:bg-white/5'
                         }`}
                 >
                     {m}
