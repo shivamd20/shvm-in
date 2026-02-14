@@ -2,6 +2,7 @@ import handler from "@tanstack/react-start/server-entry";
 import { handleMcpRequest } from "./mcp";
 import { chat } from "@tanstack/ai";
 import { getChatAdapter, getTools } from "./lib/chat";
+import { getSystemPrompt } from "./lib/system-prompt";
 
 // Re-export the MessageStore Durable Object for wrangler binding
 export { MessageStore } from "./mcp/message-store";
@@ -24,7 +25,12 @@ export default {
                 const tools = getTools(env as any);
 
                 const body: any = await request.json();
-                const messages = body.messages;
+                let messages = body.messages;
+                // Currently defaults to 'engineer'
+                const mode = body.mode || 'engineer';
+
+                const systemPrompt = getSystemPrompt(mode);
+                messages = [{ role: 'system', content: systemPrompt }, ...messages];
 
                 const stream = await chat({
                     adapter,
@@ -50,7 +56,9 @@ export default {
                             }
                         }
                     } catch (e) {
-                        console.error('[Chat] Chat stream error', e);
+                        console.error('[Chat] Chat stream error:', e);
+                        // @ts-ignore
+                        if (e.message) console.error('[Chat] Error message:', e.message);
                         await writer.write(encoder.encode("\n[Error generating response]"));
                     } finally {
                         await writer.close();

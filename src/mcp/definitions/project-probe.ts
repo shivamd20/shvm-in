@@ -1,5 +1,5 @@
 import { z } from "zod";
-import projectsData from "../data/projects.json";
+import projectsData from "../../data/projects.json";
 
 export const projectProbeDefinition = {
     name: "project_probe",

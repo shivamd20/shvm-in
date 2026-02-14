@@ -1,5 +1,5 @@
 import { z } from "zod";
-import experience from "../data/experience.json";
+import experience from "../../data/experience.json";
 
 export const behaviouralInterviewDefinition = {
     name: "behavioural_interview",

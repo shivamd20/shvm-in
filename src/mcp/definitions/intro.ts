@@ -1,6 +1,6 @@
 import { z } from "zod";
-import profile from "../data/profile.json";
-import experience from "../data/experience.json";
+import profile from "../../data/profile.json";
+import experience from "../../data/experience.json";
 
 export const introDefinition = {
     name: "intro",

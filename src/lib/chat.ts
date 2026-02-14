@@ -1,4 +1,3 @@
-// Custom adapter import logic handled by write_to_file in previous step but need to import it here
 import { CustomWorkersAiAdapter } from "./worker-ai-adapter";
 
 export const getChatAdapter = (env: ChatEnv) => {
@@ -23,51 +22,44 @@ interface ChatEnv {
     MESSAGE_STORE?: any; // Relaxed type to avoid conflicts with generated Env
 }
 
+import { toolDefinition } from "@tanstack/ai";
+
 export const getTools = (env: ChatEnv) => [
-    {
+    toolDefinition({
         name: introDefinition.name,
         description: introDefinition.description,
-        parameters: introDefinition.schema,
-        execute: async () => introDefinition.handler(),
-    },
-    {
+        inputSchema: introDefinition.schema,
+    }).server(async () => introDefinition.handler()),
+    toolDefinition({
         name: systemDesignProbeDefinition.name,
         description: systemDesignProbeDefinition.description,
-        parameters: systemDesignProbeDefinition.schema,
-        execute: async (args: any) => systemDesignProbeDefinition.handler(args),
-    },
-    {
+        inputSchema: systemDesignProbeDefinition.schema,
+    }).server(async (args: any) => systemDesignProbeDefinition.handler(args)),
+    toolDefinition({
         name: projectProbeDefinition.name,
         description: projectProbeDefinition.description,
-        parameters: projectProbeDefinition.schema,
-        execute: async (args: any) => projectProbeDefinition.handler(args),
-    },
-    {
+        inputSchema: projectProbeDefinition.schema,
+    }).server(async (args: any) => projectProbeDefinition.handler(args)),
+    toolDefinition({
         name: behaviouralInterviewDefinition.name,
         description: behaviouralInterviewDefinition.description,
-        parameters: behaviouralInterviewDefinition.schema,
-        execute: async () => behaviouralInterviewDefinition.handler(),
-    },
-    {
+        inputSchema: behaviouralInterviewDefinition.schema,
+    }).server(async () => behaviouralInterviewDefinition.handler()),
+    toolDefinition({
         name: profileFitAssessmentDefinition.name,
         description: profileFitAssessmentDefinition.description,
-        parameters: profileFitAssessmentDefinition.schema,
-        execute: async () => profileFitAssessmentDefinition.handler(),
-    },
-    {
+        inputSchema: profileFitAssessmentDefinition.schema,
+    }).server(async () => profileFitAssessmentDefinition.handler()),
+    toolDefinition({
         name: casualChatContextDefinition.name,
         description: casualChatContextDefinition.description,
-        parameters: casualChatContextDefinition.schema,
-        execute: async () => casualChatContextDefinition.handler(),
-    },
-    {
+        inputSchema: casualChatContextDefinition.schema,
+    }).server(async () => casualChatContextDefinition.handler()),
+    toolDefinition({
         name: leaveMessageDefinition.name,
         description: leaveMessageDefinition.description,
-        parameters: leaveMessageDefinition.schema,
-        execute: async (args: any) => {
-            return leaveMessageDefinition.handler(args, env);
-        },
-    },
+        inputSchema: leaveMessageDefinition.schema,
+    }).server(async (args: any) => leaveMessageDefinition.handler(args, env)),
 ];
 
 
