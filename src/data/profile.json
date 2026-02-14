@@ -14,16 +14,22 @@
         "Edge-native distributed systems on Cloudflare Workers",
         "AI-first product architecture"
     ],
+    "positioning_summary": [
+        "Edge-native systems architecture",
+        "Real-time collaborative software",
+        "AI-assisted workflows",
+        "Infrastructure as product, not just tooling"
+    ],
     "engineering_style": {
-        "philosophy": "Build systems that are small, opinionated, and reliable. Prefer deterministic behavior over cleverness. Ship fast, iterate with discipline.",
+        "philosophy": "Treating programmable infrastructure (like Cloudflare Durable Objects) as primitives rather than utilities. Build systems that are small, opinionated, and reliable. Prefer deterministic behavior over cleverness.",
         "strengths": [
             "distributed systems design",
             "edge-native architecture",
+            "real-time collaboration",
             "zero-to-one product development",
-            "performance optimization",
             "AI-augmented engineering workflows"
         ],
-        "approach": "Start with constraints, design for the 99th percentile, and keep things simple enough to explain in 5 minutes."
+        "approach": "Infrastructure-as-product. Designing for strong consistency and low-latency at the edge, using stateful primitives to solve complex distributed state problems."
     },
     "career_intent": "Build infrastructure and AI-native products at the intersection of systems engineering and developer experience. Looking for environments where engineering depth and product impact are equally valued.",
     "years_of_experience": 8,

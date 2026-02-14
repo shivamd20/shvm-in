@@ -1,9 +1,9 @@
-import portfolio from '../data/portfolio.json';
+import projectsData from '../data/projects.json';
 
 export function ProjectPills() {
     return (
         <div className="flex flex-wrap gap-3 justify-center max-w-2xl py-8">
-            {portfolio.projects.map((p, i) => (
+            {projectsData.projects.map((p, i) => (
                 <a
                     key={i}
                     href={p.url}

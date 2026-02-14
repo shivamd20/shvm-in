@@ -26,29 +26,88 @@
             ]
         },
         {
+            "id": "liva",
+            "name": "Liva",
+            "url": "https://liva.shvm.in/",
+            "repo": "https://github.com/shivamd20/liva",
+            "type": "flagship",
+            "status": "production",
+            "stack": [
+                "Cloudflare Workers",
+                "Durable Objects",
+                "Vite",
+                "React",
+                "Excalidraw",
+                "Real-time Sync"
+            ],
+            "summary": "Real‑time collaborative whiteboards + AI brainstorming. Create, organize, and revisit collaborative whiteboards with premium real‑time syncing powered by Cloudflare Durable Objects.",
+            "problem": "Ideas move from sketch → discussion → execution without context switching.",
+            "architecture": "Real‑time multiplayer boards using a Durable Object per board. WebSocket‑based sync with deterministic state handling.",
+            "ownership": "sole-author",
+            "complexity": "high",
+            "notable_decisions": [
+                "Real‑time multiplayer boards (Durable Object per board)",
+                "WebSocket‑based sync with deterministic state handling",
+                "AI conversation layer integrated into the workspace",
+                "Browser-based rendering with scalable edge infrastructure"
+            ],
+            "system_design_topics": [
+                "real-time collaboration",
+                "websockets",
+                "durable objects",
+                "state management",
+                "serverless"
+            ]
+        },
+        {
+            "id": "monorail",
+            "name": "Monorail",
+            "url": "https://liva.shvm.in/app/videos",
+            "repo": "https://github.com/shivamd20/liva/tree/main/libs/monorail",
+            "type": "system",
+            "status": "production",
+            "stack": [
+                "TypeScript",
+                "Browser APIs",
+                "Video Engine"
+            ],
+            "summary": "Browser-first voice/video/audio recording pipeline. A multi-channel recording + upload system designed so data is uploaded while recording, eliminating data loss risk.",
+            "problem": "Traditional recording systems risk data loss if the browser crashes or the upload fails after recording.",
+            "architecture": "Live chunk upload during recording (no post-recording risk). Browser-native architecture with multi-track capture.",
+            "ownership": "sole-author",
+            "complexity": "high",
+            "notable_decisions": [
+                "Live chunk upload during recording (no post-recording risk)",
+                "Voice, video, and audio multi-track capture",
+                "Browser-native architecture (no native app required)",
+                "Integrated processing pipeline for transcription and publishing"
+            ]
+        },
+        {
             "id": "shvm-db",
             "name": "shvm-db",
-            "url": "https://db.shvm.in",
+            "url": "https://db.shvm.in/",
             "repo": "https://github.com/shivamd20/shvm-db",
             "type": "system",
-            "status": "experimental",
+            "status": "production",
             "stack": [
                 "Cloudflare Durable Objects",
                 "SQLite",
-                "YCSB Benchmarks"
+                "Consistent Hashing",
+                "YCSB"
             ],
-            "summary": "DynamoDB-compatible database built entirely on Cloudflare Durable Objects.",
+            "summary": "Serverless NoSQL database on Durable Objects. A DynamoDB-compatible NoSQL database implemented on Cloudflare Durable Objects + SQLite, designed for strong consistency and horizontal scale.",
             "problem": "Edge-native strongly consistent storage without traditional database infrastructure.",
-            "architecture": "Partitioned data using Durable Object instances, each running local SQLite. Deterministic key routing via consistent hashing. Append-only versioned storage with Leader-Replica topology for read scaling.",
-            "tradeoffs": "Strong consistency over global availability. Limited cross-partition queries. Tied to Cloudflare infrastructure.",
+            "architecture": "Deterministic routing with consistent hashing, leader-replica design for read scalability, and append-only versioned storage architecture.",
+            "tradeoffs": "Strong consistency prioritized over global eventual consistency. Edge-native data locality.",
             "ownership": "sole-author",
             "complexity": "very-high",
             "notable_decisions": [
-                "Append-only storage — no hard deletes, all data versioned",
-                "Leader-Replica pattern for read scaling with strong consistency",
-                "Client-side routing with cached metadata to bypass PartitionDO in data path",
-                "DynamoDB-compatible API for ecosystem compatibility",
-                "YCSB benchmarking built into the project"
+                "DynamoDB-style API (put / get / scan / delete)",
+                "Deterministic routing with consistent hashing",
+                "Leader-replica design for read scalability",
+                "Append-only versioned storage architecture",
+                "Built-in YCSB benchmarking"
             ],
             "system_design_topics": [
                 "distributed database",
@@ -61,92 +120,28 @@
             ]
         },
         {
-            "id": "liva",
-            "name": "Liva",
-            "url": "https://liva.shvm.in",
-            "repo": "https://github.com/shivamd20/liva",
+            "id": "din",
+            "name": "DIN",
+            "url": "https://din.shvm.in/",
+            "repo": "https://github.com/shivamd20/din",
             "type": "application",
             "status": "production",
             "stack": [
-                "Cloudflare Workers",
-                "Durable Objects",
-                "Vite",
-                "React",
-                "Excalidraw"
-            ],
-            "summary": "Real-time collaborative whiteboard and note-taking app.",
-            "problem": "Serverless real-time collaboration without dedicated WebSocket servers.",
-            "architecture": "Each board is a Durable Object acting as a mini-server for state and broadcast. WebSocket connections managed per-DO. Puppeteer-based screenshot generation uploaded to R2.",
-            "tradeoffs": "State held in memory but persisted to DO storage. Infrastructure-specific to Cloudflare.",
-            "ownership": "sole-author",
-            "complexity": "high",
-            "notable_decisions": [
-                "Durable Object per board — isolates state and simplifies broadcast",
-                "Extracted excalidraw-live-sync as standalone open-source library",
-                "Monorail recording library for DOM/Canvas interactions",
-                "System Shots feature: automated screenshot generation via Puppeteer + R2"
-            ],
-            "system_design_topics": [
-                "real-time collaboration",
-                "websockets",
-                "durable objects",
-                "state management",
-                "serverless"
-            ]
-        },
-        {
-            "id": "backflare",
-            "name": "Backflare",
-            "url": "#",
-            "repo": "#",
-            "type": "flagship",
-            "status": "beta",
-            "stack": [
-                "Cloudflare R2",
-                "Durable Objects",
-                "Encryption"
-            ],
-            "summary": "Privacy-first edge backup platform.",
-            "problem": "Secure, user-owned data backup at the edge without trusting cloud providers with plaintext.",
-            "architecture": "Uses Durable Objects for coordination and R2 for encrypted storage. Client-side encryption ensures privacy.",
-            "tradeoffs": "Client-side encryption adds complexity. Recovery depends on user key management.",
-            "ownership": "sole-author",
-            "complexity": "high",
-            "notable_decisions": [
-                "End-to-end encryption — server never sees plaintext",
-                "R2 for cost-effective large object storage"
-            ],
-            "system_design_topics": [
-                "encryption",
-                "backup systems",
-                "edge computing",
-                "privacy"
-            ]
-        },
-        {
-            "id": "din",
-            "name": "Din",
-            "url": "https://din.shvm.in",
-            "repo": "https://github.com/shivamd20/din",
-            "type": "application",
-            "status": "development",
-            "stack": [
                 "PWA",
-                "TanStack AI",
+                "IndexedDB",
                 "Cloudflare Workers",
-                "Dexie",
-                "tRPC"
+                "AI"
             ],
-            "summary": "Offline-first PWA note-taking app with AI.",
-            "problem": "Reliable offline notes with AI capabilities on unstable connections.",
-            "architecture": "Local-first with Dexie (IndexedDB), sync via tRPC to Workers, edge AI inference.",
-            "tradeoffs": "Complexity of sync conflict resolution. Offline-first adds state management overhead.",
+            "summary": "A calmer personal assistant for daily life. DIN learns from life instead of task lists. It captures unstructured notes, detects patterns, and nudges thoughtful progress.",
+            "problem": "Mental overhead and pressure from traditional productivity tools.",
+            "architecture": "Local-first architecture (offline-first via IndexedDB) with sync through edge workers.",
             "ownership": "sole-author",
             "complexity": "high",
             "notable_decisions": [
-                "Local-first architecture — works fully offline",
-                "tRPC for type-safe client-server communication",
-                "Edge AI inference for low-latency AI features"
+                "Local-first architecture (offline-first via IndexedDB)",
+                "Sync through edge workers",
+                "AI-driven reflections and insights",
+                "Minimal interaction design focused on calm productivity"
             ],
             "system_design_topics": [
                 "offline-first",
@@ -157,54 +152,97 @@
             ]
         },
         {
-            "id": "krishna",
-            "name": "Krishna",
-            "url": "https://github.com/shivamd20/krishna",
-            "repo": "https://github.com/shivamd20/krishna",
+            "id": "practice-problems",
+            "name": "Practice Problems",
+            "url": "https://liva.shvm.in/practice",
             "type": "application",
-            "status": "mvp",
+            "status": "production",
             "stack": [
-                "Next.js",
-                "Postgres",
-                "Gemini AI"
+                "Cloudflare Containers",
+                "AI",
+                "Execution Engine"
             ],
-            "summary": "Library Seat Booking & Management System.",
-            "problem": "Managing complex shift-based subscriptions for physical seats.",
-            "architecture": "Shift and subscription model, AI-powered analytics chatbot instead of dashboards.",
-            "tradeoffs": "Strict shift rules reduce flexibility but ensure integrity.",
+            "summary": "AI-generated DSA platform. Master data structures and algorithms with curated, AI-generated challenges powered by an execution and evaluation engine.",
+            "problem": "Need for personalized, high-quality DSA practice with instant feedback.",
+            "architecture": "Execution and evaluation engine running on Cloudflare Containers.",
             "ownership": "sole-author",
             "complexity": "medium",
             "notable_decisions": [
-                "AI chatbot replaces traditional analytics dashboards",
-                "Strict shift-based rules for booking integrity"
+                "AI-generated problems tuned for practice",
+                "Code execution + evaluation engine",
+                "Fast iteration loop for interview preparation",
+                "Integrated into the Liva ecosystem"
             ]
         },
         {
-            "id": "ludo-elm",
-            "name": "Ludo-Elm",
-            "url": "#",
-            "repo": "#",
-            "type": "flagship",
+            "id": "master-system-design",
+            "name": "Master System Design",
+            "url": "https://liva.shvm.in/app/system-shots",
+            "type": "application",
             "status": "production",
             "stack": [
-                "Elm",
-                "WebSockets"
+                "React",
+                "Active Recall",
+                "Spaced Repetition"
             ],
-            "summary": "Real-time multiplayer game engine.",
-            "problem": "State consistency in distributed multiplayer games.",
-            "architecture": "Functional core with Elm, ensuring zero runtime exceptions. WebSocket-based real-time sync.",
-            "tradeoffs": "Elm's ecosystem is smaller but guarantees no runtime exceptions.",
+            "summary": "Swipe-based active recall learning. A bite-sized active-recall system designed to build system design intuition through spaced repetition.",
+            "problem": "Reading system design content is not the same as being able to design under pressure.",
+            "architecture": "Progressive mastery tracking with active recall + spaced repetition principles.",
             "ownership": "sole-author",
             "complexity": "medium",
             "notable_decisions": [
-                "Chose Elm for its guarantee of zero runtime exceptions",
-                "Functional architecture for predictable state management"
+                "Swipe-based concept feed (30-second cards)",
+                "Personalized progression via mastery tracking",
+                "7 levels from recognition to interview-ready thinking",
+                "50+ concepts across 12 tracks",
+                "Built around active recall + spaced repetition principles"
+            ]
+        },
+        {
+            "id": "backflare",
+            "name": "Backflare",
+            "repo": "https://github.com/shivamd20/backflare",
+            "type": "system",
+            "status": "beta",
+            "stack": [
+                "Cloudflare Durable Objects",
+                "R2",
+                "Encryption"
             ],
-            "system_design_topics": [
-                "multiplayer",
-                "real-time sync",
-                "functional programming",
-                "state machines"
+            "summary": "Privacy-first edge backup platform. An open-source backup system that snapshots, versions, and restores Google Drive data using Cloudflare’s edge infrastructure.",
+            "problem": "Secure, versioned backups without simple storage sync risks.",
+            "architecture": "Edge-native architecture with Durable Objects + R2. Client-side encryption ensures privacy.",
+            "ownership": "sole-author",
+            "complexity": "high",
+            "notable_decisions": [
+                "Client-side encryption (server never sees plaintext)",
+                "Versioned backups instead of simple storage sync",
+                "Edge-native architecture with Durable Objects + R2",
+                "Built in public"
+            ]
+        },
+        {
+            "id": "vani",
+            "name": "Vani",
+            "repo": "https://github.com/shivamd20/shvm-in/tree/main/src/vani",
+            "type": "system",
+            "status": "development",
+            "stack": [
+                "Cloudflare Workers",
+                "Durable Objects",
+                "SQLite",
+                "STT/TTS/LLM"
+            ],
+            "summary": "Cloudflare Worker voice runtime. A low-latency voice interaction framework built on Cloudflare Workers and Durable Objects enabling stateful AI voice conversations.",
+            "problem": "Voice interaction is often unreliable compared to text chat; lacks stateful session management.",
+            "architecture": "Durable Object state persistence via distributed SQLite; Edge-native STT, LLM, and TTS orchestration.",
+            "ownership": "sole-author",
+            "complexity": "high",
+            "notable_decisions": [
+                "Instant session recovery",
+                "Text ↔ voice multimodal continuity",
+                "Durable Object state persistence via distributed SQLite",
+                "Edge-native STT, LLM, and TTS orchestration"
             ]
         }
     ],
@@ -213,30 +251,47 @@
             "id": "excalidraw-live-sync",
             "name": "excalidraw-live-sync",
             "repo": "https://github.com/shivamd20/liva/tree/main/libs/excalidraw-live-sync",
-            "summary": "Standalone library for Excalidraw live sync extracted from Liva.",
+            "summary": "A lightweight React library enabling real-time collaboration in Excalidraw components.",
             "stack": [
                 "React",
                 "Excalidraw",
                 "WebSockets"
-            ]
-        },
-        {
-            "id": "monorail",
-            "name": "monorail",
-            "repo": "https://github.com/shivamd20/liva/tree/main/libs/monorail",
-            "summary": "Recording library for DOM/Canvas interactions.",
-            "stack": [
-                "TypeScript",
-                "Vite"
+            ],
+            "highlights": [
+                "Real-time drawing sync",
+                "Ephemeral pointers and cursor presence",
+                "Cloudflare Workers backend reference implementation"
             ]
         },
         {
             "id": "ng-rerouter",
             "name": "ng-rerouter",
             "repo": "https://github.com/shivamd20/ng-rerouter",
-            "summary": "Angular routing utility.",
+            "summary": "File-based routing for Angular inspired by modern framework conventions.",
             "stack": [
-                "Angular"
+                "Angular",
+                "Routing"
+            ],
+            "highlights": [
+                "Auto-generated route configuration from folders",
+                "Dynamic and wildcard routes",
+                "Standalone component support",
+                "Config extensions (guards, resolvers)"
+            ]
+        },
+        {
+            "id": "ng-cake-2",
+            "name": "ng-cake-2",
+            "repo": "https://github.com/shivamd20/ng-cake-2",
+            "summary": "A small proof-of-concept bringing react-query/SWR-style caching semantics to Angular services.",
+            "stack": [
+                "Angular",
+                "Caching"
+            ],
+            "highlights": [
+                "Query vs Mutation separation",
+                "Automatic cache invalidation on mutations",
+                "Service-level caching abstraction"
             ]
         }
     ]

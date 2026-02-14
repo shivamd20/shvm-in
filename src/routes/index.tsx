@@ -5,7 +5,9 @@ import { PromptChips } from '@/components/PromptChips'
 import { SectionHeader } from '@/components/SectionHeader'
 import { ProjectCard } from '@/components/ProjectCard'
 import { ExperienceItem } from '@/components/ExperienceItem'
-import portfolio from '@/data/portfolio.json'
+import projectsData from '@/data/projects.json'
+import experienceData from '@/data/experience.json'
+import profileData from '@/data/profile.json'
 
 export const Route = createFileRoute('/')({
   component: Index,
@@ -75,7 +77,7 @@ function Index() {
               subtitle="Selected work in distributed systems, AI infrastructure, and edge computing."
             />
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-              {portfolio.projects.slice(0, 4).map((p) => (
+              {projectsData.projects.slice(0, 4).map((p) => (
                 <ProjectCard key={p.name} project={p} />
               ))}
             </div>
@@ -92,7 +94,7 @@ function Index() {
               className="text-center mb-16"
             />
             <div className="space-y-12 pl-4 border-l border-white/5 ml-4 md:ml-0 relative">
-              {portfolio.experience.map((exp) => (
+              {experienceData.experience.map((exp) => (
                 <ExperienceItem
                   key={exp.company}
                   role={exp.role}
@@ -111,7 +113,7 @@ function Index() {
               subtitle="Contributions to the developer ecosystem."
             />
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              {portfolio.open_source.map((p) => (
+              {projectsData.open_source.map((p) => (
                 <ProjectCard key={p.name} project={{ ...p, type: 'Library', problem: '' }} />
               ))}
             </div>
@@ -123,17 +125,17 @@ function Index() {
               <div className="space-y-4">
                 <h2 className="text-4xl font-display font-medium text-white">Let's build together.</h2>
                 <a
-                  href={`mailto:${portfolio.profile.email}`}
+                  href={`mailto:${profileData.email}`}
                   className="text-muted-foreground hover:text-white transition-colors text-xl font-mono block underline decoration-zinc-800 underline-offset-8"
                 >
-                  {portfolio.profile.email}
+                  {profileData.email}
                 </a>
               </div>
 
               <div className="flex flex-col gap-4 text-right">
-                <SocialLink href={portfolio.profile.github} label="GitHub" />
-                <SocialLink href={portfolio.profile.linkedin} label="LinkedIn" />
-                <SocialLink href={portfolio.profile.x} label="X.com" />
+                <SocialLink href={profileData.github} label="GitHub" />
+                <SocialLink href={profileData.linkedin} label="LinkedIn" />
+                <SocialLink href={profileData.x} label="X.com" />
               </div>
             </div>
 
