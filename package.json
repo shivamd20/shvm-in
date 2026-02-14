@@ -11,7 +11,9 @@
 		"cf-typegen": "wrangler types"
 	},
 	"dependencies": {
+		"@cloudflare/agents": "^0.0.16",
 		"@cloudflare/vite-plugin": "^1.13.8",
+		"@modelcontextprotocol/sdk": "^1.26.0",
 		"@tailwindcss/typography": "^0.5.19",
 		"@tanstack/react-devtools": "^0.7.0",
 		"@tanstack/react-router": "^1.132.0",
@@ -19,11 +21,14 @@
 		"@tanstack/react-router-ssr-query": "^1.131.7",
 		"@tanstack/react-start": "^1.132.0",
 		"@tanstack/router-plugin": "^1.132.0",
+		"agents": "^0.4.1",
+		"agents-sdk": "^1.0.0",
 		"lucide-react": "^0.561.0",
 		"react": "^19.2.0",
 		"react-dom": "^19.2.0",
 		"react-markdown": "^10.1.0",
-		"vite-tsconfig-paths": "^6.0.2"
+		"vite-tsconfig-paths": "^6.0.2",
+		"zod": "^4.3.6"
 	},
 	"devDependencies": {
 		"@tailwindcss/vite": "^4.1.18",

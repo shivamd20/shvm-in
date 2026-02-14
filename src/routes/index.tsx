@@ -42,10 +42,7 @@ function Index() {
             <PromptChips onSelect={handlePromptSelect} />
           </div>
 
-          <div className="absolute bottom-8 left-0 right-0 text-center animate-bounce opacity-30 pointer-events-none">
-            <span className="text-[10px] font-mono text-zinc-500 uppercase tracking-widest">Scroll specifically for context</span>
-            <div className="w-px h-8 bg-gradient-to-b from-zinc-500 to-transparent mx-auto mt-2" />
-          </div>
+
         </div>
 
         {/* Narrative Scroll Section */}
@@ -83,7 +80,7 @@ function Index() {
               ))}
             </div>
             <div className="text-center mt-12">
-              <button onClick={() => handlePromptSelect("Show all projects")} className="btn-secondary">View All via Chat</button>
+              <button onClick={() => handlePromptSelect("Show all projects")} className="btn-secondary cursor-pointer">View All via Chat</button>
             </div>
           </section>
 

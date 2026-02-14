@@ -1,0 +1,31 @@
+{
+    "name": "Shivam Dwivedi",
+    "title": "Senior Staff Engineer",
+    "location": "Pune, India",
+    "tagline": "Systems-level engineering & AI-native product architecture",
+    "email": "shivamd20@gmail.com",
+    "website": "https://shvm.in",
+    "github": "https://github.com/shivamd20",
+    "linkedin": "https://linkedin.com/in/shvm-in",
+    "x": "https://x.com/final_const",
+    "current_focus": [
+        "Spec-engineering workflows — generating code from LLD, Swagger, and Figma",
+        "Figma-to-Code pipeline improving frontend integration speed by 50%",
+        "Edge-native distributed systems on Cloudflare Workers",
+        "AI-first product architecture"
+    ],
+    "engineering_style": {
+        "philosophy": "Build systems that are small, opinionated, and reliable. Prefer deterministic behavior over cleverness. Ship fast, iterate with discipline.",
+        "strengths": [
+            "distributed systems design",
+            "edge-native architecture",
+            "zero-to-one product development",
+            "performance optimization",
+            "AI-augmented engineering workflows"
+        ],
+        "approach": "Start with constraints, design for the 99th percentile, and keep things simple enough to explain in 5 minutes."
+    },
+    "career_intent": "Build infrastructure and AI-native products at the intersection of systems engineering and developer experience. Looking for environments where engineering depth and product impact are equally valued.",
+    "years_of_experience": 8,
+    "education": "B.Tech Computer Science — GGSIPU, Delhi"
+}

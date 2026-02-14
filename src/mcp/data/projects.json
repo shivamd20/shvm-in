@@ -1,0 +1,243 @@
+{
+    "projects": [
+        {
+            "id": "shvm-in",
+            "name": "SHVM.in",
+            "url": "https://shvm.in",
+            "repo": "https://github.com/shivamd20/shvm-in",
+            "type": "flagship",
+            "status": "production",
+            "stack": [
+                "TanStack Start",
+                "Cloudflare Workers",
+                "AI SDK",
+                "MCP Server"
+            ],
+            "summary": "AI-first portfolio acting as a digital twin — this very system.",
+            "problem": "Traditional portfolios are static pages. This is an interactive engineering brain that hosts can query via MCP.",
+            "architecture": "Edge-native React application (TanStack Start on Cloudflare Workers) with retrieval-augmented generation. Embeds an MCP server so external hosts can programmatically query portfolio data.",
+            "tradeoffs": "Full-stack rendered at the edge — requires careful hydration and SSR management. AI context is deterministic, not hallucinated.",
+            "ownership": "sole-author",
+            "complexity": "high",
+            "notable_decisions": [
+                "Used TanStack Start over Next.js for tighter Cloudflare Workers integration",
+                "MCP server is self-contained within the same deployment",
+                "Static JSON data layer for deterministic tool outputs"
+            ]
+        },
+        {
+            "id": "shvm-db",
+            "name": "shvm-db",
+            "url": "https://db.shvm.in",
+            "repo": "https://github.com/shivamd20/shvm-db",
+            "type": "system",
+            "status": "experimental",
+            "stack": [
+                "Cloudflare Durable Objects",
+                "SQLite",
+                "YCSB Benchmarks"
+            ],
+            "summary": "DynamoDB-compatible database built entirely on Cloudflare Durable Objects.",
+            "problem": "Edge-native strongly consistent storage without traditional database infrastructure.",
+            "architecture": "Partitioned data using Durable Object instances, each running local SQLite. Deterministic key routing via consistent hashing. Append-only versioned storage with Leader-Replica topology for read scaling.",
+            "tradeoffs": "Strong consistency over global availability. Limited cross-partition queries. Tied to Cloudflare infrastructure.",
+            "ownership": "sole-author",
+            "complexity": "very-high",
+            "notable_decisions": [
+                "Append-only storage — no hard deletes, all data versioned",
+                "Leader-Replica pattern for read scaling with strong consistency",
+                "Client-side routing with cached metadata to bypass PartitionDO in data path",
+                "DynamoDB-compatible API for ecosystem compatibility",
+                "YCSB benchmarking built into the project"
+            ],
+            "system_design_topics": [
+                "distributed database",
+                "consistent hashing",
+                "durable objects",
+                "partition strategies",
+                "leader-replica",
+                "append-only log",
+                "edge computing"
+            ]
+        },
+        {
+            "id": "liva",
+            "name": "Liva",
+            "url": "https://liva.shvm.in",
+            "repo": "https://github.com/shivamd20/liva",
+            "type": "application",
+            "status": "production",
+            "stack": [
+                "Cloudflare Workers",
+                "Durable Objects",
+                "Vite",
+                "React",
+                "Excalidraw"
+            ],
+            "summary": "Real-time collaborative whiteboard and note-taking app.",
+            "problem": "Serverless real-time collaboration without dedicated WebSocket servers.",
+            "architecture": "Each board is a Durable Object acting as a mini-server for state and broadcast. WebSocket connections managed per-DO. Puppeteer-based screenshot generation uploaded to R2.",
+            "tradeoffs": "State held in memory but persisted to DO storage. Infrastructure-specific to Cloudflare.",
+            "ownership": "sole-author",
+            "complexity": "high",
+            "notable_decisions": [
+                "Durable Object per board — isolates state and simplifies broadcast",
+                "Extracted excalidraw-live-sync as standalone open-source library",
+                "Monorail recording library for DOM/Canvas interactions",
+                "System Shots feature: automated screenshot generation via Puppeteer + R2"
+            ],
+            "system_design_topics": [
+                "real-time collaboration",
+                "websockets",
+                "durable objects",
+                "state management",
+                "serverless"
+            ]
+        },
+        {
+            "id": "backflare",
+            "name": "Backflare",
+            "url": "#",
+            "repo": "#",
+            "type": "flagship",
+            "status": "beta",
+            "stack": [
+                "Cloudflare R2",
+                "Durable Objects",
+                "Encryption"
+            ],
+            "summary": "Privacy-first edge backup platform.",
+            "problem": "Secure, user-owned data backup at the edge without trusting cloud providers with plaintext.",
+            "architecture": "Uses Durable Objects for coordination and R2 for encrypted storage. Client-side encryption ensures privacy.",
+            "tradeoffs": "Client-side encryption adds complexity. Recovery depends on user key management.",
+            "ownership": "sole-author",
+            "complexity": "high",
+            "notable_decisions": [
+                "End-to-end encryption — server never sees plaintext",
+                "R2 for cost-effective large object storage"
+            ],
+            "system_design_topics": [
+                "encryption",
+                "backup systems",
+                "edge computing",
+                "privacy"
+            ]
+        },
+        {
+            "id": "din",
+            "name": "Din",
+            "url": "https://din.shvm.in",
+            "repo": "https://github.com/shivamd20/din",
+            "type": "application",
+            "status": "development",
+            "stack": [
+                "PWA",
+                "TanStack AI",
+                "Cloudflare Workers",
+                "Dexie",
+                "tRPC"
+            ],
+            "summary": "Offline-first PWA note-taking app with AI.",
+            "problem": "Reliable offline notes with AI capabilities on unstable connections.",
+            "architecture": "Local-first with Dexie (IndexedDB), sync via tRPC to Workers, edge AI inference.",
+            "tradeoffs": "Complexity of sync conflict resolution. Offline-first adds state management overhead.",
+            "ownership": "sole-author",
+            "complexity": "high",
+            "notable_decisions": [
+                "Local-first architecture — works fully offline",
+                "tRPC for type-safe client-server communication",
+                "Edge AI inference for low-latency AI features"
+            ],
+            "system_design_topics": [
+                "offline-first",
+                "sync",
+                "local storage",
+                "PWA",
+                "edge AI"
+            ]
+        },
+        {
+            "id": "krishna",
+            "name": "Krishna",
+            "url": "https://github.com/shivamd20/krishna",
+            "repo": "https://github.com/shivamd20/krishna",
+            "type": "application",
+            "status": "mvp",
+            "stack": [
+                "Next.js",
+                "Postgres",
+                "Gemini AI"
+            ],
+            "summary": "Library Seat Booking & Management System.",
+            "problem": "Managing complex shift-based subscriptions for physical seats.",
+            "architecture": "Shift and subscription model, AI-powered analytics chatbot instead of dashboards.",
+            "tradeoffs": "Strict shift rules reduce flexibility but ensure integrity.",
+            "ownership": "sole-author",
+            "complexity": "medium",
+            "notable_decisions": [
+                "AI chatbot replaces traditional analytics dashboards",
+                "Strict shift-based rules for booking integrity"
+            ]
+        },
+        {
+            "id": "ludo-elm",
+            "name": "Ludo-Elm",
+            "url": "#",
+            "repo": "#",
+            "type": "flagship",
+            "status": "production",
+            "stack": [
+                "Elm",
+                "WebSockets"
+            ],
+            "summary": "Real-time multiplayer game engine.",
+            "problem": "State consistency in distributed multiplayer games.",
+            "architecture": "Functional core with Elm, ensuring zero runtime exceptions. WebSocket-based real-time sync.",
+            "tradeoffs": "Elm's ecosystem is smaller but guarantees no runtime exceptions.",
+            "ownership": "sole-author",
+            "complexity": "medium",
+            "notable_decisions": [
+                "Chose Elm for its guarantee of zero runtime exceptions",
+                "Functional architecture for predictable state management"
+            ],
+            "system_design_topics": [
+                "multiplayer",
+                "real-time sync",
+                "functional programming",
+                "state machines"
+            ]
+        }
+    ],
+    "open_source": [
+        {
+            "id": "excalidraw-live-sync",
+            "name": "excalidraw-live-sync",
+            "repo": "https://github.com/shivamd20/liva/tree/main/libs/excalidraw-live-sync",
+            "summary": "Standalone library for Excalidraw live sync extracted from Liva.",
+            "stack": [
+                "React",
+                "Excalidraw",
+                "WebSockets"
+            ]
+        },
+        {
+            "id": "monorail",
+            "name": "monorail",
+            "repo": "https://github.com/shivamd20/liva/tree/main/libs/monorail",
+            "summary": "Recording library for DOM/Canvas interactions.",
+            "stack": [
+                "TypeScript",
+                "Vite"
+            ]
+        },
+        {
+            "id": "ng-rerouter",
+            "name": "ng-rerouter",
+            "repo": "https://github.com/shivamd20/ng-rerouter",
+            "summary": "Angular routing utility.",
+            "stack": [
+                "Angular"
+            ]
+        }
+    ]
+}
