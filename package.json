@@ -12,9 +12,11 @@
 	},
 	"dependencies": {
 		"@cloudflare/agents": "^0.0.16",
+		"@cloudflare/tanstack-ai": "^0.1.1",
 		"@cloudflare/vite-plugin": "^1.13.8",
 		"@modelcontextprotocol/sdk": "^1.26.0",
 		"@tailwindcss/typography": "^0.5.19",
+		"@tanstack/ai": "^0.5.0",
 		"@tanstack/react-devtools": "^0.7.0",
 		"@tanstack/react-router": "^1.132.0",
 		"@tanstack/react-router-devtools": "^1.132.0",

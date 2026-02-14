@@ -13,6 +13,9 @@
 	"observability": {
 		"enabled": true
 	},
+	"ai": {
+		"binding": "AI"
+	},
 	/**
 	 * Durable Objects
 	 * Used by the MCP server for persistent message storage

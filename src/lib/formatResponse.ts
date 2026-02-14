@@ -8,7 +8,7 @@ export interface FormattedResponse {
     followUps?: string[];
 }
 
-export function formatResponse(query: string, results: SearchResult[], mode: Mode = 'engineer'): FormattedResponse {
+export function formatResponse(_query: string, results: SearchResult[], mode: Mode = 'engineer'): FormattedResponse {
     if (results.length === 0) {
         return {
             text: "I don't have specific details on that yet. Try asking about my **Engineering Philosophy**, **Flagship Projects**, or **System Designs**.",
@@ -40,7 +40,7 @@ export function formatResponse(query: string, results: SearchResult[], mode: Mod
     // Handle Single Project / Open Source
     if (topResult.type === 'project' || topResult.type === 'open_source') {
         const p = data;
-        const isRecruiter = mode === 'recruiter';
+
 
         let responseText = "";
 

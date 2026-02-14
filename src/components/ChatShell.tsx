@@ -1,11 +1,9 @@
 import { useState, useEffect, useRef } from 'react';
-import { retrieve } from '@/lib/retrieve';
-import { formatResponse } from '@/lib/formatResponse';
 import { MessageList } from './MessageList';
 import { ChatInput } from './ChatInput';
 import { PromptChips } from './PromptChips';
 import { ModeToggle, Mode } from './ModeToggle';
-import { useLocation, useNavigate } from '@tanstack/react-router';
+import { useLocation } from '@tanstack/react-router';
 
 export interface Message {
     role: 'user' | 'assistant';
@@ -23,7 +21,6 @@ export function ChatShell() {
 
     // Handle initial query from navigation state
     const location = useLocation();
-    const navigate = useNavigate();
     const hasInitialized = useRef(false);
 
     useEffect(() => {
@@ -47,22 +44,60 @@ export function ChatShell() {
         setMessages(prev => [...prev, userMsg]);
         setLoading(true);
 
-        // Simulate thinking/retrieving
-        setTimeout(() => {
-            const results = retrieve(text);
-            // @ts-ignore
-            const formatted = formatResponse(text, results, mode);
+        try {
+            // Include full history + new message
+            const apiMessages = [...messages, userMsg].map(m => ({
+                role: m.role,
+                content: m.content
+            }));
 
-            const aiMsg: Message = {
-                role: 'assistant',
-                content: formatted.text,
-                uiType: formatted.uiType,
-                uiData: formatted.uiData,
-                followUps: formatted.followUps
-            };
-            setMessages(prev => [...prev, aiMsg]);
+            const response = await fetch('/api/chat', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ messages: apiMessages })
+            });
+
+            if (!response.body) {
+                throw new Error("No response body");
+            }
+
+            const reader = response.body.getReader();
+            const decoder = new TextDecoder();
+            let assistantContent = "";
+
+            // Create placeholder for assistant message
+            setMessages(prev => [...prev, { role: 'assistant', content: "" }]);
+
+            while (true) {
+                const { done, value } = await reader.read();
+                if (done) break;
+
+                const chunk = decoder.decode(value, { stream: true });
+                assistantContent += chunk;
+
+                // Update the last message with new content
+                setMessages(prev => {
+                    const newMessages = [...prev];
+                    const lastMsg = newMessages[newMessages.length - 1];
+                    if (lastMsg.role === 'assistant') {
+                        lastMsg.content = assistantContent;
+                    }
+                    return newMessages;
+                });
+            }
+
+            // Post-process response to extract UI elements if strictly adhering to previous format (optional)
+            // For now, we assume the AI returns raw text which is rendered as markdown.
+            // If we want to restore specific UI Types (cards, timeline), we should teach the AI to output specific markers
+            // or use a structured output tool.
+            // For this iteration, we focus on the text stream.
+
+        } catch (error) {
+            console.error("Chat error:", error);
+            setMessages(prev => [...prev, { role: 'assistant', content: "Sorry, I encountered an error. Please try again." }]);
+        } finally {
             setLoading(false);
-        }, 800);
+        }
     };
 
     useEffect(() => {
