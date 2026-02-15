@@ -31,7 +31,8 @@ export type ServerEvent =
     | { type: "TTS_AUDIO"; data: ArrayBuffer }
     | { type: "llm.complete"; output: string }
     | { type: "error.platform.stt"; data: unknown }
-    | { type: "error.platform.llm"; data: unknown };
+    | { type: "error.platform.llm"; data: unknown }
+    | { type: "RESET" };
 
 // --- Logic Helpers ---
 
@@ -41,6 +42,10 @@ async function runSTT(audioBuffer: Uint8Array[], env: any): Promise<string> {
     if (audioBuffer.length === 0) return "";
 
     const totalLength = audioBuffer.reduce((acc, chunk) => acc + chunk.length, 0);
+    console.log(`[STT] Processing audio buffer of length: ${totalLength}`);
+
+    if (totalLength === 0) return "";
+
     const fullAudio = new Uint8Array(totalLength);
     let offset = 0;
     for (const chunk of audioBuffer) {
@@ -48,14 +53,21 @@ async function runSTT(audioBuffer: Uint8Array[], env: any): Promise<string> {
         offset += chunk.length;
     }
 
-    // @ts-ignore
-    const response = await env.AI.run("@cf/openai/whisper-tiny-en", {
-        audio: [...fullAudio],
-    });
+    try {
+        console.log(`[STT] Invoking env.AI.run(@cf/openai/whisper-tiny-en)`);
+        // @ts-ignore
+        const response = await env.AI.run("@cf/openai/whisper-tiny-en", {
+            audio: [...fullAudio],
+        });
+        console.log(`[STT] Response received:`, JSON.stringify(response));
 
-    // @ts-ignore
-    const text = response.text || "";
-    return text.trim();
+        // @ts-ignore
+        const text = response.text || "";
+        return text.trim();
+    } catch (e: any) {
+        console.error("[STT] Error during AI run:", e);
+        throw e; // Re-throw to be caught by actor
+    }
 }
 
 async function runTTS(text: string, env: any): Promise<ArrayBuffer | null> {
@@ -265,7 +277,15 @@ export const serverMachine = setup({
             }
         },
         emitError: ({ context, event }) => {
-            context.broadcast({ type: "error", reason: "An error occurred" });
+            const reason = (event as any).data ? String((event as any).data) : "An error occurred";
+
+            console.error("Error", {
+                context,
+                event,
+                reason
+            });
+
+            context.broadcast({ type: "error", reason });
         }
     }
 }).createMachine({
@@ -288,21 +308,25 @@ export const serverMachine = setup({
                 TEXT_MESSAGE: {
                     target: 'speaking',
                     actions: ['addUserMessage']
-                }
+                },
+                RESET: { target: 'idle', actions: 'clearAudio' }
             }
         },
         listening: {
+            // @ts-ignore
             entry: [assign({ status: 'listening' }), 'broadcastState', 'clearAudio'],
             on: {
-                STOP: 'thinking',
+                STOP: { target: 'thinking' },
                 AUDIO_CHUNK: { actions: 'appendAudio' },
                 TEXT_MESSAGE: {
                     target: 'speaking',
-                    actions: ['addUserMessage']
-                }
+                    actions: 'addUserMessage'
+                },
+                RESET: { target: 'idle', actions: 'clearAudio' }
             }
         },
         thinking: {
+            // @ts-ignore
             entry: [assign({ status: 'thinking' }), 'broadcastState'],
             invoke: {
                 src: 'sttActor',
@@ -326,6 +350,7 @@ export const serverMachine = setup({
                                         content: event.output,
                                         created_at: Date.now()
                                     };
+                                    // Side effect in assign is bad practice but kept for now as per original
                                     context.storage.sql.exec(
                                         `INSERT INTO messages (id, role, content, created_at) VALUES (?, ?, ?, ?)`,
                                         msg.id, msg.role, msg.content, msg.created_at
@@ -337,13 +362,16 @@ export const serverMachine = setup({
                     },
                     {
                         target: 'listening',
-                        actions: ({ context }) => context.broadcast({ type: "error", reason: "No speech detected" })
+                        actions: ({ context }) => { context.broadcast({ type: "error", reason: "No speech detected" }); }
                     }
                 ],
                 onError: {
                     target: 'listening',
                     actions: 'emitError'
                 }
+            },
+            on: {
+                RESET: { target: 'idle', actions: 'clearAudio' }
             }
         },
         speaking: {
@@ -361,13 +389,17 @@ export const serverMachine = setup({
                 "llm.complete": {
                     target: 'listening',
                     actions: 'addAssistantMessage'
-                }
+                },
+                RESET: { target: 'idle', actions: 'clearAudio' }
             }
         },
         error: {
             entry: [assign({ status: 'error' }), 'broadcastState', 'emitError'],
             after: {
                 1000: 'listening'
+            },
+            on: {
+                RESET: { target: 'idle', actions: 'clearAudio' }
             }
         }
     }

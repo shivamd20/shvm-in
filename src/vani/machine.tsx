@@ -154,6 +154,9 @@ export const clientMachine = setup({
                     blobUrl: event.blob ? URL.createObjectURL(event.blob) : undefined
                 }];
             }
+        }),
+        clearError: assign({
+            error: null
         })
     },
     guards: {
@@ -175,7 +178,7 @@ export const clientMachine = setup({
     },
     on: {
         LOG_EVENT: { actions: 'logEvent' },
-        ADD_MESSAGE: { actions: 'addMessage' },
+        ADD_MESSAGE: { actions: ['addMessage', 'clearError'] },
         SET_ERROR: { target: '.error', actions: 'setError' },
         DISCONNECT: { target: '.disconnected', actions: 'setDisconnected' }
     },
@@ -197,7 +200,7 @@ export const clientMachine = setup({
                 idle: {
                     entry: assign({ status: 'idle' }),
                     on: {
-                        START_LISTENING: { target: '#client.listening' },
+                        START_LISTENING: { target: '#client.listening', actions: 'clearError' },
                         AUDIO_PLAYBACK_START: { target: '#client.speaking', actions: 'setPlaying' },
                         SERVER_STATE_CHANGE: [
                             {
@@ -215,10 +218,10 @@ export const clientMachine = setup({
                     entry: assign({ status: 'processing' }),
                     // Watchdog
                     after: {
-                        60000: { target: 'idle', actions: assign({ error: 'Server timed out' }) } // Simplified watchdog
+                        60000: { target: 'idle', actions: assign({ error: 'Server timed out. Interactions will reset.' }) }
                     },
                     on: {
-                        START_LISTENING: { target: '#client.listening' },
+                        START_LISTENING: { target: '#client.listening', actions: 'clearError' },
                         AUDIO_PLAYBACK_START: { target: '#client.speaking', actions: 'setPlaying' },
                         SERVER_STATE_CHANGE: [
                             {
@@ -258,7 +261,7 @@ export const clientMachine = setup({
         error: {
             on: {
                 CONNECT: { target: 'connecting', actions: 'setStatusConfig' },
-                // Allow recovering
+                START_LISTENING: { target: 'listening', actions: 'clearError' }
             }
         }
     }

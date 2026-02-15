@@ -2,7 +2,7 @@ import { useEffect, useRef, useCallback } from 'react';
 import { useMicVAD } from '@ricky0123/vad-react';
 import * as ort from 'onnxruntime-web';
 import { useActor } from '@xstate/react';
-import { clientMachine } from '../machine';
+import { clientMachine, type Message } from '../machine';
 
 // --- Constants ---
 const ONNX_WASM_BASE_PATH = 'https://cdn.jsdelivr.net/npm/onnxruntime-web@1.22.0/dist/';
@@ -27,6 +27,8 @@ export type { VoiceStatus, Message, DebugEvent } from '../machine';
 
 interface UseVoiceSessionProps {
     onError?: (error: string) => void;
+    onMessage?: (msg: { role: 'user' | 'assistant'; content: string }) => void;
+    initialTranscript?: Message[];
 }
 
 const VAD_SAMPLE_RATE = 16000;
@@ -65,7 +67,7 @@ function encodeWav(audio: Float32Array, sampleRate: number) {
     return buffer;
 }
 
-export function useVoiceSession({ onError }: UseVoiceSessionProps = {}) {
+export function useVoiceSession({ onError, onMessage, initialTranscript }: UseVoiceSessionProps = {}) {
     // 1. Initialize Machine
     const [snapshot, send, actorRef] = useActor(clientMachine);
     const state = snapshot.context; // Consistency with previous hook: return context as 'state'
@@ -76,30 +78,29 @@ export function useVoiceSession({ onError }: UseVoiceSessionProps = {}) {
     const audioQueueRef = useRef<ArrayBuffer[]>([]);
     const isPlaybackLoopRunning = useRef(false);
     const onErrorCallbackRef = useRef(onError);
+    const onMessageCallbackRef = useRef(onMessage);
     const turnActiveRef = useRef(false);
     const lastVADErrorRef = useRef<string | null>(null);
 
+    // Sync refs
     useEffect(() => {
         onErrorCallbackRef.current = onError;
-    }, [onError]);
+        onMessageCallbackRef.current = onMessage;
+    }, [onError, onMessage]);
 
-    // We can rely on machine for basic error transitions, but need to trigger callback
+    // Sync initial transcript if provided and machine is empty (on mount)
     useEffect(() => {
-        if (state.error && onErrorCallbackRef.current) {
-            onErrorCallbackRef.current(state.error);
+        if (initialTranscript && initialTranscript.length > 0 && state.transcript.length === 0) {
+            initialTranscript.forEach(msg => {
+                send({ type: 'ADD_MESSAGE', role: msg.role as any, content: msg.content });
+            });
         }
-    }, [state.error]);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, []); // Only run once on mount
 
-    // Note: Machine handles timeout logic for 'processing' state now.
+    // ... (rest of hook)
 
-    // Cleanup
-    useEffect(() => {
-        return () => {
-            wsRef.current?.close();
-            audioContextRef.current?.close();
-            // Revoke object URLs in history to avoid leaks? (Ideally, but complicated in reducer)
-        };
-    }, []);
+
 
     const initAudio = async () => {
         if (audioContextRef.current && audioContextRef.current.state !== 'closed') {
@@ -116,6 +117,7 @@ export function useVoiceSession({ onError }: UseVoiceSessionProps = {}) {
         } catch (e: any) {
             console.error('[Voice] Audio init error:', e);
             const msg = 'Audio initialization failed: ' + e.message;
+            console.error('[Voice] Sending SET_ERROR (Audio Init)', msg);
             send({ type: 'SET_ERROR', error: msg });
             // onError callback handled by effect
             throw e;
@@ -130,13 +132,29 @@ export function useVoiceSession({ onError }: UseVoiceSessionProps = {}) {
         // Use actorRef to get latest context synchronously in callback
         const currentContext = actorRef.getSnapshot().context;
         const status = currentContext.status;
+        const error = currentContext.error;
 
-        if (status !== 'idle' && status !== 'listening') return;
+        // If we had a timeout error or any error, we should reset the server state first
+        if (error) {
+            console.log('[Voice] Sending RESET due to previous error:', error);
+            ws.send(JSON.stringify({ type: 'RESET' }));
+        }
+
+        if (status !== 'idle' && status !== 'listening' && status !== 'error') return;
 
         turnActiveRef.current = true;
         ws.send(JSON.stringify({ type: 'start' }));
         send({ type: 'START_LISTENING' });
     }, [actorRef, send]);
+
+    const sendMessage = useCallback((text: string) => {
+        const ws = wsRef.current;
+        if (ws && ws.readyState === WebSocket.OPEN) {
+            ws.send(JSON.stringify({ type: 'text', value: text }));
+            send({ type: 'ADD_MESSAGE', role: 'user', content: text });
+            send({ type: 'SERVER_STATE_CHANGE', status: 'speaking' }); // Assume server will process
+        }
+    }, [send]);
 
     const handleSpeechEnd = useCallback(async (audio: Float32Array) => {
         const ws = wsRef.current;
@@ -157,6 +175,7 @@ export function useVoiceSession({ onError }: UseVoiceSessionProps = {}) {
         ws.send(JSON.stringify({ type: 'stop' }));
         send({ type: 'STOP_LISTENING' });
     }, [send]);
+
 
     const handleVADMisfire = useCallback(() => {
         if (!turnActiveRef.current) return;
@@ -187,6 +206,7 @@ export function useVoiceSession({ onError }: UseVoiceSessionProps = {}) {
             : vad.errored.message || 'VAD failed to load';
         if (lastVADErrorRef.current === message) return;
         lastVADErrorRef.current = message;
+        console.error('[Voice] Sending SET_ERROR (VAD)', message);
         send({ type: 'SET_ERROR', error: message });
     }, [vad.errored, send]);
 
@@ -205,6 +225,7 @@ export function useVoiceSession({ onError }: UseVoiceSessionProps = {}) {
         // Initialize AudioContext immediately to capture user gesture
         initAudio().catch(err => console.warn('[Voice] Early audio init failed', err));
 
+        console.log('[Voice] Connect called');
         send({ type: 'CONNECT' });
 
         const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
@@ -243,7 +264,7 @@ export function useVoiceSession({ onError }: UseVoiceSessionProps = {}) {
 
         ws.onerror = (e) => {
             console.error('[Voice] WS Error', e);
-            send({ type: 'SET_ERROR', error: 'Connection failed' });
+            send({ type: 'SET_ERROR', error: 'Connection failed: ' + (e instanceof ErrorEvent ? e.message : 'Unknown') });
         };
     }, [send]);
 
@@ -255,14 +276,17 @@ export function useVoiceSession({ onError }: UseVoiceSessionProps = {}) {
                 break;
             case 'transcript.final':
                 send({ type: 'ADD_MESSAGE', role: 'user', content: data.text });
+                onMessageCallbackRef.current?.({ role: 'user', content: data.text });
                 break;
             case 'assistant.message':
                 send({ type: 'ADD_MESSAGE', role: 'assistant', content: data.message.content });
+                onMessageCallbackRef.current?.({ role: 'assistant', content: data.message.content });
                 break;
             case 'assistant.partial':
                 // Optional: Stream text token by token if needed
                 break;
             case 'error':
+                console.error('[Voice] Sending SET_ERROR (Server)', data.reason);
                 send({ type: 'SET_ERROR', error: data.reason });
                 break;
         }
@@ -337,6 +361,7 @@ export function useVoiceSession({ onError }: UseVoiceSessionProps = {}) {
         vadErrored: vad.errored,
         userSpeaking: vad.userSpeaking,
         connect,
-        disconnect
+        disconnect,
+        sendMessage
     };
 }
