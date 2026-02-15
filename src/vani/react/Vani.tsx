@@ -3,7 +3,7 @@ import { useState } from 'react';
 import { useVoiceSession } from './useVoiceSession';
 import { FullScreenMode } from './modes/FullScreenMode';
 import { PipMode } from './modes/PipMode';
-import { type Message } from '../machine';
+import { type Message, type VoiceConfig } from '../machine';
 
 export interface VaniProps {
     /**
@@ -30,6 +30,10 @@ export interface VaniProps {
      * Callback when mode changes (e.g. user minimizes/maximizes)
      */
     onModeChange?: (mode: 'full' | 'pip') => void;
+    /**
+     * Initial config
+     */
+    initialConfig?: VoiceConfig;
 }
 
 export function Vani({
@@ -38,14 +42,26 @@ export function Vani({
     initialTranscript,
     defaultMode = 'full',
     mode: controlledMode,
-    onModeChange
+    onModeChange,
+    initialConfig
 }: VaniProps) {
     const [internalMode, setInternalMode] = useState<'full' | 'pip'>(defaultMode);
+    const [config, setConfig] = useState<VoiceConfig>(initialConfig || {
+        sttModel: '@cf/openai/whisper',
+        llmModel: '@cf/meta/llama-3.1-8b-instruct',
+        tts: { model: '@cf/deepgram/aura-2-en', speaker: 'luna' }
+    });
+    const [feedback, setFeedback] = useState<string | null>(null);
 
     // Derived mode: if controlledMode is provided use it, otherwise internal state
     const currentMode = controlledMode ?? internalMode;
 
-    const session = useVoiceSession({ onError, onMessage, initialTranscript });
+    const handleFeedback = (message: string) => {
+        setFeedback(message);
+        setTimeout(() => setFeedback(null), 3000);
+    };
+
+    const session = useVoiceSession({ onError, onMessage, initialTranscript, config, onFeedback: handleFeedback });
 
     const handleToggleMode = () => {
         const newMode = currentMode === 'full' ? 'pip' : 'full';
@@ -56,8 +72,8 @@ export function Vani({
     };
 
     if (currentMode === 'pip') {
-        return <PipMode {...session} onTogglePip={handleToggleMode} />;
+        return <PipMode {...session} onTogglePip={handleToggleMode} config={config} setConfig={setConfig} feedback={feedback} />;
     }
 
-    return <FullScreenMode {...session} onTogglePip={handleToggleMode} />;
+    return <FullScreenMode {...session} onTogglePip={handleToggleMode} config={config} setConfig={setConfig} feedback={feedback} />;
 }

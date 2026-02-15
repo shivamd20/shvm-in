@@ -1,8 +1,9 @@
 
-import { Mic, Volume2, Loader2, Radio, WifiOff, AlertCircle, Terminal, Minimize2, Square } from 'lucide-react';
-import { useState } from 'react';
+import { Mic, Volume2, Loader2, Radio, WifiOff, AlertCircle, Terminal, Minimize2, Square, Settings, X, Save } from 'lucide-react';
+import { useState, useRef, useEffect, useMemo } from 'react';
 import { VoiceDebugSidebar } from '../VoiceDebugSidebar';
 import { VaniViewProps } from '../types';
+import { VoiceConfig, STT_MODELS, LLM_MODELS, TTS_MODELS, TTS_MODEL_VOICES } from '../../machine';
 
 export function FullScreenMode({
     status,
@@ -12,9 +13,46 @@ export function FullScreenMode({
     connect,
     cancel,
     vadLoading,
-    onTogglePip
+    onTogglePip,
+    config,
+    setConfig,
+    feedback
 }: VaniViewProps) {
     const [isDebugOpen, setIsDebugOpen] = useState(false);
+    const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+    const transcriptEndRef = useRef<HTMLDivElement>(null);
+    const [localConfig, setLocalConfig] = useState<VoiceConfig>(config || {});
+
+    // Sync local config when prop changes (if external update)
+    useEffect(() => {
+        if (config) setLocalConfig(config);
+    }, [config]);
+
+    // Auto-scroll transcript
+    useEffect(() => {
+        transcriptEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    }, [transcript]);
+
+    // Get available voices for the selected TTS model
+    const availableVoices = useMemo(() => {
+        const model = localConfig.tts?.model || TTS_MODELS[0];
+        return TTS_MODEL_VOICES[model] || [];
+    }, [localConfig.tts?.model]);
+
+    // Reset speaker if it's not available for the selected model
+    useEffect(() => {
+        if (localConfig.tts?.speaker && !availableVoices.includes(localConfig.tts.speaker as any)) {
+            setLocalConfig({
+                ...localConfig,
+                tts: { ...localConfig.tts, speaker: availableVoices[0] as any }
+            });
+        }
+    }, [availableVoices, localConfig]);
+
+    const handleSaveConfig = () => {
+        setConfig?.(localConfig);
+        setIsSettingsOpen(false);
+    };
 
     // UI Mapping
     const isListening = status === 'listening';
@@ -38,8 +76,15 @@ export function FullScreenMode({
                 />
             </div>
 
-            {/* Controls: Pip Toggle */}
+            {/* Controls: Pip Toggle & Settings */}
             <div className="absolute top-4 right-4 z-50 flex gap-2">
+                <button
+                    onClick={() => setIsSettingsOpen(true)}
+                    className="p-2 rounded-full hover:bg-zinc-900 text-zinc-500 hover:text-zinc-300 transition-colors"
+                    title="Settings"
+                >
+                    <Settings className="w-5 h-5" />
+                </button>
                 {onTogglePip && (
                     <button
                         onClick={onTogglePip}
@@ -50,6 +95,110 @@ export function FullScreenMode({
                     </button>
                 )}
             </div>
+
+            {/* Settings Modal */}
+            {isSettingsOpen && (
+                <div className="fixed inset-0 z-[60] bg-black/80 backdrop-blur-sm flex items-center justify-center p-4">
+                    <div className="bg-zinc-900 border border-zinc-700 rounded-2xl w-full max-w-md p-6 shadow-2xl animate-in fade-in zoom-in-95 duration-200">
+                        <div className="flex justify-between items-center mb-6">
+                            <h2 className="text-xl font-semibold text-white">Voice Settings</h2>
+                            <button onClick={() => setIsSettingsOpen(false)} className="text-zinc-500 hover:text-white">
+                                <X className="w-5 h-5" />
+                            </button>
+                        </div>
+
+                        <div className="space-y-4">
+                            <div>
+                                <label className="block text-xs font-mono text-zinc-500 mb-1 uppercase">LLM Model</label>
+                                <select
+                                    value={localConfig.llmModel || LLM_MODELS[0]}
+                                    onChange={e => setLocalConfig({ ...localConfig, llmModel: e.target.value as any })}
+                                    className="w-full bg-zinc-950 border border-zinc-800 rounded px-3 py-2 text-sm focus:border-blue-500 outline-none appearance-none"
+                                >
+                                    {LLM_MODELS.map(m => (
+                                        <option key={m} value={m}>{m}</option>
+                                    ))}
+                                </select>
+                            </div>
+                            <div>
+                                <label className="block text-xs font-mono text-zinc-500 mb-1 uppercase">STT Model</label>
+                                <select
+                                    value={localConfig.sttModel || STT_MODELS[0]}
+                                    onChange={e => setLocalConfig({ ...localConfig, sttModel: e.target.value as any })}
+                                    className="w-full bg-zinc-950 border border-zinc-800 rounded px-3 py-2 text-sm focus:border-blue-500 outline-none appearance-none"
+                                >
+                                    {STT_MODELS.map(m => (
+                                        <option key={m} value={m}>{m}</option>
+                                    ))}
+                                </select>
+                            </div>
+                            <div>
+                                <label className="block text-xs font-mono text-zinc-500 mb-1 uppercase">TTS Model</label>
+                                <select
+                                    value={localConfig.tts?.model || TTS_MODELS[0]}
+                                    onChange={e => setLocalConfig({ ...localConfig, tts: { ...localConfig.tts, model: e.target.value as any } })}
+                                    className="w-full bg-zinc-950 border border-zinc-800 rounded px-3 py-2 text-sm focus:border-blue-500 outline-none appearance-none"
+                                >
+                                    {TTS_MODELS.map(s => (
+                                        <option key={s} value={s}>{s}</option>
+                                    ))}
+                                </select>
+                            </div>
+                            <div>
+                                <label className="block text-xs font-mono text-zinc-500 mb-1 uppercase">TTS Voice</label>
+                                <select
+                                    value={localConfig.tts?.speaker || availableVoices[0]}
+                                    onChange={e => setLocalConfig({ ...localConfig, tts: { ...localConfig.tts, speaker: e.target.value as any } })}
+                                    className="w-full bg-zinc-950 border border-zinc-800 rounded px-3 py-2 text-sm focus:border-blue-500 outline-none appearance-none"
+                                >
+                                    {availableVoices.map((s: string) => (
+                                        <option key={s} value={s}>{s}</option>
+                                    ))}
+                                </select>
+                            </div>
+                            <div className="grid grid-cols-2 gap-4">
+                                <div>
+                                    <label className="block text-xs font-mono text-zinc-500 mb-1 uppercase">Sample Rate</label>
+                                    <input
+                                        type="number"
+                                        value={localConfig.tts?.sample_rate || ''}
+                                        onChange={e => setLocalConfig({ ...localConfig, tts: { ...localConfig.tts, sample_rate: Number(e.target.value) as any } })}
+                                        placeholder="Default"
+                                        className="w-full bg-zinc-950 border border-zinc-800 rounded px-3 py-2 text-sm focus:border-blue-500 outline-none"
+                                    />
+                                </div>
+                                <div>
+                                    <label className="block text-xs font-mono text-zinc-500 mb-1 uppercase">Format</label>
+                                    <select
+                                        value={localConfig.tts?.encoding || 'mp3'}
+                                        onChange={e => setLocalConfig({ ...localConfig, tts: { ...localConfig.tts, encoding: e.target.value as any } })}
+                                        className="w-full bg-zinc-950 border border-zinc-800 rounded px-3 py-2 text-sm focus:border-blue-500 outline-none"
+                                    >
+                                        {["mp3", "opus", "aac", "lossless"].map(f => (
+                                            <option key={f} value={f}>{f}</option>
+                                        ))}
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div className="mt-8 flex justify-end gap-3">
+                            <button
+                                onClick={() => setIsSettingsOpen(false)}
+                                className="px-4 py-2 rounded text-sm text-zinc-400 hover:text-white"
+                            >
+                                Cancel
+                            </button>
+                            <button
+                                onClick={handleSaveConfig}
+                                className="px-4 py-2 rounded text-sm bg-white text-black font-medium hover:bg-zinc-200 flex items-center gap-2"
+                            >
+                                <Save className="w-4 h-4" /> Save Changes
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
 
             <div className="relative z-10 max-w-md w-full flex flex-col items-center gap-12 transition-all duration-500" style={{ transform: isDebugOpen ? "translateX(-150px)" : "translateX(0)" }}>
 
@@ -68,6 +217,12 @@ export function FullScreenMode({
                         <div className="text-red-400 text-sm font-mono bg-red-900/20 px-3 py-1 rounded border border-red-900/50 animate-in fade-in slide-in-from-top-2 max-w-xs text-center break-words">
                             {/* Display extended error info if standard error is generic */}
                             {error === 'An error occurred' ? 'Unknown error. Check console.' : error}
+                        </div>
+                    )}
+
+                    {feedback && (
+                        <div className="text-yellow-400 text-sm font-mono bg-yellow-900/20 px-3 py-1 rounded border border-yellow-900/50 animate-in fade-in slide-in-from-top-2 max-w-xs text-center break-words">
+                            {feedback}
                         </div>
                     )}
 
@@ -132,12 +287,12 @@ export function FullScreenMode({
                     </p>
                 )}
 
-                {/* Transcript (Last 2 messages) */}
-                <div className="w-full space-y-4 min-h-[150px] mask-gradient-b flex flex-col justify-end pb-4">
-                    {transcript && transcript.slice(-2).map((msg: any) => (
+                {/* Transcript */}
+                <div className="w-full min-h-[150px] max-h-[30vh] overflow-y-auto space-y-4 mask-gradient-b flex flex-col pb-4 px-2 scrollbar-thin scrollbar-thumb-zinc-800 scrollbar-track-transparent">
+                    {transcript && transcript.map((msg: any) => (
                         <div key={msg.id} className={`flex flex-col space-y-1 animate-in slide-in-from-bottom-2 fade-in duration-300 ${msg.role === 'user' ? 'items-end' : 'items-start'}`}>
                             <span className="text-[10px] font-mono text-zinc-600 uppercase tracking-widest">{msg.role}</span>
-                            <div className={`px-4 py-2 rounded-2xl max-w-[90%] text-sm leading-relaxed shadow-lg
+                            <div className={`px-4 py-2 rounded-2xl max-w-[90%] text-sm leading-relaxed shadow-lg break-words
                 ${msg.role === 'user'
                                     ? 'bg-zinc-800/80 text-zinc-200 rounded-tr-sm border border-zinc-700/50'
                                     : 'bg-blue-900/20 text-blue-100 border border-blue-500/20 rounded-tl-sm backdrop-blur-sm'}`}>
@@ -145,6 +300,7 @@ export function FullScreenMode({
                             </div>
                         </div>
                     ))}
+                    <div ref={transcriptEndRef} />
                 </div>
 
             </div>

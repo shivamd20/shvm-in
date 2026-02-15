@@ -1,5 +1,5 @@
 
-import { VoiceStatus, Message, DebugEvent } from '../machine';
+import { VoiceStatus, Message, DebugEvent, VoiceConfig } from '../machine';
 
 export interface VaniViewProps {
     status: VoiceStatus;
@@ -10,4 +10,7 @@ export interface VaniViewProps {
     cancel: () => void;
     vadLoading: boolean;
     onTogglePip?: () => void;
+    config?: VoiceConfig;
+    setConfig?: (config: VoiceConfig) => void;
+    feedback?: string | null;
 }

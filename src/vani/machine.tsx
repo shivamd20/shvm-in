@@ -43,6 +43,72 @@ export interface DebugEvent {
     blobUrl?: string;
 }
 
+// --- Constants for Configuration ---
+
+export const STT_MODELS = [
+    "@cf/openai/whisper",
+    "@cf/openai/whisper-tiny-en"
+] as const;
+
+export const LLM_MODELS = [
+    "@cf/meta/llama-3.1-8b-instruct",
+    "@cf/meta/llama-3-8b-instruct",
+    "@cf/meta/llama-2-7b-chat-int8",
+    "@cf/mistral/mistral-7b-instruct-v0.1"
+] as const;
+
+export const TTS_MODELS = [
+    "@cf/deepgram/aura-2-en",
+    "@cf/deepgram/aura-1"
+] as const;
+
+// Voice options per model
+export const TTS_MODEL_VOICES = {
+    "@cf/deepgram/aura-2-en": [
+        "asteria",
+        "luna",
+        "arcas",
+        "athena",
+        "helios",
+        "orpheus",
+        "perseus",
+        "angus"
+    ],
+    "@cf/deepgram/aura-1": [
+        "asteria",
+        "luna",
+        "stella",
+        "athena",
+        "hera",
+        "orion",
+        "arcas",
+        "perseus",
+        "angus",
+        "orpheus",
+        "helios",
+        "zeus"
+    ]
+} as const;
+
+// Helper type to get voices for a specific model
+export type VoicesForModel<T extends typeof TTS_MODELS[number]> = typeof TTS_MODEL_VOICES[T][number];
+
+// All possible voices across all models
+export type TTS_VOICE = VoicesForModel<typeof TTS_MODELS[number]>;
+
+export interface VoiceConfig {
+    sttModel?: typeof STT_MODELS[number];
+    llmModel?: typeof LLM_MODELS[number];
+    tts?: {
+        speaker?: TTS_VOICE;
+        encoding?: "mp3" | "opus" | "aac" | "lossless";
+        container?: "mp3" | "ogg" | "aac" | "wav";
+        sample_rate?: 16000 | 24000 | 44100 | 48000;
+        bit_rate?: number;
+        model?: typeof TTS_MODELS[number];
+    };
+}
+
 export interface ClientContext {
     status: VoiceStatus; // Derived/synced with state
     serverStatus: string;

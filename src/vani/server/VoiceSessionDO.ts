@@ -118,7 +118,7 @@ export class VoiceSessionDO extends DurableObject<Env> {
 
         switch (data.type) {
             case "start":
-                this.actor.send({ type: "START" });
+                this.actor.send({ type: "START", config: data.config });
                 break;
             case "stop":
                 this.actor.send({ type: "STOP" });

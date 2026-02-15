@@ -2,7 +2,8 @@ import { useEffect, useRef, useCallback } from 'react';
 import { useMicVAD } from '@ricky0123/vad-react';
 import * as ort from 'onnxruntime-web';
 import { useActor } from '@xstate/react';
-import { clientMachine, type Message } from '../machine';
+import { clientMachine, type Message, type VoiceStatus, type DebugEvent, type VoiceConfig } from '../machine';
+export type { VoiceStatus, Message, DebugEvent, VoiceConfig };
 
 // --- Constants ---
 const ONNX_WASM_BASE_PATH = 'https://cdn.jsdelivr.net/npm/onnxruntime-web@1.22.0/dist/';
@@ -20,7 +21,8 @@ if (typeof window !== 'undefined') {
 
 // --- Types ---
 // Re-export types from machine if needed, or use them directly in UI
-export type { VoiceStatus, Message, DebugEvent } from '../machine';
+
+
 
 
 // --- Hook ---
@@ -28,7 +30,9 @@ export type { VoiceStatus, Message, DebugEvent } from '../machine';
 interface UseVoiceSessionProps {
     onError?: (error: string) => void;
     onMessage?: (msg: { role: 'user' | 'assistant'; content: string }) => void;
+    onFeedback?: (message: string) => void;
     initialTranscript?: Message[];
+    config?: VoiceConfig;
 }
 
 const VAD_SAMPLE_RATE = 16000;
@@ -67,7 +71,7 @@ function encodeWav(audio: Float32Array, sampleRate: number) {
     return buffer;
 }
 
-export function useVoiceSession({ onError, onMessage, initialTranscript }: UseVoiceSessionProps = {}) {
+export function useVoiceSession({ onError, onMessage, onFeedback, initialTranscript, config }: UseVoiceSessionProps = {}) {
     // 1. Initialize Machine
     const [snapshot, send, actorRef] = useActor(clientMachine);
     const state = snapshot.context; // Consistency with previous hook: return context as 'state'
@@ -79,6 +83,8 @@ export function useVoiceSession({ onError, onMessage, initialTranscript }: UseVo
     const isPlaybackLoopRunning = useRef(false);
     const onErrorCallbackRef = useRef(onError);
     const onMessageCallbackRef = useRef(onMessage);
+    const onFeedbackCallbackRef = useRef(onFeedback);
+    const configRef = useRef(config);
     const turnActiveRef = useRef(false);
     const lastVADErrorRef = useRef<string | null>(null);
 
@@ -86,7 +92,9 @@ export function useVoiceSession({ onError, onMessage, initialTranscript }: UseVo
     useEffect(() => {
         onErrorCallbackRef.current = onError;
         onMessageCallbackRef.current = onMessage;
-    }, [onError, onMessage]);
+        onFeedbackCallbackRef.current = onFeedback;
+        configRef.current = config;
+    }, [onError, onMessage, onFeedback, config]);
 
     // Sync initial transcript if provided and machine is empty (on mount)
     useEffect(() => {
@@ -134,16 +142,36 @@ export function useVoiceSession({ onError, onMessage, initialTranscript }: UseVo
         const status = currentContext.status;
         const error = currentContext.error;
 
-        // If we had a timeout error or any error, we should reset the server state first
+        // On error, try to reset or recover.
         if (error) {
-            console.log('[Voice] Sending RESET due to previous error:', error);
-            ws.send(JSON.stringify({ type: 'RESET' }));
+            // Optional reset logic
+        }
+
+        // Interruption / Busy Handling
+        if (status === 'speaking' || status === 'processing') {
+            // Reject input and give feedback
+            const msg = "I'm listening, but give me a sec to finish this thought...";
+            // onFeedbackCallbackRef.current?.(msg);
+            // Or send a temporary error/status to UI?
+            // Since we have onFeedback, use it.
+            if (onFeedbackCallbackRef.current) {
+                onFeedbackCallbackRef.current(msg);
+            } else {
+                console.log("[Voice] Busy, rejecting speech input.");
+            }
+            return;
         }
 
         if (status !== 'idle' && status !== 'listening' && status !== 'error') return;
 
         turnActiveRef.current = true;
-        ws.send(JSON.stringify({ type: 'start' }));
+
+        // Send start with config
+        ws.send(JSON.stringify({
+            type: 'start',
+            config: configRef.current
+        }));
+
         send({ type: 'START_LISTENING' });
     }, [actorRef, send]);
 
@@ -175,6 +203,7 @@ export function useVoiceSession({ onError, onMessage, initialTranscript }: UseVo
         ws.send(JSON.stringify({ type: 'stop' }));
         send({ type: 'STOP_LISTENING' });
     }, [send]);
+
 
 
     const handleVADMisfire = useCallback(() => {
@@ -288,6 +317,9 @@ export function useVoiceSession({ onError, onMessage, initialTranscript }: UseVo
             case 'error':
                 console.error('[Voice] Sending SET_ERROR (Server)', data.reason);
                 send({ type: 'SET_ERROR', error: data.reason });
+                break;
+            case 'feedback':
+                onFeedbackCallbackRef.current?.(data.message);
                 break;
         }
     };
