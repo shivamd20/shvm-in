@@ -66,7 +66,8 @@ export type ClientEvent =
     | { type: 'AUDIO_PLAYBACK_START' }
     | { type: 'AUDIO_PLAYBACK_END' }
     | { type: 'LOG_EVENT'; eventType: DebugEvent['type']; details: any; blob?: Blob }
-    | { type: 'TIMEOUT' };
+    | { type: 'TIMEOUT' }
+    | { type: 'CANCEL' };
 
 
 // --- Machine ---
@@ -218,9 +219,10 @@ export const clientMachine = setup({
                     entry: assign({ status: 'processing' }),
                     // Watchdog
                     after: {
-                        60000: { target: 'idle', actions: assign({ error: 'Server timed out. Interactions will reset.' }) }
+                        20000: { target: 'idle', actions: assign({ error: 'Server timed out. Interactions will reset.' }) }
                     },
                     on: {
+                        CANCEL: { target: 'idle', actions: 'clearError' },
                         START_LISTENING: { target: '#client.listening', actions: 'clearError' },
                         AUDIO_PLAYBACK_START: { target: '#client.speaking', actions: 'setPlaying' },
                         SERVER_STATE_CHANGE: [

@@ -53,7 +53,7 @@ export class VoiceSessionDO extends DurableObject<Env> {
 
         // Error logging
         this.actor.subscribe({
-            error: (err) => console.error("[VoiceDO] Machine Error:", err)
+            error: (err: any) => console.error("[VoiceDO] Machine Error:", err)
         });
 
         this.actor.start();
@@ -122,6 +122,9 @@ export class VoiceSessionDO extends DurableObject<Env> {
                 break;
             case "stop":
                 this.actor.send({ type: "STOP" });
+                break;
+            case "reset":
+                this.actor.send({ type: "RESET" });
                 break;
             case "text.message":
                 if (data.content) {

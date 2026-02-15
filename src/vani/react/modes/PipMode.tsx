@@ -8,6 +8,7 @@ export function PipMode({
     transcript,
     error,
     connect,
+    cancel,
     onTogglePip
 }: VaniViewProps) {
     const [isExpanded, setIsExpanded] = useState(true);
@@ -17,9 +18,8 @@ export function PipMode({
     const isListening = status === 'listening';
     const isThinking = status === 'processing';
     const isSpeaking = status === 'speaking';
-    const isConnecting = status === 'connecting';
     const isDisconnected = status === 'disconnected';
-    const isError = status === 'error';
+    const isError = status === 'error'; // isConnecting removed as unused
 
     const getStatusColor = () => {
         if (isListening) return 'bg-green-500';
@@ -90,12 +90,15 @@ export function PipMode({
                 {/* Main Visualizer (Small) */}
                 <div className="flex justify-center py-2">
                     <button
-                        onClick={isDisconnected || isError ? connect : undefined}
+                        onClick={() => {
+                            if (isDisconnected || isError) connect();
+                            else if (isThinking || isSpeaking) cancel();
+                        }}
                         className={`w-16 h-16 rounded-full flex items-center justify-center transition-all duration-300
                             ${isListening ? 'bg-green-500/20 shadow-[0_0_20px_rgba(34,197,94,0.3)]' :
-                                isThinking ? 'bg-yellow-500/20 shadow-[0_0_20px_rgba(234,179,8,0.3)]' :
-                                    isSpeaking ? 'bg-blue-500/20 shadow-[0_0_20px_rgba(59,130,246,0.3)]' :
-                                        'bg-zinc-800'}`}
+                                isSpeaking ? 'bg-blue-500/20 shadow-[0_0_20px_rgba(59,130,246,0.3)] hover:bg-red-500/20 hover:text-red-500 cursor-pointer' :
+                                    'bg-zinc-800'}`}
+                        title={isThinking || isSpeaking ? "Stop" : isError && error ? error : undefined}
                     >
                         {getStatusIcon()}
                     </button>
@@ -108,7 +111,7 @@ export function PipMode({
                             {isDisconnected ? 'Disconnected' : 'Conversation will appear here...'}
                         </div>
                     ) : (
-                        transcript.slice(-2).map((msg) => (
+                        transcript.slice(-2).map((msg: any) => (
                             <div key={msg.id} className={`flex flex-col ${msg.role === 'user' ? 'items-end' : 'items-start'}`}>
                                 <div className={`px-2 py-1.5 rounded-lg max-w-[90%] text-xs leading-relaxed
                                     ${msg.role === 'user'

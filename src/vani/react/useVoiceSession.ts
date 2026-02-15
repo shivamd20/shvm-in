@@ -354,6 +354,14 @@ export function useVoiceSession({ onError, onMessage, initialTranscript }: UseVo
         send({ type: 'DISCONNECT' });
     }, [send]);
 
+    const cancel = useCallback(() => {
+        const ws = wsRef.current;
+        if (ws && ws.readyState === WebSocket.OPEN) {
+            ws.send(JSON.stringify({ type: 'reset' }));
+        }
+        send({ type: 'CANCEL' });
+    }, [send]);
+
     return {
         ...state,
         vadListening: vad.listening,
@@ -362,6 +370,7 @@ export function useVoiceSession({ onError, onMessage, initialTranscript }: UseVo
         userSpeaking: vad.userSpeaking,
         connect,
         disconnect,
-        sendMessage
+        sendMessage,
+        cancel
     };
 }

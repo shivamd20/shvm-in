@@ -1,5 +1,5 @@
 
-import { Mic, Volume2, Loader2, Radio, WifiOff, AlertCircle, Terminal, Minimize2 } from 'lucide-react';
+import { Mic, Volume2, Loader2, Radio, WifiOff, AlertCircle, Terminal, Minimize2, Square } from 'lucide-react';
 import { useState } from 'react';
 import { VoiceDebugSidebar } from '../VoiceDebugSidebar';
 import { VaniViewProps } from '../types';
@@ -10,6 +10,7 @@ export function FullScreenMode({
     history,
     error,
     connect,
+    cancel,
     vadLoading,
     onTogglePip
 }: VaniViewProps) {
@@ -80,13 +81,13 @@ export function FullScreenMode({
                     )}
                 </div>
 
-                {/* Main Interaction Circle */}
                 <button
                     disabled={isConnecting || isError || isDisconnected}
-                    className={`relative w-48 h-48 rounded-full flex items-center justify-center border-4 transition-all duration-300 outline-none
+                    onClick={() => (isThinking || isSpeaking) && cancel()}
+                    className={`group relative w-48 h-48 rounded-full flex items-center justify-center border-4 transition-all duration-300 outline-none
             ${isListening ? 'border-green-500/50 bg-green-500/10 scale-105 shadow-[0_0_40px_rgba(34,197,94,0.3)]' :
-                            isThinking ? 'border-yellow-500/50 bg-yellow-500/10 shadow-[0_0_40px_rgba(234,179,8,0.3)] animate-pulse' :
-                                isSpeaking ? 'border-blue-500/50 bg-blue-500/10 shadow-[0_0_40px_rgba(59,130,246,0.3)]' :
+                            isThinking ? 'border-yellow-500/50 bg-yellow-500/10 shadow-[0_0_40px_rgba(234,179,8,0.3)] animate-pulse cursor-pointer hover:border-red-500/50 hover:bg-red-500/10' :
+                                isSpeaking ? 'border-blue-500/50 bg-blue-500/10 shadow-[0_0_40px_rgba(59,130,246,0.3)] cursor-pointer hover:border-red-500/50 hover:bg-red-500/10' :
                                     isError ? 'border-red-500/50 bg-red-500/10 hover:border-red-400 cursor-not-allowed' :
                                         isDisconnected ? 'border-zinc-800/50 bg-black/50 cursor-not-allowed' :
                                             'border-zinc-800 bg-zinc-900 hover:border-zinc-700 hover:bg-zinc-800'}`}
@@ -94,15 +95,19 @@ export function FullScreenMode({
                     {isListening ? (
                         <Radio className="w-16 h-16 text-green-500 animate-pulse" />
                     ) : isThinking ? (
-                        <Loader2 className="w-16 h-16 text-yellow-500 animate-spin" />
+                        <Loader2 className="w-16 h-16 text-yellow-500 animate-spin group-hover:hidden" />
                     ) : isSpeaking ? (
-                        <Volume2 className="w-16 h-16 text-blue-500 animate-bounce" />
+                        <Volume2 className="w-16 h-16 text-blue-500 animate-bounce group-hover:hidden" />
                     ) : isError ? (
                         <AlertCircle className="w-16 h-16 text-red-500" />
                     ) : isDisconnected ? (
                         <WifiOff className="w-16 h-16 text-zinc-600" />
                     ) : (
                         <Mic className="w-16 h-16 text-zinc-500" />
+                    )}
+                    {/* Hover Stop Icon for Thinking/Speaking */}
+                    {(isThinking || isSpeaking) && (
+                        <Square className="w-16 h-16 text-red-500 absolute hidden group-hover:block fill-current" />
                     )}
                 </button>
 
@@ -114,6 +119,13 @@ export function FullScreenMode({
                     >
                         {isError ? 'Retry Connection' : 'Start Voice Session'}
                     </button>
+                ) : (isThinking || isSpeaking) ? (
+                    <button
+                        onClick={cancel}
+                        className="text-zinc-400 hover:text-red-400 text-sm font-mono border border-zinc-700 px-4 py-2 rounded hover:bg-zinc-800 transition-colors flex items-center gap-2"
+                    >
+                        <Square className="w-3 h-3 fill-current" /> Stop
+                    </button>
                 ) : (
                     <p className="text-zinc-500 text-sm font-mono text-center h-6">
                         {vadLoading ? 'Loading voice activity detection…' : 'Just start talking'}
@@ -122,7 +134,7 @@ export function FullScreenMode({
 
                 {/* Transcript (Last 2 messages) */}
                 <div className="w-full space-y-4 min-h-[150px] mask-gradient-b flex flex-col justify-end pb-4">
-                    {transcript && transcript.slice(-2).map((msg) => (
+                    {transcript && transcript.slice(-2).map((msg: any) => (
                         <div key={msg.id} className={`flex flex-col space-y-1 animate-in slide-in-from-bottom-2 fade-in duration-300 ${msg.role === 'user' ? 'items-end' : 'items-start'}`}>
                             <span className="text-[10px] font-mono text-zinc-600 uppercase tracking-widest">{msg.role}</span>
                             <div className={`px-4 py-2 rounded-2xl max-w-[90%] text-sm leading-relaxed shadow-lg

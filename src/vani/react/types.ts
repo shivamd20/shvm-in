@@ -7,6 +7,7 @@ export interface VaniViewProps {
     history: DebugEvent[];
     error: string | null;
     connect: () => void;
+    cancel: () => void;
     vadLoading: boolean;
     onTogglePip?: () => void;
 }

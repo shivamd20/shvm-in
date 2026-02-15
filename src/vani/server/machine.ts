@@ -38,6 +38,16 @@ export type ServerEvent =
 
 const SYSTEM_PROMPT = "You are a helpful, concise voice assistant. Respond in short, conversational sentences. NEVER MORE THAN 2 sentence.";
 
+const withTimeout = <T>(promise: Promise<T>, ms: number, errorMessage = "Operation timed out"): Promise<T> => {
+    return new Promise((resolve, reject) => {
+        const timer = setTimeout(() => reject(new Error(errorMessage)), ms);
+        promise.then(
+            (val) => { clearTimeout(timer); resolve(val); },
+            (err) => { clearTimeout(timer); reject(err); }
+        );
+    });
+};
+
 async function runSTT(audioBuffer: Uint8Array[], env: any): Promise<string> {
     if (audioBuffer.length === 0) return "";
 
@@ -56,9 +66,11 @@ async function runSTT(audioBuffer: Uint8Array[], env: any): Promise<string> {
     try {
         console.log(`[STT] Invoking env.AI.run(@cf/openai/whisper-tiny-en)`);
         // @ts-ignore
-        const response = await env.AI.run("@cf/openai/whisper-tiny-en", {
-            audio: [...fullAudio],
-        });
+        const response = await withTimeout(
+            env.AI.run("@cf/openai/whisper-tiny-en", { audio: [...fullAudio] }),
+            10000, // 10s timeout for STT
+            "STT timed out"
+        );
         console.log(`[STT] Response received:`, JSON.stringify(response));
 
         // @ts-ignore
@@ -73,10 +85,14 @@ async function runSTT(audioBuffer: Uint8Array[], env: any): Promise<string> {
 async function runTTS(text: string, env: any): Promise<ArrayBuffer | null> {
     try {
         // @ts-ignore
-        const ttsResponse = await env.AI.run("@cf/myshell-ai/melotts", {
-            prompt: text,
-            language: "en-US"
-        });
+        const ttsResponse = await withTimeout(
+            env.AI.run("@cf/myshell-ai/melotts", {
+                prompt: text,
+                language: "en-US"
+            }),
+            10000,
+            "TTS timed out"
+        );
 
         // @ts-ignore
         if (ttsResponse.audio) {
@@ -115,12 +131,16 @@ const llmActor = fromCallback<ServerEvent, { messages: Message[]; env: any }>(
         (async () => {
             try {
                 // @ts-ignore
-                const responseStream = await env.AI.run(
-                    "@cf/meta/llama-3.1-8b-instruct",
-                    {
-                        messages: aiMessages,
-                        stream: true
-                    }
+                const responseStream = await withTimeout(
+                    env.AI.run(
+                        "@cf/meta/llama-3.1-8b-instruct",
+                        {
+                            messages: aiMessages,
+                            stream: true
+                        }
+                    ),
+                    15000, // 15s timeout for initial response
+                    "LLM start timed out"
                 );
 
                 // @ts-ignore
@@ -129,8 +149,13 @@ const llmActor = fromCallback<ServerEvent, { messages: Message[]; env: any }>(
                 let buffer = "";
                 let sentenceBuffer = "";
                 let fullResponse = "";
+                // Safety watchdog for stream processing
+                const STREAM_TIMEOUT_MS = 30 * 1000;
+                const streamStart = Date.now();
 
                 while (true) {
+                    if (Date.now() - streamStart > STREAM_TIMEOUT_MS) throw new Error("LLM Streaming timed out");
+
                     const { done, value } = await reader.read();
                     if (done) break;
 
@@ -172,7 +197,8 @@ const llmActor = fromCallback<ServerEvent, { messages: Message[]; env: any }>(
 
             } catch (e) {
                 console.error("LLM Error", e);
-                sendBack({ type: "llm.complete", output: "" });
+                // Send specific error so machine can handle it
+                sendBack({ type: "error.platform.llm", data: e });
             }
         })();
 
@@ -389,6 +415,10 @@ export const serverMachine = setup({
                 "llm.complete": {
                     target: 'listening',
                     actions: 'addAssistantMessage'
+                },
+                "error.platform.llm": {
+                    target: 'listening',
+                    actions: 'emitError'
                 },
                 RESET: { target: 'idle', actions: 'clearAudio' }
             }
