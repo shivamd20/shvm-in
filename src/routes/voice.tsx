@@ -2,7 +2,7 @@ import { createFileRoute } from '@tanstack/react-router';
 import { useVoiceSession } from '../vani/react/useVoiceSession';
 import { VoiceDebugSidebar } from '../vani/react/VoiceDebugSidebar'; // Check path!
 import { Mic, Volume2, Loader2, Radio, WifiOff, AlertCircle, Terminal } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 
 export const Route = createFileRoute('/voice')({
     component: VoiceSession,
@@ -15,7 +15,6 @@ function VoiceSession() {
         history,
         error,
         connect,
-        disconnect,
         vadLoading
     } = useVoiceSession({
         onError: (err) => console.error('[Voice UI]', err)
@@ -24,10 +23,8 @@ function VoiceSession() {
     const [isDebugOpen, setIsDebugOpen] = useState(false);
 
     // Auto-connect on mount
-    useEffect(() => {
-        connect();
-        return () => disconnect();
-    }, [connect, disconnect]);
+    // Auto-connect removed: Browser autoplay policy requires user gesture to start AudioContext
+    // The user must explicitly click "Start Voice Session"
 
     // UI Mapping
     const isListening = status === 'listening';
@@ -61,7 +58,7 @@ function VoiceSession() {
                                 isSpeaking ? 'Speaking...' :
                                     isConnecting ? 'Connecting...' :
                                         isError ? 'Connection Error' :
-                                            isDisconnected ? 'Disconnected' : 'Ready'}
+                                            'Ready'}
                     </h1>
 
                     {error && (
@@ -112,7 +109,7 @@ function VoiceSession() {
                         onClick={() => connect()}
                         className="text-zinc-400 hover:text-white text-sm font-mono border border-zinc-700 px-4 py-2 rounded hover:bg-zinc-800 transition-colors"
                     >
-                        Retry Connection
+                        {isError ? 'Retry Connection' : 'Start Voice Session'}
                     </button>
                 ) : (
                     <p className="text-zinc-500 text-sm font-mono text-center h-6">

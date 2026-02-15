@@ -287,9 +287,17 @@ export function useVoiceSession({ onError }: UseVoiceSessionProps = {}) {
     }, []);
 
     const initAudio = async () => {
-        if (audioContextRef.current && audioContextRef.current.state !== 'closed') return;
+        if (audioContextRef.current && audioContextRef.current.state !== 'closed') {
+            if (audioContextRef.current.state === 'suspended') {
+                await audioContextRef.current.resume();
+            }
+            return;
+        }
         try {
             audioContextRef.current = new (window.AudioContext || (window as any).webkitAudioContext)({ sampleRate: 24000 });
+            if (audioContextRef.current.state === 'suspended') {
+                await audioContextRef.current.resume();
+            }
         } catch (e: any) {
             console.error('[Voice] Audio init error:', e);
             const msg = 'Audio initialization failed: ' + e.message;
@@ -371,6 +379,9 @@ export function useVoiceSession({ onError }: UseVoiceSessionProps = {}) {
 
     const connect = useCallback(() => {
         if (wsRef.current) wsRef.current.close();
+
+        // Initialize AudioContext immediately to capture user gesture
+        initAudio().catch(err => console.warn('[Voice] Early audio init failed', err));
 
         dispatch({ type: 'CONNECTING' });
 
