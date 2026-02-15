@@ -17,7 +17,7 @@ export class VoiceSessionDO extends DurableObject<Env> {
     private sessions: Map<WebSocket, any> = new Map();
     private audioBuffer: Uint8Array[] = [];
     private messages: Message[] = [];
-    private readonly SYSTEM_PROMPT = "You are a helpful, concise voice assistant. Respond in short, conversational sentences.";
+    private readonly SYSTEM_PROMPT = "You are a helpful, concise voice assistant. Respond in short, conversational sentences. NEVER MORE THAN 2 sentence.";
 
     constructor(ctx: DurableObjectState, env: Env) {
         super(ctx, env);

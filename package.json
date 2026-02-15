@@ -52,9 +52,5 @@
 		"vitest": "^3.0.5",
 		"web-vitals": "^5.1.0",
 		"wrangler": "^4.65.0"
-	},
-	"optionalDependencies": {
-		"@rollup/rollup-linux-x64-gnu": "^4.57.1",
-		"lightningcss-linux-x64-gnu": "^1.30.2"
 	}
 }
