@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { createActor } from 'xstate';
 import { serverMachine } from './machine';
+import { VoiceConfig } from '../machine';
 
 describe('Server Machine', () => {
     let mockEnv: any;
@@ -43,7 +44,7 @@ describe('Server Machine', () => {
         const actor = createServer();
         actor.start();
 
-        const config = { sttModel: 'my-stt' };
+        const config: VoiceConfig = { sttModel: '@cf/openai/whisper-tiny-en' };
         actor.send({ type: 'START', config });
 
         expect(actor.getSnapshot().value).toBe('listening');
