@@ -351,6 +351,7 @@ export function useVoiceSession({ onError }: UseVoiceSessionProps = {}) {
         onSpeechStart: handleSpeechStart,
         onSpeechEnd: handleSpeechEnd,
         onVADMisfire: handleVADMisfire,
+        // @ts-expect-error
         workletURL: VAD_BASE_ASSET_PATH + 'vad.worklet.bundle.min.js',
         modelURL: VAD_MODEL_URL,
         onnxWASMBasePath: ONNX_WASM_BASE_PATH,
@@ -361,6 +362,7 @@ export function useVoiceSession({ onError }: UseVoiceSessionProps = {}) {
         if (!vad.errored) return;
         const message = typeof vad.errored === 'string'
             ? vad.errored
+            // @ts-expect-error
             : vad.errored.message || 'VAD failed to load';
         if (lastVADErrorRef.current === message) return;
         lastVADErrorRef.current = message;
