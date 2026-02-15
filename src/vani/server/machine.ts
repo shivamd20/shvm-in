@@ -1,0 +1,374 @@
+import { setup, assign, fromPromise, fromCallback } from "xstate";
+
+// --- Types ---
+
+export interface Message {
+    id: string;
+    role: "user" | "assistant" | "system";
+    content: string;
+    created_at: number;
+}
+
+export type SessionStatus = "idle" | "listening" | "thinking" | "speaking" | "error";
+
+export interface ServerContext {
+    status: SessionStatus;
+    messages: Message[];
+    audioBuffer: Uint8Array[];
+    env: any; // Cloudflare Env
+    storage: any; // Durable Object Storage
+    broadcast: (msg: any) => void;
+    sendBinary: (data: ArrayBuffer) => void;
+}
+
+export type ServerEvent =
+    | { type: "START" }
+    | { type: "STOP" }
+    | { type: "AUDIO_CHUNK"; data: ArrayBuffer }
+    | { type: "TEXT_MESSAGE"; content: string }
+    | { type: "TRANSCRIPT_READY"; text: string }
+    | { type: "LLM_PARTIAL"; text: string }
+    | { type: "TTS_AUDIO"; data: ArrayBuffer }
+    | { type: "llm.complete"; output: string }
+    | { type: "error.platform.stt"; data: unknown }
+    | { type: "error.platform.llm"; data: unknown };
+
+// --- Logic Helpers ---
+
+const SYSTEM_PROMPT = "You are a helpful, concise voice assistant. Respond in short, conversational sentences. NEVER MORE THAN 2 sentence.";
+
+async function runSTT(audioBuffer: Uint8Array[], env: any): Promise<string> {
+    if (audioBuffer.length === 0) return "";
+
+    const totalLength = audioBuffer.reduce((acc, chunk) => acc + chunk.length, 0);
+    const fullAudio = new Uint8Array(totalLength);
+    let offset = 0;
+    for (const chunk of audioBuffer) {
+        fullAudio.set(chunk, offset);
+        offset += chunk.length;
+    }
+
+    // @ts-ignore
+    const response = await env.AI.run("@cf/openai/whisper-tiny-en", {
+        audio: [...fullAudio],
+    });
+
+    // @ts-ignore
+    const text = response.text || "";
+    return text.trim();
+}
+
+async function runTTS(text: string, env: any): Promise<ArrayBuffer | null> {
+    try {
+        // @ts-ignore
+        const ttsResponse = await env.AI.run("@cf/myshell-ai/melotts", {
+            prompt: text,
+            language: "en-US"
+        });
+
+        // @ts-ignore
+        if (ttsResponse.audio) {
+            // @ts-ignore
+            const binaryString = atob(ttsResponse.audio);
+            const len = binaryString.length;
+            const bytes = new Uint8Array(len);
+            for (let i = 0; i < len; i++) {
+                bytes[i] = binaryString.charCodeAt(i);
+            }
+            return bytes.buffer;
+        } else {
+            // @ts-ignore
+            return await new Response(ttsResponse).arrayBuffer();
+        }
+    } catch (e) {
+        console.error("TTS Error", e);
+        return null;
+    }
+}
+
+// --- Actors ---
+
+const sttActor = fromPromise<string, { audioBuffer: Uint8Array[]; env: any }>(
+    async ({ input }) => {
+        return await runSTT(input.audioBuffer, input.env);
+    }
+);
+
+const llmActor = fromCallback<ServerEvent, { messages: Message[]; env: any }>(
+    ({ input, sendBack }) => {
+        const { messages, env } = input;
+
+        const aiMessages = messages.map(m => ({ role: m.role, content: m.content }));
+
+        (async () => {
+            try {
+                // @ts-ignore
+                const responseStream = await env.AI.run(
+                    "@cf/meta/llama-3.1-8b-instruct",
+                    {
+                        messages: aiMessages,
+                        stream: true
+                    }
+                );
+
+                // @ts-ignore
+                const reader = responseStream.getReader();
+                const decoder = new TextDecoder();
+                let buffer = "";
+                let sentenceBuffer = "";
+                let fullResponse = "";
+
+                while (true) {
+                    const { done, value } = await reader.read();
+                    if (done) break;
+
+                    buffer += decoder.decode(value, { stream: true });
+                    const lines = buffer.split("\n");
+                    buffer = lines.pop() || "";
+
+                    for (const line of lines) {
+                        const trimmed = line.trim();
+                        if (!trimmed || trimmed === "data: [DONE]") continue;
+                        if (trimmed.startsWith("data: ")) {
+                            try {
+                                const jsonStr = trimmed.slice(6);
+                                const data = JSON.parse(jsonStr);
+                                const text = data.response;
+
+                                if (text) {
+                                    fullResponse += text;
+                                    sentenceBuffer += text;
+                                    sendBack({ type: "LLM_PARTIAL", text });
+
+                                    if (sentenceBuffer.match(/[.!?](\s+|\n)/)) {
+                                        const audio = await runTTS(sentenceBuffer, env);
+                                        if (audio) sendBack({ type: "TTS_AUDIO", data: audio });
+                                        sentenceBuffer = "";
+                                    }
+                                }
+                            } catch (e) { console.error("SSE Parse Error", e); }
+                        }
+                    }
+                }
+
+                if (sentenceBuffer.trim()) {
+                    const audio = await runTTS(sentenceBuffer, env);
+                    if (audio) sendBack({ type: "TTS_AUDIO", data: audio });
+                }
+
+                sendBack({ type: "llm.complete", output: fullResponse });
+
+            } catch (e) {
+                console.error("LLM Error", e);
+                sendBack({ type: "llm.complete", output: "" });
+            }
+        })();
+
+        return () => {
+            // cleanup
+        };
+    }
+);
+
+// --- Machine ---
+
+export const serverMachine = setup({
+    types: {
+        context: {} as ServerContext,
+        events: {} as ServerEvent,
+        input: {} as { env: any; storage: any; broadcast: (msg: any) => void; sendBinary: (data: ArrayBuffer) => void; initialMessages: Message[] }
+    },
+    actors: {
+        sttActor,
+        llmActor
+    },
+    actions: {
+        broadcastState: ({ context }) => {
+            context.broadcast({ type: "state", value: context.status });
+        },
+        appendAudio: assign({
+            audioBuffer: ({ context, event }) => {
+                if (event.type !== 'AUDIO_CHUNK') return context.audioBuffer;
+                return [...context.audioBuffer, new Uint8Array(event.data)];
+            }
+        }),
+        clearAudio: assign({
+            audioBuffer: []
+        }),
+        addSystemMessage: assign({
+            messages: ({ context }) => {
+                if (context.messages.length > 0) return context.messages;
+                const msg: Message = {
+                    id: crypto.randomUUID(),
+                    role: "system",
+                    content: SYSTEM_PROMPT,
+                    created_at: Date.now()
+                };
+                return [msg];
+            }
+        }),
+        addUserMessage: assign({
+            messages: ({ context, event }) => {
+                const text = event.type === 'TEXT_MESSAGE' ? event.content : '';
+                // Note: STT transcript is handled in thinking state logic
+                if (!text) return context.messages;
+
+                const msg: Message = {
+                    id: crypto.randomUUID(),
+                    role: "user",
+                    content: text,
+                    created_at: Date.now()
+                };
+
+                context.storage.sql.exec(
+                    `INSERT INTO messages (id, role, content, created_at) VALUES (?, ?, ?, ?)`,
+                    msg.id, msg.role, msg.content, msg.created_at
+                );
+
+                return [...context.messages, msg];
+            }
+        }),
+        addAssistantMessage: assign({
+            messages: ({ context, event }) => {
+                if (event.type !== 'llm.complete') return context.messages;
+                const text = event.output;
+                if (!text) return context.messages;
+
+                const msg: Message = {
+                    id: crypto.randomUUID(),
+                    role: "assistant",
+                    content: text,
+                    created_at: Date.now()
+                };
+
+                context.storage.sql.exec(
+                    `INSERT INTO messages (id, role, content, created_at) VALUES (?, ?, ?, ?)`,
+                    msg.id, msg.role, msg.content, msg.created_at
+                );
+
+                context.broadcast({
+                    type: "assistant.message",
+                    message: { role: "assistant", content: text }
+                });
+
+                return [...context.messages, msg];
+            }
+        }),
+        emitPartial: ({ context, event }) => {
+            if (event.type === 'LLM_PARTIAL') {
+                context.broadcast({ type: "assistant.partial", text: event.text });
+            }
+        },
+        emitAudio: ({ context, event }) => {
+            if (event.type === 'TTS_AUDIO') {
+                context.sendBinary(event.data);
+            }
+        },
+        emitError: ({ context, event }) => {
+            context.broadcast({ type: "error", reason: "An error occurred" });
+        }
+    }
+}).createMachine({
+    id: "server",
+    initial: "idle",
+    context: ({ input }) => ({
+        status: "idle",
+        messages: input.initialMessages || [],
+        audioBuffer: [],
+        env: input.env,
+        storage: input.storage,
+        broadcast: input.broadcast,
+        sendBinary: input.sendBinary
+    }),
+    states: {
+        idle: {
+            entry: [assign({ status: 'idle' }), 'broadcastState', 'addSystemMessage'],
+            on: {
+                START: { target: 'listening' },
+                TEXT_MESSAGE: {
+                    target: 'speaking',
+                    actions: ['addUserMessage']
+                }
+            }
+        },
+        listening: {
+            entry: [assign({ status: 'listening' }), 'broadcastState', 'clearAudio'],
+            on: {
+                STOP: 'thinking',
+                AUDIO_CHUNK: { actions: 'appendAudio' },
+                TEXT_MESSAGE: {
+                    target: 'speaking',
+                    actions: ['addUserMessage']
+                }
+            }
+        },
+        thinking: {
+            entry: [assign({ status: 'thinking' }), 'broadcastState'],
+            invoke: {
+                src: 'sttActor',
+                input: ({ context }) => ({
+                    audioBuffer: context.audioBuffer,
+                    env: context.env
+                }),
+                onDone: [
+                    {
+                        guard: ({ event }) => !!event.output,
+                        target: 'speaking',
+                        actions: [
+                            ({ context, event }) => {
+                                context.broadcast({ type: "transcript.final", text: event.output });
+                            },
+                            assign({
+                                messages: ({ context, event }) => {
+                                    const msg: Message = {
+                                        id: crypto.randomUUID(),
+                                        role: 'user',
+                                        content: event.output,
+                                        created_at: Date.now()
+                                    };
+                                    context.storage.sql.exec(
+                                        `INSERT INTO messages (id, role, content, created_at) VALUES (?, ?, ?, ?)`,
+                                        msg.id, msg.role, msg.content, msg.created_at
+                                    );
+                                    return [...context.messages, msg];
+                                }
+                            })
+                        ]
+                    },
+                    {
+                        target: 'listening',
+                        actions: ({ context }) => context.broadcast({ type: "error", reason: "No speech detected" })
+                    }
+                ],
+                onError: {
+                    target: 'listening',
+                    actions: 'emitError'
+                }
+            }
+        },
+        speaking: {
+            entry: [assign({ status: 'speaking' }), 'broadcastState'],
+            invoke: {
+                src: 'llmActor',
+                input: ({ context }) => ({
+                    messages: context.messages,
+                    env: context.env
+                })
+            },
+            on: {
+                LLM_PARTIAL: { actions: 'emitPartial' },
+                TTS_AUDIO: { actions: 'emitAudio' },
+                "llm.complete": {
+                    target: 'listening',
+                    actions: 'addAssistantMessage'
+                }
+            }
+        },
+        error: {
+            entry: [assign({ status: 'error' }), 'broadcastState', 'emitError'],
+            after: {
+                1000: 'listening'
+            }
+        }
+    }
+});
