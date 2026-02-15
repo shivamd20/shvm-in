@@ -1,4 +1,4 @@
-import { X, Play, FileAudio, Terminal, Activity, AlertCircle, Mic, Speaker } from 'lucide-react';
+import { X, FileAudio, Terminal, Activity, AlertCircle, Mic, Speaker } from 'lucide-react';
 import type { DebugEvent } from './useVoiceSession';
 
 interface VoiceDebugSidebarProps {

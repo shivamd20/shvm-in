@@ -1,6 +1,8 @@
-import { useReducer, useEffect, useRef, useCallback } from 'react';
+import { useEffect, useRef, useCallback } from 'react';
 import { useMicVAD } from '@ricky0123/vad-react';
 import * as ort from 'onnxruntime-web';
+import { useActor } from '@xstate/react';
+import { clientMachine } from '../machine';
 
 // --- Constants ---
 const ONNX_WASM_BASE_PATH = 'https://cdn.jsdelivr.net/npm/onnxruntime-web@1.22.0/dist/';
@@ -17,181 +19,9 @@ if (typeof window !== 'undefined') {
 }
 
 // --- Types ---
+// Re-export types from machine if needed, or use them directly in UI
+export type { VoiceStatus, Message, DebugEvent } from '../machine';
 
-export type VoiceStatus =
-    | "disconnected"
-    | "connecting"
-    | "idle"        // Connected, waiting
-    | "listening"   // Mic is open, recording
-    | "processing"  // Server is thinking (STT or LLM generation before audio)
-    | "speaking"    // Client is playing audio
-    | "error";
-
-export interface Message {
-    id: string;
-    role: "user" | "assistant" | "system";
-    content: string;
-    timestamp: number;
-}
-
-export interface DebugEvent {
-    id: string;
-    type: "state_change" | "socket_event" | "audio_input" | "audio_output" | "transcript" | "llm_token" | "error";
-    timestamp: number;
-    details: any;
-    blobUrl?: string; // For audio events
-}
-
-interface VoiceState {
-    status: VoiceStatus;
-    serverStatus: string; // The raw status reported by the server
-    transcript: Message[];
-    history: DebugEvent[];
-    error: string | null;
-    isPlaying: boolean; // Is audio currently playing?
-}
-
-type VoiceAction =
-    | { type: 'CONNECTING' }
-    | { type: 'CONNECTED' }
-    | { type: 'DISCONNECTED' }
-    | { type: 'SET_ERROR'; error: string }
-    | { type: 'SERVER_STATE_CHANGE'; status: string }
-    | { type: 'START_LISTENING' }
-    | { type: 'STOP_LISTENING' }
-    | { type: 'ADD_MESSAGE'; role: Message['role']; content: string }
-    | { type: 'APPEND_LLM_TOKEN'; token: string }
-    | { type: 'AUDIO_PLAYBACK_START' }
-    | { type: 'AUDIO_PLAYBACK_END' }
-    | { type: 'LOG_EVENT'; eventType: DebugEvent['type']; details: any; blob?: Blob };
-
-const initialState: VoiceState = {
-    status: 'disconnected',
-    serverStatus: 'idle',
-    transcript: [],
-    history: [],
-    error: null,
-    isPlaying: false,
-};
-
-// --- Reducer ---
-
-function voiceReducer(state: VoiceState, action: VoiceAction): VoiceState {
-    const timestamp = Date.now();
-    const eventId = Math.random().toString(36).slice(2, 9);
-
-    // Helpers to create log entries
-    const createLog = (eventType: DebugEvent['type'], details: any, blob?: Blob): DebugEvent => ({
-        id: eventId,
-        type: eventType,
-        timestamp,
-        details,
-        blobUrl: blob ? URL.createObjectURL(blob) : undefined
-    });
-
-    switch (action.type) {
-        case 'CONNECTING':
-            return {
-                ...state,
-                status: 'connecting',
-                error: null,
-                history: [...state.history, createLog('socket_event', { status: 'connecting' })]
-            };
-        case 'CONNECTED':
-            return {
-                ...state,
-                status: 'idle',
-                error: null,
-                history: [...state.history, createLog('socket_event', { status: 'connected' })]
-            };
-        case 'DISCONNECTED':
-            return {
-                ...state,
-                status: 'disconnected',
-                history: [...state.history, createLog('socket_event', { status: 'disconnected' })]
-            };
-        case 'SET_ERROR':
-            return {
-                ...state,
-                status: 'error',
-                error: action.error,
-                history: [...state.history, createLog('error', { message: action.error })]
-            };
-        case 'SERVER_STATE_CHANGE': {
-            // Determine combined status
-            // If server is "speaking", it just means it's sending audio.
-            // We only show "speaking" in UI when we actually PLAY audio.
-            // If server is "thinking", we show processing.
-            // If server is "listening", we default to idle (unless user is actually holding space).
-
-            let nextStatus = state.status;
-
-            // If we are currently listening (local override), ignore server "listening"
-            if (state.status === 'listening' && action.status === 'listening') {
-                nextStatus = 'listening';
-            } else if (state.isPlaying) {
-                nextStatus = 'speaking';
-            } else if (action.status === 'thinking' || action.status === 'speaking') {
-                nextStatus = 'processing';
-            } else if (action.status === 'listening' || action.status === 'idle') {
-                nextStatus = 'idle';
-            }
-
-            return {
-                ...state,
-                serverStatus: action.status,
-                status: nextStatus,
-                history: [...state.history, createLog('state_change', { from: state.serverStatus, to: action.status, source: 'server' })]
-            };
-        }
-        case 'START_LISTENING':
-            return {
-                ...state,
-                status: 'listening',
-                history: [...state.history, createLog('state_change', { to: 'listening', source: 'user_action' })]
-            };
-        case 'STOP_LISTENING':
-            return {
-                ...state,
-                status: 'processing', // Assume we go to processing after stop
-                history: [...state.history, createLog('state_change', { to: 'processing', source: 'user_action' })]
-            };
-        case 'ADD_MESSAGE':
-            return {
-                ...state,
-                transcript: [...state.transcript, {
-                    id: eventId,
-                    role: action.role,
-                    content: action.content,
-                    timestamp
-                }],
-                history: [...state.history, createLog('transcript', { role: action.role, text: action.content })]
-            };
-        case 'AUDIO_PLAYBACK_START':
-            return {
-                ...state,
-                isPlaying: true,
-                status: 'speaking',
-                history: [...state.history, createLog('state_change', { to: 'speaking', source: 'audio_player' })]
-            };
-        case 'AUDIO_PLAYBACK_END':
-            // When playback ends, fallback to idle (or processing if server is still doing something?)
-            // Usually we go to idle.
-            return {
-                ...state,
-                isPlaying: false,
-                status: 'idle',
-                history: [...state.history, createLog('state_change', { to: 'idle', source: 'audio_player' })]
-            };
-        case 'LOG_EVENT':
-            return {
-                ...state,
-                history: [...state.history, createLog(action.eventType, action.details, action.blob)]
-            };
-        default:
-            return state;
-    }
-}
 
 // --- Hook ---
 
@@ -236,7 +66,9 @@ function encodeWav(audio: Float32Array, sampleRate: number) {
 }
 
 export function useVoiceSession({ onError }: UseVoiceSessionProps = {}) {
-    const [state, dispatch] = useReducer(voiceReducer, initialState);
+    // 1. Initialize Machine
+    const [snapshot, send, actorRef] = useActor(clientMachine);
+    const state = snapshot.context; // Consistency with previous hook: return context as 'state'
 
     // Refs for callbacks/non-state logic
     const wsRef = useRef<WebSocket | null>(null);
@@ -244,8 +76,6 @@ export function useVoiceSession({ onError }: UseVoiceSessionProps = {}) {
     const audioQueueRef = useRef<ArrayBuffer[]>([]);
     const isPlaybackLoopRunning = useRef(false);
     const onErrorCallbackRef = useRef(onError);
-    const processingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-    const latestStateRef = useRef(state);
     const turnActiveRef = useRef(false);
     const lastVADErrorRef = useRef<string | null>(null);
 
@@ -253,29 +83,14 @@ export function useVoiceSession({ onError }: UseVoiceSessionProps = {}) {
         onErrorCallbackRef.current = onError;
     }, [onError]);
 
+    // We can rely on machine for basic error transitions, but need to trigger callback
     useEffect(() => {
-        latestStateRef.current = state;
-    }, [state]);
-
-    // Watchdog for processing state
-    useEffect(() => {
-        if (state.status === 'processing') {
-            processingTimeoutRef.current = setTimeout(() => {
-                console.warn('[Voice] Processing timeout - resetting to idle');
-                dispatch({ type: 'SET_ERROR', error: 'Server timed out' });
-                dispatch({ type: 'SERVER_STATE_CHANGE', status: 'idle' }); // Force reset
-            }, 60000); // 60s timeout
-        } else {
-            if (processingTimeoutRef.current) {
-                clearTimeout(processingTimeoutRef.current);
-                processingTimeoutRef.current = null;
-            }
+        if (state.error && onErrorCallbackRef.current) {
+            onErrorCallbackRef.current(state.error);
         }
-        return () => {
-            if (processingTimeoutRef.current) clearTimeout(processingTimeoutRef.current);
-        };
-    }, [state.status]);
+    }, [state.error]);
 
+    // Note: Machine handles timeout logic for 'processing' state now.
 
     // Cleanup
     useEffect(() => {
@@ -301,8 +116,8 @@ export function useVoiceSession({ onError }: UseVoiceSessionProps = {}) {
         } catch (e: any) {
             console.error('[Voice] Audio init error:', e);
             const msg = 'Audio initialization failed: ' + e.message;
-            dispatch({ type: 'SET_ERROR', error: msg });
-            onErrorCallbackRef.current?.(msg);
+            send({ type: 'SET_ERROR', error: msg });
+            // onError callback handled by effect
             throw e;
         }
     };
@@ -312,13 +127,16 @@ export function useVoiceSession({ onError }: UseVoiceSessionProps = {}) {
         if (!ws || ws.readyState !== WebSocket.OPEN) return;
         if (turnActiveRef.current) return;
 
-        const status = latestStateRef.current.status;
+        // Use actorRef to get latest context synchronously in callback
+        const currentContext = actorRef.getSnapshot().context;
+        const status = currentContext.status;
+
         if (status !== 'idle' && status !== 'listening') return;
 
         turnActiveRef.current = true;
         ws.send(JSON.stringify({ type: 'start' }));
-        dispatch({ type: 'START_LISTENING' });
-    }, []);
+        send({ type: 'START_LISTENING' });
+    }, [actorRef, send]);
 
     const handleSpeechEnd = useCallback(async (audio: Float32Array) => {
         const ws = wsRef.current;
@@ -326,7 +144,7 @@ export function useVoiceSession({ onError }: UseVoiceSessionProps = {}) {
         turnActiveRef.current = false;
 
         if (!ws || ws.readyState !== WebSocket.OPEN) {
-            dispatch({ type: 'SERVER_STATE_CHANGE', status: 'idle' });
+            send({ type: 'SERVER_STATE_CHANGE', status: 'idle' });
             return;
         }
 
@@ -335,16 +153,19 @@ export function useVoiceSession({ onError }: UseVoiceSessionProps = {}) {
         const wavBlob = new Blob([wavBuffer], { type: 'audio/wav' });
 
         ws.send(wavBuffer);
-        dispatch({ type: 'LOG_EVENT', eventType: 'audio_input', details: { size: wavBuffer.byteLength }, blob: wavBlob });
+        send({ type: 'LOG_EVENT', eventType: 'audio_input', details: { size: wavBuffer.byteLength }, blob: wavBlob });
         ws.send(JSON.stringify({ type: 'stop' }));
-        dispatch({ type: 'STOP_LISTENING' });
-    }, []);
+        send({ type: 'STOP_LISTENING' });
+    }, [send]);
 
     const handleVADMisfire = useCallback(() => {
         if (!turnActiveRef.current) return;
         turnActiveRef.current = false;
-        dispatch({ type: 'SERVER_STATE_CHANGE', status: 'idle' });
-    }, []);
+        // Reset via server state simulation or dedicated event? 
+        // Logic was dispatch({ type: 'SERVER_STATE_CHANGE', status: 'idle' });
+        // Keeping it consistent:
+        send({ type: 'SERVER_STATE_CHANGE', status: 'idle' });
+    }, [send]);
 
     const vad = useMicVAD({
         startOnLoad: false,
@@ -366,9 +187,8 @@ export function useVoiceSession({ onError }: UseVoiceSessionProps = {}) {
             : vad.errored.message || 'VAD failed to load';
         if (lastVADErrorRef.current === message) return;
         lastVADErrorRef.current = message;
-        dispatch({ type: 'SET_ERROR', error: message });
-        onErrorCallbackRef.current?.(message);
-    }, [vad.errored]);
+        send({ type: 'SET_ERROR', error: message });
+    }, [vad.errored, send]);
 
     useEffect(() => {
         const shouldListen = state.status === 'idle' || state.status === 'listening';
@@ -385,7 +205,7 @@ export function useVoiceSession({ onError }: UseVoiceSessionProps = {}) {
         // Initialize AudioContext immediately to capture user gesture
         initAudio().catch(err => console.warn('[Voice] Early audio init failed', err));
 
-        dispatch({ type: 'CONNECTING' });
+        send({ type: 'CONNECT' });
 
         const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
         const host = window.location.host;
@@ -396,14 +216,14 @@ export function useVoiceSession({ onError }: UseVoiceSessionProps = {}) {
         wsRef.current = ws;
 
         ws.onopen = () => {
-            dispatch({ type: 'CONNECTED' });
+            send({ type: 'CONNECTED' });
             initAudio().catch(() => { });
         };
 
         ws.onmessage = async (event) => {
             if (event.data instanceof Blob) {
                 const buf = await event.data.arrayBuffer();
-                dispatch({ type: 'LOG_EVENT', eventType: 'audio_output', details: { size: buf.byteLength }, blob: event.data });
+                send({ type: 'LOG_EVENT', eventType: 'audio_output', details: { size: buf.byteLength }, blob: event.data });
                 queueAudio(buf);
                 return;
             }
@@ -418,32 +238,32 @@ export function useVoiceSession({ onError }: UseVoiceSessionProps = {}) {
 
         ws.onclose = (e) => {
             console.log('[Voice] Closed', e.code);
-            dispatch({ type: 'DISCONNECTED' });
+            send({ type: 'DISCONNECT' }); // Use DISCONNECT event
         };
 
         ws.onerror = (e) => {
             console.error('[Voice] WS Error', e);
-            dispatch({ type: 'SET_ERROR', error: 'Connection failed' });
+            send({ type: 'SET_ERROR', error: 'Connection failed' });
         };
-    }, []);
+    }, [send]);
 
     const handleMessage = (data: any) => {
-        // dispatch({ type: 'LOG_EVENT', eventType: 'socket_event', details: data });
+        // send({ type: 'LOG_EVENT', eventType: 'socket_event', details: data });
         switch (data.type) {
             case 'state':
-                dispatch({ type: 'SERVER_STATE_CHANGE', status: data.value });
+                send({ type: 'SERVER_STATE_CHANGE', status: data.value });
                 break;
             case 'transcript.final':
-                dispatch({ type: 'ADD_MESSAGE', role: 'user', content: data.text });
+                send({ type: 'ADD_MESSAGE', role: 'user', content: data.text });
                 break;
             case 'assistant.message':
-                dispatch({ type: 'ADD_MESSAGE', role: 'assistant', content: data.message.content });
+                send({ type: 'ADD_MESSAGE', role: 'assistant', content: data.message.content });
                 break;
             case 'assistant.partial':
                 // Optional: Stream text token by token if needed
                 break;
             case 'error':
-                dispatch({ type: 'SET_ERROR', error: data.reason });
+                send({ type: 'SET_ERROR', error: data.reason });
                 break;
         }
     };
@@ -459,7 +279,7 @@ export function useVoiceSession({ onError }: UseVoiceSessionProps = {}) {
         isPlaybackLoopRunning.current = true;
 
         while (audioQueueRef.current.length > 0) {
-            dispatch({ type: 'AUDIO_PLAYBACK_START' });
+            send({ type: 'AUDIO_PLAYBACK_START' });
 
             const buffer = audioQueueRef.current.shift();
             if (!buffer) continue;
@@ -498,7 +318,7 @@ export function useVoiceSession({ onError }: UseVoiceSessionProps = {}) {
             }
         }
 
-        dispatch({ type: 'AUDIO_PLAYBACK_END' });
+        send({ type: 'AUDIO_PLAYBACK_END' });
         isPlaybackLoopRunning.current = false;
     };
 
@@ -507,8 +327,8 @@ export function useVoiceSession({ onError }: UseVoiceSessionProps = {}) {
             wsRef.current.close();
             wsRef.current = null;
         }
-        dispatch({ type: 'DISCONNECTED' });
-    }, []);
+        send({ type: 'DISCONNECT' });
+    }, [send]);
 
     return {
         ...state,
