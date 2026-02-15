@@ -1,4 +1,20 @@
 import { useReducer, useEffect, useRef, useCallback } from 'react';
+import { useMicVAD } from '@ricky0123/vad-react';
+import * as ort from 'onnxruntime-web';
+
+// --- Constants ---
+const ONNX_WASM_BASE_PATH = 'https://cdn.jsdelivr.net/npm/onnxruntime-web@1.22.0/dist/';
+const VAD_BASE_ASSET_PATH = 'https://cdn.jsdelivr.net/npm/@ricky0123/vad-web@0.0.29/dist/';
+const VAD_MODEL_URL = 'https://cdn.jsdelivr.net/npm/@ricky0123/vad-web@0.0.29/dist/silero_vad_v5.onnx';
+
+// Set WASM paths for ONNX Runtime
+if (typeof window !== 'undefined') {
+    ort.env.wasm.wasmPaths = ONNX_WASM_BASE_PATH;
+    // Disable proxy to avoid dynamic import of worker scripts which Vite tries to optimize
+    ort.env.wasm.proxy = false;
+    // Avoid SIMD if it's causing issues, though usually SIMD is better
+    // ort.env.wasm.simd = false; 
+}
 
 // --- Types ---
 
@@ -183,23 +199,63 @@ interface UseVoiceSessionProps {
     onError?: (error: string) => void;
 }
 
+const VAD_SAMPLE_RATE = 16000;
+
+function writeString(view: DataView, offset: number, text: string) {
+    for (let i = 0; i < text.length; i += 1) {
+        view.setUint8(offset + i, text.charCodeAt(i));
+    }
+}
+
+function encodeWav(audio: Float32Array, sampleRate: number) {
+    const buffer = new ArrayBuffer(44 + audio.length * 2);
+    const view = new DataView(buffer);
+
+    writeString(view, 0, 'RIFF');
+    view.setUint32(4, 36 + audio.length * 2, true);
+    writeString(view, 8, 'WAVE');
+    writeString(view, 12, 'fmt ');
+    view.setUint32(16, 16, true);
+    view.setUint16(20, 1, true);
+    view.setUint16(22, 1, true);
+    view.setUint32(24, sampleRate, true);
+    view.setUint32(28, sampleRate * 2, true);
+    view.setUint16(32, 2, true);
+    view.setUint16(34, 16, true);
+    writeString(view, 36, 'data');
+    view.setUint32(40, audio.length * 2, true);
+
+    let offset = 44;
+    for (let i = 0; i < audio.length; i += 1) {
+        const sample = Math.max(-1, Math.min(1, audio[i]));
+        view.setInt16(offset, sample < 0 ? sample * 0x8000 : sample * 0x7fff, true);
+        offset += 2;
+    }
+
+    return buffer;
+}
+
 export function useVoiceSession({ onError }: UseVoiceSessionProps = {}) {
     const [state, dispatch] = useReducer(voiceReducer, initialState);
 
     // Refs for callbacks/non-state logic
     const wsRef = useRef<WebSocket | null>(null);
     const audioContextRef = useRef<AudioContext | null>(null);
-    const mediaStreamRef = useRef<MediaStream | null>(null);
-    const recorderRef = useRef<MediaRecorder | null>(null);
     const audioQueueRef = useRef<ArrayBuffer[]>([]);
     const isPlaybackLoopRunning = useRef(false);
-    const sentChunksRef = useRef<Blob[]>([]);
     const onErrorCallbackRef = useRef(onError);
     const processingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+    const latestStateRef = useRef(state);
+    const turnActiveRef = useRef(false);
+    const lastVADErrorRef = useRef<string | null>(null);
 
     useEffect(() => {
         onErrorCallbackRef.current = onError;
     }, [onError]);
+
+    useEffect(() => {
+        latestStateRef.current = state;
+    }, [state]);
 
     // Watchdog for processing state
     useEffect(() => {
@@ -226,7 +282,6 @@ export function useVoiceSession({ onError }: UseVoiceSessionProps = {}) {
         return () => {
             wsRef.current?.close();
             audioContextRef.current?.close();
-            mediaStreamRef.current?.getTracks().forEach(t => t.stop());
             // Revoke object URLs in history to avoid leaks? (Ideally, but complicated in reducer)
         };
     }, []);
@@ -235,15 +290,84 @@ export function useVoiceSession({ onError }: UseVoiceSessionProps = {}) {
         if (audioContextRef.current && audioContextRef.current.state !== 'closed') return;
         try {
             audioContextRef.current = new (window.AudioContext || (window as any).webkitAudioContext)({ sampleRate: 24000 });
-            mediaStreamRef.current = await navigator.mediaDevices.getUserMedia({ audio: true });
         } catch (e: any) {
             console.error('[Voice] Audio init error:', e);
-            const msg = 'Microphone access denied: ' + e.message;
+            const msg = 'Audio initialization failed: ' + e.message;
             dispatch({ type: 'SET_ERROR', error: msg });
             onErrorCallbackRef.current?.(msg);
             throw e;
         }
     };
+
+    const handleSpeechStart = useCallback(() => {
+        const ws = wsRef.current;
+        if (!ws || ws.readyState !== WebSocket.OPEN) return;
+        if (turnActiveRef.current) return;
+
+        const status = latestStateRef.current.status;
+        if (status !== 'idle' && status !== 'listening') return;
+
+        turnActiveRef.current = true;
+        ws.send(JSON.stringify({ type: 'start' }));
+        dispatch({ type: 'START_LISTENING' });
+    }, []);
+
+    const handleSpeechEnd = useCallback(async (audio: Float32Array) => {
+        const ws = wsRef.current;
+        if (!turnActiveRef.current) return;
+        turnActiveRef.current = false;
+
+        if (!ws || ws.readyState !== WebSocket.OPEN) {
+            dispatch({ type: 'SERVER_STATE_CHANGE', status: 'idle' });
+            return;
+        }
+
+        // VAD sample rate is 16k
+        const wavBuffer = encodeWav(audio, VAD_SAMPLE_RATE);
+        const wavBlob = new Blob([wavBuffer], { type: 'audio/wav' });
+
+        ws.send(wavBuffer);
+        dispatch({ type: 'LOG_EVENT', eventType: 'audio_input', details: { size: wavBuffer.byteLength }, blob: wavBlob });
+        ws.send(JSON.stringify({ type: 'stop' }));
+        dispatch({ type: 'STOP_LISTENING' });
+    }, []);
+
+    const handleVADMisfire = useCallback(() => {
+        if (!turnActiveRef.current) return;
+        turnActiveRef.current = false;
+        dispatch({ type: 'SERVER_STATE_CHANGE', status: 'idle' });
+    }, []);
+
+    const vad = useMicVAD({
+        startOnLoad: false,
+        onSpeechStart: handleSpeechStart,
+        onSpeechEnd: handleSpeechEnd,
+        onVADMisfire: handleVADMisfire,
+        workletURL: VAD_BASE_ASSET_PATH + 'vad.worklet.bundle.min.js',
+        modelURL: VAD_MODEL_URL,
+        onnxWASMBasePath: ONNX_WASM_BASE_PATH,
+        baseAssetPath: VAD_BASE_ASSET_PATH,
+    });
+
+    useEffect(() => {
+        if (!vad.errored) return;
+        const message = typeof vad.errored === 'string'
+            ? vad.errored
+            : vad.errored.message || 'VAD failed to load';
+        if (lastVADErrorRef.current === message) return;
+        lastVADErrorRef.current = message;
+        dispatch({ type: 'SET_ERROR', error: message });
+        onErrorCallbackRef.current?.(message);
+    }, [vad.errored]);
+
+    useEffect(() => {
+        const shouldListen = state.status === 'idle' || state.status === 'listening';
+        if (shouldListen && !vad.listening && !vad.loading && !vad.errored) {
+            vad.start();
+        } else if (!shouldListen && vad.listening) {
+            vad.pause();
+        }
+    }, [state.status, vad.listening, vad.loading, vad.errored, vad.start, vad.pause]);
 
     const connect = useCallback(() => {
         if (wsRef.current) wsRef.current.close();
@@ -311,66 +435,6 @@ export function useVoiceSession({ onError }: UseVoiceSessionProps = {}) {
         }
     };
 
-    const startRecording = useCallback(async () => {
-        if (!wsRef.current || wsRef.current.readyState !== WebSocket.OPEN) return;
-
-        // Only allow start if we are allowed (idle/listening/speaking shouldn't block per se, but logic...)
-        // We enforce PTT.
-        await initAudio();
-        if (audioContextRef.current?.state === 'suspended') await audioContextRef.current.resume();
-
-        sentChunksRef.current = [];
-        wsRef.current.send(JSON.stringify({ type: 'start' }));
-
-        const stream = mediaStreamRef.current;
-        if (!stream) return;
-
-        const options = { mimeType: 'audio/webm' };
-        if (!MediaRecorder.isTypeSupported(options.mimeType)) {
-            // @ts-ignore
-            delete options.mimeType;
-        }
-
-        const recorder = new MediaRecorder(stream, options);
-        recorderRef.current = recorder;
-
-        recorder.ondataavailable = (e) => {
-            if (e.data.size > 0) {
-                sentChunksRef.current.push(e.data);
-            }
-        };
-
-        recorder.onstop = async () => {
-            const ws = wsRef.current;
-            if (sentChunksRef.current.length > 0 && ws && ws.readyState === WebSocket.OPEN) {
-                const fullBlob = new Blob(sentChunksRef.current, { type: 'audio/webm' });
-                const buffer = await fullBlob.arrayBuffer();
-                ws.send(buffer);
-                dispatch({ type: 'LOG_EVENT', eventType: 'audio_input', details: { size: buffer.byteLength }, blob: fullBlob });
-                // We assume server will ack with 'thinking' soon. If not, watchdog will catch it.
-            } else if (!ws || ws.readyState !== WebSocket.OPEN) {
-                console.warn('[Voice] Socket closed before sending audio');
-                dispatch({ type: 'SERVER_STATE_CHANGE', status: 'idle' });
-            }
-
-            if (ws && ws.readyState === WebSocket.OPEN) {
-                ws.send(JSON.stringify({ type: 'stop' }));
-                dispatch({ type: 'STOP_LISTENING' }); // Enter processing state
-            }
-        };
-
-        recorder.start(100);
-        dispatch({ type: 'START_LISTENING' });
-
-    }, []);
-
-    const stopRecording = useCallback(() => {
-        if (recorderRef.current && recorderRef.current.state !== 'inactive') {
-            recorderRef.current.stop();
-            dispatch({ type: 'STOP_LISTENING' });
-        }
-    }, []);
-
     const queueAudio = (buffer: ArrayBuffer) => {
         audioQueueRef.current.push(buffer);
         if (!isPlaybackLoopRunning.current) {
@@ -435,9 +499,11 @@ export function useVoiceSession({ onError }: UseVoiceSessionProps = {}) {
 
     return {
         ...state,
+        vadListening: vad.listening,
+        vadLoading: vad.loading,
+        vadErrored: vad.errored,
+        userSpeaking: vad.userSpeaking,
         connect,
-        disconnect,
-        startRecording,
-        stopRecording
+        disconnect
     };
 }

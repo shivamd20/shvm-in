@@ -16,8 +16,7 @@ function VoiceSession() {
         error,
         connect,
         disconnect,
-        startRecording,
-        stopRecording
+        vadLoading
     } = useVoiceSession({
         onError: (err) => console.error('[Voice UI]', err)
     });
@@ -29,30 +28,6 @@ function VoiceSession() {
         connect();
         return () => disconnect();
     }, [connect, disconnect]);
-
-    // Handle Spacebar PTT
-    useEffect(() => {
-        const handleKeyDown = (e: KeyboardEvent) => {
-            if (e.code === 'Space' && !e.repeat && (status === 'idle' || status === 'listening')) {
-                e.preventDefault();
-                startRecording();
-            }
-        };
-
-        const handleKeyUp = (e: KeyboardEvent) => {
-            if (e.code === 'Space') {
-                e.preventDefault();
-                stopRecording();
-            }
-        };
-
-        window.addEventListener('keydown', handleKeyDown);
-        window.addEventListener('keyup', handleKeyUp);
-        return () => {
-            window.removeEventListener('keydown', handleKeyDown);
-            window.removeEventListener('keyup', handleKeyUp);
-        };
-    }, [status, startRecording, stopRecording]);
 
     // UI Mapping
     const isListening = status === 'listening';
@@ -115,11 +90,6 @@ function VoiceSession() {
                                     isError ? 'border-red-500/50 bg-red-500/10 hover:border-red-400 cursor-not-allowed' :
                                         isDisconnected ? 'border-zinc-800/50 bg-black/50 cursor-not-allowed' :
                                             'border-zinc-800 bg-zinc-900 hover:border-zinc-700 hover:bg-zinc-800'}`}
-                    onMouseDown={() => startRecording()}
-                    onMouseUp={() => stopRecording()}
-                    onMouseLeave={() => stopRecording()}
-                    onTouchStart={(e) => { e.preventDefault(); startRecording(); }}
-                    onTouchEnd={(e) => { e.preventDefault(); stopRecording(); }}
                 >
                     {isListening ? (
                         <Radio className="w-16 h-16 text-green-500 animate-pulse" />
@@ -146,7 +116,7 @@ function VoiceSession() {
                     </button>
                 ) : (
                     <p className="text-zinc-500 text-sm font-mono text-center h-6">
-                        Hold <span className="text-zinc-300 bg-zinc-800 px-1.5 py-0.5 rounded mx-1">Space</span> to speak
+                        {vadLoading ? 'Loading voice activity detection…' : 'Just start talking'}
                     </p>
                 )}
 

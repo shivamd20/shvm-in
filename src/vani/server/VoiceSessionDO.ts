@@ -173,6 +173,9 @@ export class VoiceSessionDO extends DurableObject<Env> {
             // @ts-ignore
             const response = await this.env.AI.run("@cf/openai/whisper-tiny-en", {
                 audio: [...fullAudio],
+                // Whisper expects 16k mono by default.
+                // We are sending 16k WAV from client (with header) which should be fine,
+                // but some environments might prefer raw PCM or explicit configuration.
             });
             console.log("[VoiceDO] STT Response:", JSON.stringify(response));
 

@@ -25,6 +25,11 @@ const config = defineConfig({
     viteReact(),
     tailwindcss(),
   ],
+  optimizeDeps: {
+    exclude: [
+      'onnxruntime-web'
+    ],
+  },
 })
 
 export default config

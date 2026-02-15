@@ -62,8 +62,8 @@ Vani uses two synchronized state machines: one on the **Server** (Authoritative)
 | :--- | :--- | :--- | :--- |
 | `disconnected` | `connecting` | `connect()` call | Opens WebSocket connection. |
 | `connecting` | `idle` | `onopen` event | Initializes AudioContext and Mic permissions. |
-| `idle` | `listening` | `startRecording()` | Sends `start` to server, begins streaming Mic chunks. |
-| `listening` | `processing` | `stopRecording()` | Sends `stop` and final audio buffer to server. |
+| `idle` | `listening` | VAD `onSpeechStart` | Sends `start` to server, begins the turn. |
+| `listening` | `processing` | VAD `onSpeechEnd` | Sends `stop` and final audio buffer to server. |
 | `processing` | `speaking` | Binary packet received | Queues audio chunks and starts playback. |
 | `speaking` | `idle` | Audio playback queue empty | Reverts to idle (ready for next turn). |
 | `*` | `error` | Socket Close / Server Error | Displays error and provides recovery hooks. |
@@ -119,7 +119,7 @@ Vani uses a dual-channel WebSocket protocol (JSON and Binary).
 To integrate Vani:
 1.  Add `VoiceSessionDO` to your `wrangler.toml` migrations.
 2.  Bind the DO to your Worker.
-3.  Use the `useVoiceSession` hook in your UI components to access `status`, `transcript`, and `startRecording`/`stopRecording`.
+3.  Use the `useVoiceSession` hook in your UI components to access `status` and `transcript`. Recording is now handled automatically via client-side VAD.
 
 ---
 
