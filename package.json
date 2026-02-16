@@ -2,14 +2,18 @@
 	"name": "shvm-in",
 	"private": true,
 	"type": "module",
-	"scripts": {
+	"workspaces": [
+		"packages/*"
+	],
+		"scripts": {
 		"dev": "vite dev --port 3000",
-		"build": "vite build",
+		"build": "WRANGLER_LOG_PATH=./.wrangler/logs vite build",
 		"preview": "npm run build && vite preview",
 		"lint": "eslint \"src/vani/**/*.{ts,tsx}\"",
 		"test": "vitest run",
-		"test:vani": "vitest run src/vani",
-		"typecheck:vani": "tsc -p tsconfig.vani.shared.json --noEmit && tsc -p tsconfig.vani.headless.json --noEmit && tsc -p tsconfig.vani.ui.json --noEmit && tsc -p tsconfig.vani.server.json --noEmit",
+		"test:vani": "vitest run src/vani packages/vani-client",
+		"build:vani-client": "npm -w @shvm/vani-client run build",
+		"typecheck:vani": "npm -w @shvm/vani-client run typecheck && tsc -p tsconfig.vani.ui.json --noEmit && tsc -p tsconfig.vani.server.json --noEmit",
 		"deploy": "npm run build && wrangler deploy",
 		"cf-typegen": "wrangler types"
 	},
@@ -38,6 +42,8 @@
 		"xstate": "^5.28.0",
 		"zod": "^4.3.6",
 		"zod-to-json-schema": "^3.25.1"
+		,
+		"@shvm/vani-client": "workspace:*"
 	},
 	"devDependencies": {
 		"@eslint/js": "^10.0.1",

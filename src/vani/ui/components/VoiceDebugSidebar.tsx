@@ -1,5 +1,5 @@
 import { X, FileAudio, Terminal, Activity, AlertCircle, Mic, Speaker } from 'lucide-react';
-import type { DebugEvent } from '@vani/headless';
+import type { DebugEvent } from '@shvm/vani-client/headless';
 
 interface VoiceDebugSidebarProps {
     isOpen: boolean;

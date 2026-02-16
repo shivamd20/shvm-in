@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from "vitest";
 import { render, screen } from "@testing-library/react";
 
-vi.mock("@vani/headless", () => {
+vi.mock("@shvm/vani-client/headless", () => {
   return {
     useVoiceSession: () => ({
       status: "disconnected",

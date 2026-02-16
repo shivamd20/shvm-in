@@ -1,5 +1,5 @@
-import type { DebugEvent } from '@vani/headless';
-import type { ClientMessage, VoiceConfig, VoiceStatus } from '@vani/shared';
+import type { DebugEvent } from '@shvm/vani-client/headless';
+import type { ClientMessage, VoiceConfig, VoiceStatus } from '@shvm/vani-client/shared';
 
 export interface VaniViewProps {
     status: VoiceStatus;

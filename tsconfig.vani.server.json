@@ -1,15 +1,18 @@
 {
   "extends": "./tsconfig.json",
   "compilerOptions": {
-    "composite": true,
     "types": ["@cloudflare/workers-types", "node"],
+    "moduleResolution": "bundler",
     "paths": {
-      "@vani/shared": ["./src/vani/shared/index.ts"],
-      "@vani/shared/*": ["./src/vani/shared/*"],
+      "@/*": ["./src/*"],
+      "@vani/ui": ["./src/vani/ui/index.ts"],
+      "@vani/ui/*": ["./src/vani/ui/*"],
       "@vani/server": ["./src/vani/server/index.ts"],
-      "@vani/server/*": ["./src/vani/server/*"]
+      "@vani/server/*": ["./src/vani/server/*"],
+      "@shvm/vani-client/shared": ["./packages/vani-client/src/shared/index.ts"],
+      "@shvm/vani-client/shared/*": ["./packages/vani-client/src/shared/*"]
     }
   },
-  "include": ["src/vani/server/**/*", "src/vani/shared/**/*"],
+  "include": ["src/vani/server/**/*"],
   "exclude": ["src/vani/**/__boundary_fixtures__/**"]
 }

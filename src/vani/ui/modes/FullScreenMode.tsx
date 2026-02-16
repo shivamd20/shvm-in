@@ -2,8 +2,8 @@ import { Mic, Volume2, Loader2, Radio, WifiOff, AlertCircle, Terminal, Minimize2
 import { useState, useRef, useEffect, useMemo } from 'react';
 import { VoiceDebugSidebar } from '@vani/ui/components/VoiceDebugSidebar';
 import type { VaniViewProps } from '@vani/ui/types';
-import { LLM_MODELS, STT_MODELS, TTS_MODELS, TTS_MODEL_VOICES } from '@vani/shared/constants/models';
-import type { VoiceConfig } from '@vani/shared/types/voice';
+import { LLM_MODELS, STT_MODELS, TTS_MODELS, TTS_MODEL_VOICES } from '@shvm/vani-client/shared';
+import type { VoiceConfig } from '@shvm/vani-client/shared';
 
 export function FullScreenMode({
     status,

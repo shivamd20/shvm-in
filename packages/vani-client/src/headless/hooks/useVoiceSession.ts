@@ -2,9 +2,9 @@ import { useEffect, useRef, useCallback } from 'react';
 import { useMicVAD } from '@ricky0123/vad-react';
 import * as ort from 'onnxruntime-web';
 import { useActor } from '@xstate/react';
-import { clientMachine, type ClientContext, type DebugEvent } from '@vani/headless/machine/clientMachine';
-import type { ClientMessage, VoiceConfig, VoiceStatus } from '@vani/shared';
-import type { ServerToClientJson } from '@vani/shared/contracts/ws';
+import { clientMachine, type ClientContext, type DebugEvent } from '../machine/clientMachine';
+import type { ClientMessage, VoiceConfig, VoiceStatus } from '../../shared/types/voice';
+import type { ServerToClientJson } from '../../shared/contracts/ws';
 export type { VoiceStatus, ClientMessage as Message, DebugEvent, VoiceConfig };
 
 // --- Constants ---
@@ -29,12 +29,35 @@ if (typeof window !== 'undefined') {
 
 // --- Hook ---
 
-interface UseVoiceSessionProps {
+export interface UseVoiceSessionProps {
     onError?: (error: string) => void;
     onMessage?: (msg: { role: 'user' | 'assistant'; content: string }) => void;
     onFeedback?: (message: string) => void;
     initialTranscript?: ClientMessage[];
     config?: VoiceConfig;
+    /**
+     * Base server URL used to construct the websocket URL.
+     * Examples:
+     * - "https://example.com"
+     * - "wss://example.com"
+     *
+     * Default: uses current window location.
+     */
+    serverUrl?: string;
+    /**
+     * Full override for websocket URL construction. Takes precedence over `serverUrl`.
+     */
+    getWebSocketUrl?: (sessionId: string) => string;
+    /**
+     * Override session id for the websocket route (e.g. `/ws/:sessionId`).
+     * If omitted, a random one is generated once per hook instance.
+     */
+    sessionId?: string;
+    /**
+     * Customizes the websocket path appended to the server base URL.
+     * Default: `/ws/${sessionId}`
+     */
+    wsPath?: (sessionId: string) => string;
 }
 
 const VAD_SAMPLE_RATE = 16000;
@@ -73,7 +96,19 @@ function encodeWav(audio: Float32Array, sampleRate: number) {
     return buffer;
 }
 
-export function useVoiceSession({ onError, onMessage, onFeedback, initialTranscript, config }: UseVoiceSessionProps = {}) {
+export function useVoiceSession(props: UseVoiceSessionProps = {}) {
+    const {
+        onError,
+        onMessage,
+        onFeedback,
+        initialTranscript,
+        config,
+        serverUrl,
+        getWebSocketUrl: getWebSocketUrlOverride,
+        sessionId,
+        wsPath
+    } = props;
+
     // 1. Initialize Machine
     const [snapshot, send, actorRef] = useActor(clientMachine);
     const state = snapshot.context as ClientContext;
@@ -90,6 +125,33 @@ export function useVoiceSession({ onError, onMessage, onFeedback, initialTranscr
     const turnActiveRef = useRef(false);
     const lastVADErrorRef = useRef<string | null>(null);
     const hasSeededTranscriptRef = useRef(false);
+    const sessionIdRef = useRef<string | null>(null);
+
+    if (sessionIdRef.current === null) {
+        sessionIdRef.current =
+            sessionId ??
+            (typeof crypto !== 'undefined' && 'randomUUID' in crypto
+                ? // @ts-ignore
+                crypto.randomUUID()
+                : "session-" + Math.floor(Math.random() * 10000));
+    }
+
+    const buildWebSocketUrl = useCallback((activeSessionId: string) => {
+        if (getWebSocketUrlOverride) return getWebSocketUrlOverride(activeSessionId);
+
+        const wsPathValue = wsPath ? wsPath(activeSessionId) : `/ws/${activeSessionId}`;
+
+        if (serverUrl) {
+            const base = new URL(serverUrl);
+            const protocol = base.protocol === 'https:' ? 'wss:' : base.protocol === 'http:' ? 'ws:' : base.protocol;
+            base.protocol = protocol;
+            return new URL(wsPathValue, base).toString();
+        }
+
+        const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+        const host = window.location.host;
+        return `${protocol}//${host}${wsPathValue}`;
+    }, [getWebSocketUrlOverride, serverUrl, wsPath]);
 
     // Sync refs
     useEffect(() => {
@@ -266,10 +328,8 @@ export function useVoiceSession({ onError, onMessage, onFeedback, initialTranscr
         console.log('[Voice] Connect called');
         send({ type: 'CONNECT' });
 
-        const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-        const host = window.location.host;
-        const sessionId = "session-" + Math.floor(Math.random() * 10000);
-        const url = `${protocol}//${host}/ws/${sessionId}`;
+        const sessionId = sessionIdRef.current || "session-" + Math.floor(Math.random() * 10000);
+        const url = buildWebSocketUrl(sessionId);
 
         const ws = new WebSocket(url);
         wsRef.current = ws;
@@ -304,7 +364,7 @@ export function useVoiceSession({ onError, onMessage, onFeedback, initialTranscr
             console.error('[Voice] WS Error', e);
             send({ type: 'SET_ERROR', error: 'Connection failed: ' + (e instanceof ErrorEvent ? e.message : 'Unknown') });
         };
-    }, [send]);
+    }, [buildWebSocketUrl, send]);
 
     const handleMessage = (data: ServerToClientJson) => {
         // send({ type: 'LOG_EVENT', eventType: 'socket_event', details: data });

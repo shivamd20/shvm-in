@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { createActor } from 'xstate';
-import { clientMachine } from '@vani/headless/machine/clientMachine';
+import { clientMachine } from '../machine/clientMachine';
 
 describe('Client Machine', () => {
     it('should start in disconnected state', () => {

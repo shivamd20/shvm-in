@@ -1,7 +1,7 @@
 import { assign, fromCallback, fromPromise, setup } from "xstate";
-import { LLM_MODELS, STT_MODELS, TTS_MODELS } from "@vani/shared/constants/models";
-import type { ServerToClientJson } from "@vani/shared/contracts/ws";
-import type { ServerMessage, SessionStatus, VoiceConfig } from "@vani/shared/types/voice";
+import { LLM_MODELS, STT_MODELS, TTS_MODELS } from "@shvm/vani-client/shared";
+import type { ServerToClientJson } from "@shvm/vani-client/shared";
+import type { ServerMessage, SessionStatus, VoiceConfig } from "@shvm/vani-client/shared";
 
 // --- Types ---
 

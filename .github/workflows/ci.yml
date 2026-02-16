@@ -21,4 +21,5 @@ jobs:
       - run: npm run lint
       - run: npm run typecheck:vani
       - run: npm run test:vani
-
+      - run: npm run build:vani-client
+      - run: npm run build

@@ -1,4 +1,4 @@
-import type { SessionStatus, VoiceConfig } from "@vani/shared/types/voice";
+import type { SessionStatus, VoiceConfig } from "../types/voice";
 
 export type ClientToServerJson =
   | { type: "start"; config?: VoiceConfig }

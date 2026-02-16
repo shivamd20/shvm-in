@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { useVoiceSession } from "@vani/headless";
+import { useVoiceSession } from "@shvm/vani-client/headless";
 
 export function HeadlessPlayground() {
   const [text, setText] = useState("");
@@ -75,4 +75,3 @@ export function HeadlessPlayground() {
     </div>
   );
 }
-

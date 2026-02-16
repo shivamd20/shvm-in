@@ -25,8 +25,6 @@ export default [
       "boundaries/include": ["src/vani/**/*"],
       "boundaries/elements": [
         { type: "public", pattern: "src/vani/index.ts" },
-        { type: "shared", pattern: "src/vani/shared/**" },
-        { type: "headless", pattern: "src/vani/headless/**" },
         { type: "ui", pattern: "src/vani/ui/**" },
         { type: "server", pattern: "src/vani/server/**" },
       ],
@@ -38,7 +36,8 @@ export default [
           patterns: [
             {
               group: ["../*", "../**"],
-              message: "Do not use parent relative imports inside src/vani/*; use @vani/* aliases.",
+              message:
+                "Do not use parent relative imports inside src/vani/*; use @vani/* aliases (ui/server) or @shvm/vani-client/* (headless/shared).",
             },
           ],
         },
@@ -48,11 +47,32 @@ export default [
         {
           default: "disallow",
           rules: [
-            { from: "public", allow: ["public", "shared", "headless", "ui", "server"] },
-            { from: "shared", allow: ["shared"] },
-            { from: "headless", allow: ["headless", "shared"] },
-            { from: "ui", allow: ["ui", "headless", "shared"] },
-            { from: "server", allow: ["server", "shared"] },
+            { from: "public", allow: ["public", "ui", "server"] },
+            { from: "ui", allow: ["ui"] },
+            { from: "server", allow: ["server"] },
+          ],
+        },
+      ],
+    },
+  },
+  {
+    files: ["src/vani/server/**/*.{ts,tsx}"],
+    ignores: ["src/vani/**/__boundary_fixtures__/**"],
+    rules: {
+      "no-restricted-imports": [
+        "error",
+        {
+          paths: [
+            {
+              name: "@shvm/vani-client",
+              message: "Server must not import headless runtime; use @shvm/vani-client/shared only.",
+            },
+          ],
+          patterns: [
+            {
+              group: ["@shvm/vani-client/headless", "@shvm/vani-client/headless/*"],
+              message: "Server must not import headless runtime; use @shvm/vani-client/shared only.",
+            },
           ],
         },
       ],

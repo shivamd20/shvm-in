@@ -1,8 +1,8 @@
 import { useState } from 'react';
-import { useVoiceSession } from '@vani/headless';
+import { useVoiceSession } from '@shvm/vani-client/headless';
 import { FullScreenMode } from '@vani/ui/modes/FullScreenMode';
 import { PipMode } from '@vani/ui/modes/PipMode';
-import type { ClientMessage, VoiceConfig } from '@vani/shared';
+import type { ClientMessage, VoiceConfig } from '@shvm/vani-client/shared';
 
 export interface VaniProps {
     /**

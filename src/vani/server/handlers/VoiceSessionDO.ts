@@ -1,8 +1,8 @@
 import { DurableObject } from "cloudflare:workers";
 import { createActor, type ActorRefFrom } from "xstate";
 import { serverMachine } from "@vani/server/runtime/machine";
-import type { AnyClientToServerJson, ServerToClientJson } from "@vani/shared/contracts/ws";
-import type { ServerMessage } from "@vani/shared/types/voice";
+import type { AnyClientToServerJson, ServerToClientJson } from "@shvm/vani-client/shared";
+import type { ServerMessage } from "@shvm/vani-client/shared";
 
 export class VoiceSessionDO extends DurableObject<any> {
     private sessions: Map<WebSocket, any> = new Map();

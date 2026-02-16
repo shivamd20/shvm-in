@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { createActor } from 'xstate';
 import { serverMachine } from '@vani/server/runtime/machine';
-import type { VoiceConfig } from '@vani/shared/types/voice';
+import type { VoiceConfig } from '@shvm/vani-client/shared';
 
 describe('Server Machine', () => {
     let mockEnv: any;

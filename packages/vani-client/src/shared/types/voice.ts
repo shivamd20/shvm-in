@@ -1,4 +1,4 @@
-import type { LLMModelId, STTModelId, TTSModelId, TtsVoiceId } from "@vani/shared/constants/models";
+import type { LLMModelId, STTModelId, TTSModelId, TtsVoiceId } from "../constants/models";
 
 export type ChatRole = "user" | "assistant" | "system";
 

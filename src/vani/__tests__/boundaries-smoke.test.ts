@@ -4,7 +4,7 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import fs from "node:fs/promises";
 
-const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../../../..");
+const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../../..");
 
 async function listFixtureFiles(dir: string) {
   const absoluteDir = path.join(repoRoot, dir);
@@ -17,8 +17,6 @@ async function listFixtureFiles(dir: string) {
 describe("vani boundaries (smoke)", () => {
   it("fails lint on boundary violations in fixtures", async () => {
     const fixtureDirs = [
-      "src/vani/shared/__boundary_fixtures__",
-      "src/vani/headless/__boundary_fixtures__",
       "src/vani/ui/__boundary_fixtures__",
       "src/vani/server/__boundary_fixtures__",
     ];
@@ -36,8 +34,11 @@ describe("vani boundaries (smoke)", () => {
     for (const file of files) {
       const result = byFile.get(path.normalize(file));
       expect(result, `Missing eslint result for ${file}`).toBeTruthy();
-      const hasBoundaryError = (result?.messages ?? []).some((m) => m.ruleId === "boundaries/element-types");
-      expect(hasBoundaryError, `Expected boundaries/element-types error for ${file}`).toBe(true);
+      const messages = result?.messages ?? [];
+      const hasExpectedError = messages.some(
+        (m) => m.ruleId === "boundaries/element-types" || m.ruleId === "no-restricted-imports",
+      );
+      expect(hasExpectedError, `Expected boundaries/element-types or no-restricted-imports error for ${file}`).toBe(true);
     }
   });
 });

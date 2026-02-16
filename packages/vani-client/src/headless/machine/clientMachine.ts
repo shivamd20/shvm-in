@@ -1,6 +1,6 @@
 import { assign, fromCallback, setup } from "xstate";
-import { createBlobUrl } from "@vani/headless/adapters/blobUrl";
-import type { ClientMessage, SessionStatus, VoiceStatus } from "@vani/shared";
+import { createBlobUrl } from "../adapters/blobUrl";
+import type { ClientMessage, SessionStatus, VoiceStatus } from "../../shared/types/voice";
 
 export const socketActor = fromCallback(() => {
   return () => {};
