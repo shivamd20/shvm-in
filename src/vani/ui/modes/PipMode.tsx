@@ -1,7 +1,6 @@
-
 import { useState } from 'react';
 import { Maximize2, X, Mic, Volume2, Radio, Loader2, AlertCircle, WifiOff } from 'lucide-react';
-import { VaniViewProps } from '../types';
+import type { VaniViewProps } from '@vani/ui/types';
 
 export function PipMode({
     status,

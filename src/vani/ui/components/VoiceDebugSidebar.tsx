@@ -1,5 +1,5 @@
 import { X, FileAudio, Terminal, Activity, AlertCircle, Mic, Speaker } from 'lucide-react';
-import type { DebugEvent } from './useVoiceSession';
+import type { DebugEvent } from '@vani/headless';
 
 interface VoiceDebugSidebarProps {
     isOpen: boolean;
@@ -94,12 +94,12 @@ function renderDetails(event: DebugEvent) {
     if (event.type === 'state_change') {
         return (
             <span className="flex items-center gap-1.5">
-                <span className="text-zinc-500">{event.details.from || 'void'}</span>
+                <span className="text-zinc-500">{(event.details as any).from || 'void'}</span>
                 <span className="text-zinc-600">→</span>
-                <span className={`${getStateColor(event.details.to)} font-semibold`}>
-                    {event.details.to}
+                <span className={`${getStateColor((event.details as any).to)} font-semibold`}>
+                    {(event.details as any).to}
                 </span>
-                <span className="text-zinc-600 ml-1 text-[10px]">({event.details.source})</span>
+                <span className="text-zinc-600 ml-1 text-[10px]">({(event.details as any).source})</span>
             </span>
         );
     }
@@ -107,9 +107,9 @@ function renderDetails(event: DebugEvent) {
     if (event.type === 'transcript') {
         return (
             <span>
-                <span className={event.details.role === 'user' ? 'text-green-400' : 'text-purple-400'}>
-                    {event.details.role}:
-                </span> {event.details.text}
+                <span className={(event.details as any).role === 'user' ? 'text-green-400' : 'text-purple-400'}>
+                    {(event.details as any).role}:
+                </span> {(event.details as any).text}
             </span>
         );
     }

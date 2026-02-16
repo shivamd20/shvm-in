@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { createActor } from 'xstate';
-import { serverMachine } from './machine';
-import { VoiceConfig } from '../machine';
+import { serverMachine } from '@vani/server/runtime/machine';
+import type { VoiceConfig } from '@vani/shared/types/voice';
 
 describe('Server Machine', () => {
     let mockEnv: any;
@@ -12,11 +12,22 @@ describe('Server Machine', () => {
     beforeEach(() => {
         mockEnv = {
             AI: {
-                run: vi.fn(async () => {
-                    // Slow down to keep state active
-                    await new Promise(r => setTimeout(r, 100));
-                    return { text: 'Hello', audio: 'base64audio' };
-                })
+                run: vi.fn(async (_model: string, input: any) => {
+                    if (input?.audio) {
+                        await new Promise((r) => setTimeout(r, 10));
+                        return { text: 'Hello' };
+                    }
+
+                    if (input?.stream) {
+                        return new ReadableStream({
+                            start(controller) {
+                                controller.close();
+                            }
+                        });
+                    }
+
+                    return { text: 'Hello' };
+                }),
             }
         };
         mockStorage = {
@@ -48,7 +59,7 @@ describe('Server Machine', () => {
         actor.send({ type: 'START', config });
 
         expect(actor.getSnapshot().value).toBe('listening');
-        expect(actor.getSnapshot().context.config).toEqual(expect.objectContaining({ sttModel: 'my-stt' }));
+        expect(actor.getSnapshot().context.config).toEqual(expect.objectContaining({ sttModel: '@cf/openai/whisper-tiny-en' }));
     });
 
     it('should handle interruptions in thinking state', async () => {
@@ -78,5 +89,7 @@ describe('Server Machine', () => {
 
         const feedbackCalls2 = broadcastSpy.mock.calls.filter((args: any[]) => args[0].type === 'feedback');
         expect(feedbackCalls2.length).toBeGreaterThan(feedbackCalls1.length);
+
+        actor.stop();
     });
 });

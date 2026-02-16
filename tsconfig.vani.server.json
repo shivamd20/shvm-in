@@ -1,0 +1,15 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "composite": true,
+    "types": ["@cloudflare/workers-types", "node"],
+    "paths": {
+      "@vani/shared": ["./src/vani/shared/index.ts"],
+      "@vani/shared/*": ["./src/vani/shared/*"],
+      "@vani/server": ["./src/vani/server/index.ts"],
+      "@vani/server/*": ["./src/vani/server/*"]
+    }
+  },
+  "include": ["src/vani/server/**/*", "src/vani/shared/**/*"],
+  "exclude": ["src/vani/**/__boundary_fixtures__/**"]
+}

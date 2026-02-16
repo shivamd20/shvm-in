@@ -1,0 +1,17 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "composite": true,
+    "types": ["node", "vite/client"],
+    "paths": {
+      "@vani/shared": ["./src/vani/shared/index.ts"],
+      "@vani/shared/*": ["./src/vani/shared/*"],
+      "@vani/headless": ["./src/vani/headless/index.ts"],
+      "@vani/headless/*": ["./src/vani/headless/*"],
+      "@vani/ui": ["./src/vani/ui/index.ts"],
+      "@vani/ui/*": ["./src/vani/ui/*"]
+    }
+  },
+  "include": ["src/vani/ui/**/*", "src/vani/headless/**/*", "src/vani/shared/**/*"],
+  "exclude": ["src/vani/**/__boundary_fixtures__/**"]
+}

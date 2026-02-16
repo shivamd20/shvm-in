@@ -1,17 +1,14 @@
 import { DurableObject } from "cloudflare:workers";
 import { createActor, type ActorRefFrom } from "xstate";
-import { serverMachine, type Message } from "./machine";
+import { serverMachine } from "@vani/server/runtime/machine";
+import type { AnyClientToServerJson, ServerToClientJson } from "@vani/shared/contracts/ws";
+import type { ServerMessage } from "@vani/shared/types/voice";
 
-interface WebSocketMessage {
-    type: string;
-    [key: string]: any;
-}
-
-export class VoiceSessionDO extends DurableObject<Env> {
+export class VoiceSessionDO extends DurableObject<any> {
     private sessions: Map<WebSocket, any> = new Map();
     private actor: ActorRefFrom<typeof serverMachine>;
 
-    constructor(ctx: DurableObjectState, env: Env) {
+    constructor(ctx: DurableObjectState, env: any) {
         super(ctx, env);
 
         // 1. Initialize Schema
@@ -25,7 +22,7 @@ export class VoiceSessionDO extends DurableObject<Env> {
         `);
 
         // 2. Load History
-        const messages: Message[] = [];
+        const messages: ServerMessage[] = [];
         const result = this.ctx.storage.sql.exec(`SELECT id, role, content, created_at FROM messages ORDER BY created_at ASC`);
         for (const row of result) {
             messages.push({
@@ -46,7 +43,7 @@ export class VoiceSessionDO extends DurableObject<Env> {
                 env: this.env,
                 storage: this.ctx.storage,
                 initialMessages: messages,
-                broadcast: (msg: any) => this.broadcast(msg),
+                broadcast: (msg: ServerToClientJson) => this.broadcast(msg),
                 sendBinary: (data: ArrayBuffer) => this.broadcastBinary(data)
             }
         });
@@ -81,7 +78,8 @@ export class VoiceSessionDO extends DurableObject<Env> {
 
             // Send current state
             const snapshot = this.actor.getSnapshot();
-            server.send(JSON.stringify({ type: "state", value: snapshot.context.status }));
+            const msg: ServerToClientJson = { type: "state", value: snapshot.context.status };
+            server.send(JSON.stringify(msg));
 
             return new Response(null, { status: 101, webSocket: client });
         }
@@ -92,7 +90,7 @@ export class VoiceSessionDO extends DurableObject<Env> {
     async webSocketMessage(ws: WebSocket, message: string | ArrayBuffer) {
         try {
             if (typeof message === "string") {
-                const data = JSON.parse(message) as WebSocketMessage;
+                const data = JSON.parse(message) as AnyClientToServerJson;
                 this.handleJsonMessage(data);
             } else {
                 this.handleBinaryMessage(message);
@@ -113,7 +111,7 @@ export class VoiceSessionDO extends DurableObject<Env> {
         this.sessions.delete(ws);
     }
 
-    private handleJsonMessage(data: WebSocketMessage) {
+    private handleJsonMessage(data: AnyClientToServerJson) {
         console.log(`[VoiceDO] Received JSON:`, data);
 
         switch (data.type) {
@@ -125,6 +123,11 @@ export class VoiceSessionDO extends DurableObject<Env> {
                 break;
             case "reset":
                 this.actor.send({ type: "RESET" });
+                break;
+            case "text":
+                if (data.value) {
+                    this.actor.send({ type: "TEXT_MESSAGE", content: data.value });
+                }
                 break;
             case "text.message":
                 if (data.content) {
@@ -142,7 +145,7 @@ export class VoiceSessionDO extends DurableObject<Env> {
         this.actor.send({ type: "AUDIO_CHUNK", data });
     }
 
-    private broadcast(message: any) {
+    private broadcast(message: ServerToClientJson) {
         const msg = JSON.stringify(message);
         for (const ws of this.sessions.keys()) {
             try {

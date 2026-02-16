@@ -6,7 +6,7 @@ import { getSystemPrompt } from "./lib/system-prompt";
 
 // Re-export the MessageStore Durable Object for wrangler binding
 export { MessageStore } from "./mcp/message-store";
-export { VoiceSessionDO } from "./vani/server/VoiceSessionDO";
+export { VoiceSessionDO } from "./vani/server/handlers/VoiceSessionDO";
 
 export default {
     async fetch(request: Request, env: Env, ctx: ExecutionContext) {

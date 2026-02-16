@@ -1,6 +1,9 @@
+export { Vani } from "./ui";
+export { useVoiceSession } from "./headless";
 
-export { Vani } from './react/Vani';
-export { useVoiceSession } from './react/useVoiceSession';
-export type { VaniProps } from './react/Vani';
-export type { VoiceStatus, Message, DebugEvent } from './machine';
-export type { VaniViewProps } from './react/types';
+export type { VaniProps } from "./ui";
+export type { VaniViewProps } from "./ui";
+
+export type { VoiceConfig, VoiceStatus } from "./shared";
+export type { ClientMessage as Message } from "./shared";
+export type { DebugEvent } from "./headless";

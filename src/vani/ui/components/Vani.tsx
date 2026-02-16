@@ -1,9 +1,8 @@
-
 import { useState } from 'react';
-import { useVoiceSession } from './useVoiceSession';
-import { FullScreenMode } from './modes/FullScreenMode';
-import { PipMode } from './modes/PipMode';
-import { type Message, type VoiceConfig } from '../machine';
+import { useVoiceSession } from '@vani/headless';
+import { FullScreenMode } from '@vani/ui/modes/FullScreenMode';
+import { PipMode } from '@vani/ui/modes/PipMode';
+import type { ClientMessage, VoiceConfig } from '@vani/shared';
 
 export interface VaniProps {
     /**
@@ -17,7 +16,7 @@ export interface VaniProps {
     /**
      * Initial transcript to seed the session
      */
-    initialTranscript?: Message[];
+    initialTranscript?: ClientMessage[];
     /**
      * Initial display mode. Defaults to 'full'.
      */

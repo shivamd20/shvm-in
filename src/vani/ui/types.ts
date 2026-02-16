@@ -1,9 +1,9 @@
-
-import { VoiceStatus, Message, DebugEvent, VoiceConfig } from '../machine';
+import type { DebugEvent } from '@vani/headless';
+import type { ClientMessage, VoiceConfig, VoiceStatus } from '@vani/shared';
 
 export interface VaniViewProps {
     status: VoiceStatus;
-    transcript: Message[];
+    transcript: ClientMessage[];
     history: DebugEvent[];
     error: string | null;
     connect: () => void;

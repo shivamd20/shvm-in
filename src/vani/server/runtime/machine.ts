@@ -1,89 +1,17 @@
-import { setup, assign, fromPromise, fromCallback } from "xstate";
+import { assign, fromCallback, fromPromise, setup } from "xstate";
+import { LLM_MODELS, STT_MODELS, TTS_MODELS } from "@vani/shared/constants/models";
+import type { ServerToClientJson } from "@vani/shared/contracts/ws";
+import type { ServerMessage, SessionStatus, VoiceConfig } from "@vani/shared/types/voice";
 
 // --- Types ---
-
-// --- Types ---
-
-// Keep in sync with client/machine.tsx
-export const STT_MODELS = [
-    "@cf/openai/whisper",
-    "@cf/openai/whisper-tiny-en"
-] as const;
-
-export const LLM_MODELS = [
-    "@cf/meta/llama-3.1-8b-instruct",
-    "@cf/meta/llama-3-8b-instruct",
-    "@cf/meta/llama-2-7b-chat-int8",
-    "@cf/mistral/mistral-7b-instruct-v0.1"
-] as const;
-
-export const TTS_MODELS = [
-    "@cf/deepgram/aura-2-en",
-    "@cf/deepgram/aura-1"
-] as const;
-
-// Voice options per model
-export const TTS_MODEL_VOICES = {
-    "@cf/deepgram/aura-2-en": [
-        "asteria",
-        "luna",
-        "arcas",
-        "athena",
-        "helios",
-        "orpheus",
-        "perseus",
-        "angus"
-    ],
-    "@cf/deepgram/aura-1": [
-        "asteria",
-        "luna",
-        "stella",
-        "athena",
-        "hera",
-        "orion",
-        "arcas",
-        "perseus",
-        "angus",
-        "orpheus",
-        "helios",
-        "zeus"
-    ]
-} as const;
-
-// Helper type to get voices for a specific model
-export type VoicesForModel<T extends typeof TTS_MODELS[number]> = typeof TTS_MODEL_VOICES[T][number];
-
-// All possible voices across all models
-export type TTS_VOICE = VoicesForModel<typeof TTS_MODELS[number]>;
-
-export interface VoiceConfig {
-    sttModel?: typeof STT_MODELS[number];
-    llmModel?: typeof LLM_MODELS[number];
-    tts?: {
-        speaker?: TTS_VOICE;
-        encoding?: "mp3" | "opus" | "aac" | "lossless";
-        container?: "mp3" | "ogg" | "aac" | "wav";
-        sample_rate?: 16000 | 24000 | 44100 | 48000;
-        bit_rate?: number;
-        model?: typeof TTS_MODELS[number];
-    };
-}
-export interface Message {
-    id: string;
-    role: "user" | "assistant" | "system";
-    content: string;
-    created_at: number;
-}
-
-export type SessionStatus = "idle" | "listening" | "thinking" | "speaking" | "error";
 
 export interface ServerContext {
     status: SessionStatus;
-    messages: Message[];
+    messages: ServerMessage[];
     audioBuffer: Uint8Array[];
     env: any; // Cloudflare Env
     storage: any; // Durable Object Storage
-    broadcast: (msg: any) => void;
+    broadcast: (msg: ServerToClientJson) => void;
     sendBinary: (data: ArrayBuffer) => void;
     config: VoiceConfig;
 }
@@ -131,7 +59,7 @@ async function runSTT(audioBuffer: Uint8Array[], env: any, model?: string): Prom
     }
 
     try {
-        const Model = model || "@cf/openai/whisper";
+        const Model = model || STT_MODELS[0];
         console.log(`[STT] Invoking env.AI.run(${Model})`);
 
         // @ts-ignore
@@ -154,7 +82,7 @@ async function runSTT(audioBuffer: Uint8Array[], env: any, model?: string): Prom
 async function runTTS(text: string, env: any, config?: VoiceConfig['tts']): Promise<ArrayBuffer | null> {
     try {
         // Default to a specific model that is known to work
-        const MODEL = config?.model || '@cf/deepgram/aura-2-en';
+        const MODEL = config?.model || TTS_MODELS[0];
 
         // Options construction
         const options: any = {
@@ -214,12 +142,12 @@ const sttActor = fromPromise<string, { audioBuffer: Uint8Array[]; env: any; mode
     }
 );
 
-const llmActor = fromCallback<ServerEvent, { messages: Message[]; env: any; config: VoiceConfig }>(
+const llmActor = fromCallback<ServerEvent, { messages: ServerMessage[]; env: any; config: VoiceConfig }>(
     ({ input, sendBack }) => {
         const { messages, env, config } = input;
 
         const aiMessages = messages.map(m => ({ role: m.role, content: m.content }));
-        const Model = config.llmModel || "@cf/meta/llama-3.1-8b-instruct";
+        const Model = config.llmModel || LLM_MODELS[0];
 
         (async () => {
             try {
@@ -307,7 +235,13 @@ export const serverMachine = setup({
     types: {
         context: {} as ServerContext,
         events: {} as ServerEvent,
-        input: {} as { env: any; storage: any; broadcast: (msg: any) => void; sendBinary: (data: ArrayBuffer) => void; initialMessages: Message[] }
+        input: {} as {
+            env: any;
+            storage: any;
+            broadcast: (msg: ServerToClientJson) => void;
+            sendBinary: (data: ArrayBuffer) => void;
+            initialMessages: ServerMessage[];
+        }
     },
     actors: {
         sttActor,
@@ -340,7 +274,7 @@ export const serverMachine = setup({
         addSystemMessage: assign({
             messages: ({ context }) => {
                 if (context.messages.length > 0) return context.messages;
-                const msg: Message = {
+                const msg: ServerMessage = {
                     id: crypto.randomUUID(),
                     role: "system",
                     content: SYSTEM_PROMPT,
@@ -355,7 +289,7 @@ export const serverMachine = setup({
                 // Note: STT transcript is handled in thinking state logic
                 if (!text) return context.messages;
 
-                const msg: Message = {
+                const msg: ServerMessage = {
                     id: crypto.randomUUID(),
                     role: "user",
                     content: text,
@@ -376,7 +310,7 @@ export const serverMachine = setup({
                 const text = event.output;
                 if (!text) return context.messages;
 
-                const msg: Message = {
+                const msg: ServerMessage = {
                     id: crypto.randomUUID(),
                     role: "assistant",
                     content: text,
@@ -478,7 +412,7 @@ export const serverMachine = setup({
                             },
                             assign({
                                 messages: ({ context, event }) => {
-                                    const msg: Message = {
+                                    const msg: ServerMessage = {
                                         id: crypto.randomUUID(),
                                         role: 'user',
                                         content: event.output,

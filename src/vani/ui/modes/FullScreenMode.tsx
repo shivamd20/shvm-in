@@ -1,9 +1,9 @@
-
 import { Mic, Volume2, Loader2, Radio, WifiOff, AlertCircle, Terminal, Minimize2, Square, Settings, X, Save } from 'lucide-react';
 import { useState, useRef, useEffect, useMemo } from 'react';
-import { VoiceDebugSidebar } from '../VoiceDebugSidebar';
-import { VaniViewProps } from '../types';
-import { VoiceConfig, STT_MODELS, LLM_MODELS, TTS_MODELS, TTS_MODEL_VOICES } from '../../machine';
+import { VoiceDebugSidebar } from '@vani/ui/components/VoiceDebugSidebar';
+import type { VaniViewProps } from '@vani/ui/types';
+import { LLM_MODELS, STT_MODELS, TTS_MODELS, TTS_MODEL_VOICES } from '@vani/shared/constants/models';
+import type { VoiceConfig } from '@vani/shared/types/voice';
 
 export function FullScreenMode({
     status,
@@ -30,7 +30,7 @@ export function FullScreenMode({
 
     // Auto-scroll transcript
     useEffect(() => {
-        transcriptEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+        transcriptEndRef.current?.scrollIntoView?.({ behavior: 'smooth' });
     }, [transcript]);
 
     // Get available voices for the selected TTS model

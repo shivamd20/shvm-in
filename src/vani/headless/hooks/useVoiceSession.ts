@@ -2,8 +2,10 @@ import { useEffect, useRef, useCallback } from 'react';
 import { useMicVAD } from '@ricky0123/vad-react';
 import * as ort from 'onnxruntime-web';
 import { useActor } from '@xstate/react';
-import { clientMachine, type Message, type VoiceStatus, type DebugEvent, type VoiceConfig } from '../machine';
-export type { VoiceStatus, Message, DebugEvent, VoiceConfig };
+import { clientMachine, type ClientContext, type DebugEvent } from '@vani/headless/machine/clientMachine';
+import type { ClientMessage, VoiceConfig, VoiceStatus } from '@vani/shared';
+import type { ServerToClientJson } from '@vani/shared/contracts/ws';
+export type { VoiceStatus, ClientMessage as Message, DebugEvent, VoiceConfig };
 
 // --- Constants ---
 const ONNX_WASM_BASE_PATH = 'https://cdn.jsdelivr.net/npm/onnxruntime-web@1.22.0/dist/';
@@ -31,7 +33,7 @@ interface UseVoiceSessionProps {
     onError?: (error: string) => void;
     onMessage?: (msg: { role: 'user' | 'assistant'; content: string }) => void;
     onFeedback?: (message: string) => void;
-    initialTranscript?: Message[];
+    initialTranscript?: ClientMessage[];
     config?: VoiceConfig;
 }
 
@@ -74,7 +76,7 @@ function encodeWav(audio: Float32Array, sampleRate: number) {
 export function useVoiceSession({ onError, onMessage, onFeedback, initialTranscript, config }: UseVoiceSessionProps = {}) {
     // 1. Initialize Machine
     const [snapshot, send, actorRef] = useActor(clientMachine);
-    const state = snapshot.context; // Consistency with previous hook: return context as 'state'
+    const state = snapshot.context as ClientContext;
 
     // Refs for callbacks/non-state logic
     const wsRef = useRef<WebSocket | null>(null);
@@ -87,6 +89,7 @@ export function useVoiceSession({ onError, onMessage, onFeedback, initialTranscr
     const configRef = useRef(config);
     const turnActiveRef = useRef(false);
     const lastVADErrorRef = useRef<string | null>(null);
+    const hasSeededTranscriptRef = useRef(false);
 
     // Sync refs
     useEffect(() => {
@@ -96,15 +99,21 @@ export function useVoiceSession({ onError, onMessage, onFeedback, initialTranscr
         configRef.current = config;
     }, [onError, onMessage, onFeedback, config]);
 
-    // Sync initial transcript if provided and machine is empty (on mount)
+    // Seed initial transcript once, if provided and machine is empty.
     useEffect(() => {
-        if (initialTranscript && initialTranscript.length > 0 && state.transcript.length === 0) {
-            initialTranscript.forEach(msg => {
-                send({ type: 'ADD_MESSAGE', role: msg.role as any, content: msg.content });
-            });
+        if (hasSeededTranscriptRef.current) return;
+        if (!initialTranscript || initialTranscript.length === 0) return;
+        if (actorRef.getSnapshot().context.transcript.length > 0) {
+            hasSeededTranscriptRef.current = true;
+            return;
         }
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, []); // Only run once on mount
+
+        initialTranscript.forEach((msg) => {
+            send({ type: 'ADD_MESSAGE', role: msg.role as any, content: msg.content });
+        });
+
+        hasSeededTranscriptRef.current = true;
+    }, [actorRef, initialTranscript, send]);
 
     // ... (rest of hook)
 
@@ -178,7 +187,7 @@ export function useVoiceSession({ onError, onMessage, onFeedback, initialTranscr
     const sendMessage = useCallback((text: string) => {
         const ws = wsRef.current;
         if (ws && ws.readyState === WebSocket.OPEN) {
-            ws.send(JSON.stringify({ type: 'text', value: text }));
+            ws.send(JSON.stringify({ type: 'text.message', content: text }));
             send({ type: 'ADD_MESSAGE', role: 'user', content: text });
             send({ type: 'SERVER_STATE_CHANGE', status: 'speaking' }); // Assume server will process
         }
@@ -279,7 +288,7 @@ export function useVoiceSession({ onError, onMessage, onFeedback, initialTranscr
             }
 
             try {
-                const data = JSON.parse(event.data);
+                const data = JSON.parse(event.data) as ServerToClientJson;
                 handleMessage(data);
             } catch (e) {
                 console.error('[Voice] Parse error', e);
@@ -297,7 +306,7 @@ export function useVoiceSession({ onError, onMessage, onFeedback, initialTranscr
         };
     }, [send]);
 
-    const handleMessage = (data: any) => {
+    const handleMessage = (data: ServerToClientJson) => {
         // send({ type: 'LOG_EVENT', eventType: 'socket_event', details: data });
         switch (data.type) {
             case 'state':
@@ -323,6 +332,7 @@ export function useVoiceSession({ onError, onMessage, onFeedback, initialTranscr
                 break;
         }
     };
+
 
     const queueAudio = (buffer: ArrayBuffer) => {
         audioQueueRef.current.push(buffer);

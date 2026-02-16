@@ -34,7 +34,15 @@
     "paths": {
       "@/*": [
         "./src/*"
-      ]
+      ],
+      "@vani/shared": ["./src/vani/shared/index.ts"],
+      "@vani/shared/*": ["./src/vani/shared/*"],
+      "@vani/headless": ["./src/vani/headless/index.ts"],
+      "@vani/headless/*": ["./src/vani/headless/*"],
+      "@vani/ui": ["./src/vani/ui/index.ts"],
+      "@vani/ui/*": ["./src/vani/ui/*"],
+      "@vani/server": ["./src/vani/server/index.ts"],
+      "@vani/server/*": ["./src/vani/server/*"]
     }
   }
 }

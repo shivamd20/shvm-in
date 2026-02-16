@@ -10,6 +10,7 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as VoiceRouteImport } from './routes/voice'
+import { Route as VaniHeadlessRouteImport } from './routes/vani-headless'
 import { Route as ChatRouteImport } from './routes/chat'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as DemoStartServerFuncsRouteImport } from './routes/demo/start.server-funcs'
@@ -23,6 +24,11 @@ import { Route as DemoStartSsrDataOnlyRouteImport } from './routes/demo/start.ss
 const VoiceRoute = VoiceRouteImport.update({
   id: '/voice',
   path: '/voice',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const VaniHeadlessRoute = VaniHeadlessRouteImport.update({
+  id: '/vani-headless',
+  path: '/vani-headless',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ChatRoute = ChatRouteImport.update({
@@ -74,6 +80,7 @@ const DemoStartSsrDataOnlyRoute = DemoStartSsrDataOnlyRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/chat': typeof ChatRoute
+  '/vani-headless': typeof VaniHeadlessRoute
   '/voice': typeof VoiceRoute
   '/demo/api/names': typeof DemoApiNamesRoute
   '/demo/start/api-request': typeof DemoStartApiRequestRoute
@@ -86,6 +93,7 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/chat': typeof ChatRoute
+  '/vani-headless': typeof VaniHeadlessRoute
   '/voice': typeof VoiceRoute
   '/demo/api/names': typeof DemoApiNamesRoute
   '/demo/start/api-request': typeof DemoStartApiRequestRoute
@@ -99,6 +107,7 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/chat': typeof ChatRoute
+  '/vani-headless': typeof VaniHeadlessRoute
   '/voice': typeof VoiceRoute
   '/demo/api/names': typeof DemoApiNamesRoute
   '/demo/start/api-request': typeof DemoStartApiRequestRoute
@@ -113,6 +122,7 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/chat'
+    | '/vani-headless'
     | '/voice'
     | '/demo/api/names'
     | '/demo/start/api-request'
@@ -125,6 +135,7 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/chat'
+    | '/vani-headless'
     | '/voice'
     | '/demo/api/names'
     | '/demo/start/api-request'
@@ -137,6 +148,7 @@ export interface FileRouteTypes {
     | '__root__'
     | '/'
     | '/chat'
+    | '/vani-headless'
     | '/voice'
     | '/demo/api/names'
     | '/demo/start/api-request'
@@ -150,6 +162,7 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   ChatRoute: typeof ChatRoute
+  VaniHeadlessRoute: typeof VaniHeadlessRoute
   VoiceRoute: typeof VoiceRoute
   DemoApiNamesRoute: typeof DemoApiNamesRoute
   DemoStartApiRequestRoute: typeof DemoStartApiRequestRoute
@@ -167,6 +180,13 @@ declare module '@tanstack/react-router' {
       path: '/voice'
       fullPath: '/voice'
       preLoaderRoute: typeof VoiceRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/vani-headless': {
+      id: '/vani-headless'
+      path: '/vani-headless'
+      fullPath: '/vani-headless'
+      preLoaderRoute: typeof VaniHeadlessRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/chat': {
@@ -238,6 +258,7 @@ declare module '@tanstack/react-router' {
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   ChatRoute: ChatRoute,
+  VaniHeadlessRoute: VaniHeadlessRoute,
   VoiceRoute: VoiceRoute,
   DemoApiNamesRoute: DemoApiNamesRoute,
   DemoStartApiRequestRoute: DemoStartApiRequestRoute,
