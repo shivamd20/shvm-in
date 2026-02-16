@@ -47,7 +47,7 @@ export function Vani({
 }: VaniProps) {
     const [internalMode, setInternalMode] = useState<'full' | 'pip'>(defaultMode);
     const [config, setConfig] = useState<VoiceConfig>(initialConfig || {
-        sttModel: '@cf/openai/whisper',
+        sttModel: '@cf/openai/whisper-tiny-en',
         llmModel: '@cf/meta/llama-3.1-8b-instruct',
         tts: { model: '@cf/deepgram/aura-2-en', speaker: 'luna' }
     });
