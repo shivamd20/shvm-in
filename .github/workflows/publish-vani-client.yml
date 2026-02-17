@@ -39,7 +39,9 @@ jobs:
 
       - name: Read version
         id: version
-        run: echo "version=$(node -p \"JSON.parse(require('fs').readFileSync('packages/vani-client/package.json','utf8')).version\")" >> "$GITHUB_OUTPUT"
+        run: |
+          VERSION="$(node -p "require('./packages/vani-client/package.json').version")"
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
 
       - name: Build package
         run: npm -w @shvm/vani-client run build

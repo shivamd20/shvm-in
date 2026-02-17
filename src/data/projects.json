@@ -226,8 +226,8 @@
             "name": "Vani",
             "url": "/vani",
             "repo": "https://github.com/shivamd20/shvm-in/tree/main/packages/vani-client",
-            "type": "system",
-            "status": "development",
+            "type": "flagship",
+            "status": "beta",
             "stack": [
                 "Cloudflare Workers",
                 "Durable Objects",

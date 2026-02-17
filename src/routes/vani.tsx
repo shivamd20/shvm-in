@@ -1,4 +1,4 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { Outlet, createFileRoute, Link, useRouterState } from "@tanstack/react-router";
 
 const VANICLIENT_GITHUB_URL = "https://github.com/shivamd20/shvm-in/tree/main/packages/vani-client";
 const VANICLIENT_NPM_URL = "https://www.npmjs.com/package/@shvm/vani-client";
@@ -8,6 +8,11 @@ export const Route = createFileRoute("/vani")({
 });
 
 function VaniLandingRoute() {
+  const pathname = useRouterState({ select: (s) => s.location.pathname });
+  const isIndex = pathname === "/vani" || pathname === "/vani/";
+
+  if (!isIndex) return <Outlet />;
+
   return (
     <div className="min-h-screen bg-black text-zinc-100 overflow-x-hidden">
       <div className="container-width py-16">

@@ -15,9 +15,10 @@ interface ProjectCardProps {
 
 export function ProjectCard({ project, onSelect }: ProjectCardProps) {
     const link = project.url || project.repo || '#';
+    const isInternalLink = link.startsWith('/');
 
     const handleClick = (e: MouseEvent) => {
-        if (onSelect) {
+        if (onSelect && !isInternalLink) {
             e.preventDefault();
             onSelect(`Tell me more about ${project.name}`);
         }
@@ -27,8 +28,8 @@ export function ProjectCard({ project, onSelect }: ProjectCardProps) {
         <a
             href={link}
             onClick={handleClick}
-            target="_blank"
-            rel="noopener noreferrer"
+            target={isInternalLink ? undefined : "_blank"}
+            rel={isInternalLink ? undefined : "noopener noreferrer"}
             className="group block p-6 rounded-2xl glass-panel hover:bg-white/5 transition-all duration-300 border border-white/5 hover:border-accent/40 relative overflow-hidden flex flex-col h-full cursor-pointer"
         >
             <div className="absolute inset-0 bg-gradient-to-br from-accent/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />

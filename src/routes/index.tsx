@@ -15,6 +15,11 @@ export const Route = createFileRoute('/')({
 
 function Index() {
   const navigate = useNavigate();
+  const featuredProjects = [
+    projectsData.projects.find((p) => p.id === "shvm-in"),
+    projectsData.projects.find((p) => p.id === "vani"),
+    ...projectsData.projects.filter((p) => p.id !== "shvm-in" && p.id !== "vani").slice(0, 2),
+  ].filter(Boolean);
 
   const handlePromptSelect = (text: string) => {
     // @ts-ignore
@@ -44,6 +49,13 @@ function Index() {
             <PromptChips onSelect={handlePromptSelect} />
           </div>
 
+          <div className="mt-6 text-xs font-mono text-zinc-500 px-4 z-10">
+            Prefer tooling? Use my MCP server at{" "}
+            <a href="/mcp" className="text-zinc-300 hover:text-accent transition-colors underline underline-offset-4">
+              shvm.in/mcp
+            </a>
+            .
+          </div>
 
         </div>
 
@@ -77,7 +89,7 @@ function Index() {
               subtitle="Selected work in distributed systems, AI infrastructure, and edge computing."
             />
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-              {projectsData.projects.slice(0, 4).map((p) => (
+              {featuredProjects.map((p) => (
                 <ProjectCard key={p.name} project={p} />
               ))}
             </div>
