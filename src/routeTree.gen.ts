@@ -11,8 +11,11 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as VoiceRouteImport } from './routes/voice'
 import { Route as VaniHeadlessRouteImport } from './routes/vani-headless'
+import { Route as VaniRouteImport } from './routes/vani'
 import { Route as ChatRouteImport } from './routes/chat'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as VaniPlaygroundRouteImport } from './routes/vani.playground'
+import { Route as VaniDocsRouteImport } from './routes/vani.docs'
 import { Route as DemoStartServerFuncsRouteImport } from './routes/demo/start.server-funcs'
 import { Route as DemoStartApiRequestRouteImport } from './routes/demo/start.api-request'
 import { Route as DemoApiNamesRouteImport } from './routes/demo/api.names'
@@ -31,6 +34,11 @@ const VaniHeadlessRoute = VaniHeadlessRouteImport.update({
   path: '/vani-headless',
   getParentRoute: () => rootRouteImport,
 } as any)
+const VaniRoute = VaniRouteImport.update({
+  id: '/vani',
+  path: '/vani',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ChatRoute = ChatRouteImport.update({
   id: '/chat',
   path: '/chat',
@@ -40,6 +48,16 @@ const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => rootRouteImport,
+} as any)
+const VaniPlaygroundRoute = VaniPlaygroundRouteImport.update({
+  id: '/playground',
+  path: '/playground',
+  getParentRoute: () => VaniRoute,
+} as any)
+const VaniDocsRoute = VaniDocsRouteImport.update({
+  id: '/docs',
+  path: '/docs',
+  getParentRoute: () => VaniRoute,
 } as any)
 const DemoStartServerFuncsRoute = DemoStartServerFuncsRouteImport.update({
   id: '/demo/start/server-funcs',
@@ -80,8 +98,11 @@ const DemoStartSsrDataOnlyRoute = DemoStartSsrDataOnlyRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/chat': typeof ChatRoute
+  '/vani': typeof VaniRouteWithChildren
   '/vani-headless': typeof VaniHeadlessRoute
   '/voice': typeof VoiceRoute
+  '/vani/docs': typeof VaniDocsRoute
+  '/vani/playground': typeof VaniPlaygroundRoute
   '/demo/api/names': typeof DemoApiNamesRoute
   '/demo/start/api-request': typeof DemoStartApiRequestRoute
   '/demo/start/server-funcs': typeof DemoStartServerFuncsRoute
@@ -93,8 +114,11 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/chat': typeof ChatRoute
+  '/vani': typeof VaniRouteWithChildren
   '/vani-headless': typeof VaniHeadlessRoute
   '/voice': typeof VoiceRoute
+  '/vani/docs': typeof VaniDocsRoute
+  '/vani/playground': typeof VaniPlaygroundRoute
   '/demo/api/names': typeof DemoApiNamesRoute
   '/demo/start/api-request': typeof DemoStartApiRequestRoute
   '/demo/start/server-funcs': typeof DemoStartServerFuncsRoute
@@ -107,8 +131,11 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/chat': typeof ChatRoute
+  '/vani': typeof VaniRouteWithChildren
   '/vani-headless': typeof VaniHeadlessRoute
   '/voice': typeof VoiceRoute
+  '/vani/docs': typeof VaniDocsRoute
+  '/vani/playground': typeof VaniPlaygroundRoute
   '/demo/api/names': typeof DemoApiNamesRoute
   '/demo/start/api-request': typeof DemoStartApiRequestRoute
   '/demo/start/server-funcs': typeof DemoStartServerFuncsRoute
@@ -122,8 +149,11 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/chat'
+    | '/vani'
     | '/vani-headless'
     | '/voice'
+    | '/vani/docs'
+    | '/vani/playground'
     | '/demo/api/names'
     | '/demo/start/api-request'
     | '/demo/start/server-funcs'
@@ -135,8 +165,11 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/chat'
+    | '/vani'
     | '/vani-headless'
     | '/voice'
+    | '/vani/docs'
+    | '/vani/playground'
     | '/demo/api/names'
     | '/demo/start/api-request'
     | '/demo/start/server-funcs'
@@ -148,8 +181,11 @@ export interface FileRouteTypes {
     | '__root__'
     | '/'
     | '/chat'
+    | '/vani'
     | '/vani-headless'
     | '/voice'
+    | '/vani/docs'
+    | '/vani/playground'
     | '/demo/api/names'
     | '/demo/start/api-request'
     | '/demo/start/server-funcs'
@@ -162,6 +198,7 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   ChatRoute: typeof ChatRoute
+  VaniRoute: typeof VaniRouteWithChildren
   VaniHeadlessRoute: typeof VaniHeadlessRoute
   VoiceRoute: typeof VoiceRoute
   DemoApiNamesRoute: typeof DemoApiNamesRoute
@@ -189,6 +226,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof VaniHeadlessRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/vani': {
+      id: '/vani'
+      path: '/vani'
+      fullPath: '/vani'
+      preLoaderRoute: typeof VaniRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/chat': {
       id: '/chat'
       path: '/chat'
@@ -202,6 +246,20 @@ declare module '@tanstack/react-router' {
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
+    }
+    '/vani/playground': {
+      id: '/vani/playground'
+      path: '/playground'
+      fullPath: '/vani/playground'
+      preLoaderRoute: typeof VaniPlaygroundRouteImport
+      parentRoute: typeof VaniRoute
+    }
+    '/vani/docs': {
+      id: '/vani/docs'
+      path: '/docs'
+      fullPath: '/vani/docs'
+      preLoaderRoute: typeof VaniDocsRouteImport
+      parentRoute: typeof VaniRoute
     }
     '/demo/start/server-funcs': {
       id: '/demo/start/server-funcs'
@@ -255,9 +313,22 @@ declare module '@tanstack/react-router' {
   }
 }
 
+interface VaniRouteChildren {
+  VaniDocsRoute: typeof VaniDocsRoute
+  VaniPlaygroundRoute: typeof VaniPlaygroundRoute
+}
+
+const VaniRouteChildren: VaniRouteChildren = {
+  VaniDocsRoute: VaniDocsRoute,
+  VaniPlaygroundRoute: VaniPlaygroundRoute,
+}
+
+const VaniRouteWithChildren = VaniRoute._addFileChildren(VaniRouteChildren)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   ChatRoute: ChatRoute,
+  VaniRoute: VaniRouteWithChildren,
   VaniHeadlessRoute: VaniHeadlessRoute,
   VoiceRoute: VoiceRoute,
   DemoApiNamesRoute: DemoApiNamesRoute,

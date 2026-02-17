@@ -9,7 +9,13 @@
     "skipLibCheck": true,
     "declaration": true,
     "noEmit": true,
-    "types": ["node"]
+    "types": ["node"],
+    "baseUrl": ".",
+    "paths": {
+      "@shvm/vani-client": ["./src/index.ts"],
+      "@shvm/vani-client/*": ["./src/*"]
+    }
   },
-  "include": ["src/**/*"]
+  "include": ["src/**/*"],
+  "exclude": ["src/**/__boundary_fixtures__/**"]
 }

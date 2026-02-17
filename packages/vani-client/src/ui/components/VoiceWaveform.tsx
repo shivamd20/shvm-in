@@ -1,6 +1,6 @@
-import { useEffect, useMemo, useRef } from 'react';
+import { useEffect, useMemo, useRef } from "react";
 
-type WaveformKind = 'input' | 'output';
+type WaveformKind = "input" | "output";
 
 type GetWaveformData = (kind: WaveformKind, out: Float32Array) => boolean;
 
@@ -9,7 +9,6 @@ function clamp01(x: number) {
 }
 
 function withAlpha(rgb: string, a: number) {
-  // rgb should be like "34 197 94" (Tailwind style space-separated RGB)
   const parts = rgb.trim().split(/\s+/).map((p) => Number(p));
   const [r, g, b] = parts;
   const alpha = clamp01(a);
@@ -36,14 +35,13 @@ export function VoiceWaveform({
   const rafRef = useRef<number | null>(null);
   const resizeObserverRef = useRef<ResizeObserver | null>(null);
 
-  // Must match the analyser fftSize used by the voice hook (2048) to avoid IndexSizeError.
   const samples = useMemo(() => new Float32Array(2048), []);
 
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
 
-    const ctx = canvas.getContext('2d');
+    const ctx = canvas.getContext("2d");
     if (!ctx) return;
 
     const resize = () => {
@@ -69,7 +67,7 @@ export function VoiceWaveform({
     const canvas = canvasRef.current;
     if (!canvas) return;
 
-    const ctx = canvas.getContext('2d');
+    const ctx = canvas.getContext("2d");
     if (!ctx) return;
 
     const drawFrame = () => {
@@ -83,7 +81,6 @@ export function VoiceWaveform({
       const midY = height / 2;
       const amplitude = height * 0.34;
 
-      // Baseline
       ctx.strokeStyle = withAlpha(rgb, active ? 0.35 : 0.18);
       ctx.lineWidth = 1;
       ctx.beginPath();
@@ -98,7 +95,6 @@ export function VoiceWaveform({
       grad.addColorStop(0.5, withAlpha(rgb, 0.9));
       grad.addColorStop(1, withAlpha(rgb, 0.25));
 
-      // Glow stroke
       ctx.save();
       ctx.strokeStyle = grad;
       ctx.lineWidth = 2.5;
@@ -114,7 +110,6 @@ export function VoiceWaveform({
       ctx.stroke();
       ctx.restore();
 
-      // Crisp stroke on top
       ctx.strokeStyle = withAlpha(rgb, 0.9);
       ctx.lineWidth = 1.25;
       ctx.beginPath();
@@ -135,17 +130,11 @@ export function VoiceWaveform({
       };
     }
 
-    // When inactive, ensure any running loop is stopped and canvas is cleared.
     if (rafRef.current) cancelAnimationFrame(rafRef.current);
     rafRef.current = null;
     ctx.clearRect(0, 0, canvas.width, canvas.height);
   }, [active, getWaveformData, kind, rgb, samples]);
 
-  return (
-    <canvas
-      ref={canvasRef}
-      className={className}
-      aria-hidden="true"
-    />
-  );
+  return <canvas ref={canvasRef} className={className} aria-hidden="true" />;
 }
+

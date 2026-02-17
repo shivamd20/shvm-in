@@ -17,7 +17,7 @@ async function listFixtureFiles(dir: string) {
 describe("vani boundaries (smoke)", () => {
   it("fails lint on boundary violations in fixtures", async () => {
     const fixtureDirs = [
-      "src/vani/ui/__boundary_fixtures__",
+      "packages/vani-client/src/ui/__boundary_fixtures__",
       "src/vani/server/__boundary_fixtures__",
     ];
 

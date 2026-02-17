@@ -37,8 +37,6 @@
       ],
       "@shvm/vani-client": ["./packages/vani-client/src/index.ts"],
       "@shvm/vani-client/*": ["./packages/vani-client/src/*"],
-      "@vani/ui": ["./src/vani/ui/index.ts"],
-      "@vani/ui/*": ["./src/vani/ui/*"],
       "@vani/server": ["./src/vani/server/index.ts"],
       "@vani/server/*": ["./src/vani/server/*"]
     }

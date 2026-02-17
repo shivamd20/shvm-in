@@ -4,16 +4,16 @@
     "types": ["node", "vite/client"],
     "paths": {
       "@/*": ["./src/*"],
-      "@vani/ui": ["./src/vani/ui/index.ts"],
-      "@vani/ui/*": ["./src/vani/ui/*"],
       "@vani/server": ["./src/vani/server/index.ts"],
       "@vani/server/*": ["./src/vani/server/*"],
       "@shvm/vani-client/shared": ["./packages/vani-client/src/shared/index.ts"],
       "@shvm/vani-client/shared/*": ["./packages/vani-client/src/shared/*"],
       "@shvm/vani-client/headless": ["./packages/vani-client/src/headless/index.ts"],
-      "@shvm/vani-client/headless/*": ["./packages/vani-client/src/headless/*"]
+      "@shvm/vani-client/headless/*": ["./packages/vani-client/src/headless/*"],
+      "@shvm/vani-client/ui": ["./packages/vani-client/src/ui/index.ts"],
+      "@shvm/vani-client/ui/*": ["./packages/vani-client/src/ui/*"]
     }
   },
-  "include": ["src/vani/ui/**/*", "src/vani/index.ts"],
-  "exclude": ["src/vani/**/__boundary_fixtures__/**"]
+  "include": ["packages/vani-client/src/ui/**/*", "src/vani/index.ts"],
+  "exclude": ["src/vani/**/__boundary_fixtures__/**", "packages/vani-client/src/**/__boundary_fixtures__/**"]
 }

@@ -5,6 +5,7 @@ import { useActor } from '@xstate/react';
 import { clientMachine, type ClientContext, type DebugEvent } from '../machine/clientMachine';
 import type { ClientMessage, VoiceConfig, VoiceStatus } from '../../shared/types/voice';
 import type { ServerToClientJson } from '../../shared/contracts/ws';
+import { buildVoiceWebSocketUrl } from '../utils/webSocketUrl';
 export type { VoiceStatus, ClientMessage as Message, DebugEvent, VoiceConfig };
 
 // --- Constants ---
@@ -41,7 +42,7 @@ export interface UseVoiceSessionProps {
      * - "https://example.com"
      * - "wss://example.com"
      *
-     * Default: uses current window location.
+     * Default: "https://shvm.in"
      */
     serverUrl?: string;
     /**
@@ -137,20 +138,12 @@ export function useVoiceSession(props: UseVoiceSessionProps = {}) {
     }
 
     const buildWebSocketUrl = useCallback((activeSessionId: string) => {
-        if (getWebSocketUrlOverride) return getWebSocketUrlOverride(activeSessionId);
-
-        const wsPathValue = wsPath ? wsPath(activeSessionId) : `/ws/${activeSessionId}`;
-
-        if (serverUrl) {
-            const base = new URL(serverUrl);
-            const protocol = base.protocol === 'https:' ? 'wss:' : base.protocol === 'http:' ? 'ws:' : base.protocol;
-            base.protocol = protocol;
-            return new URL(wsPathValue, base).toString();
-        }
-
-        const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-        const host = window.location.host;
-        return `${protocol}//${host}${wsPathValue}`;
+        return buildVoiceWebSocketUrl({
+            sessionId: activeSessionId,
+            serverUrl,
+            wsPath,
+            getWebSocketUrlOverride,
+        });
     }, [getWebSocketUrlOverride, serverUrl, wsPath]);
 
     // Sync refs

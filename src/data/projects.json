@@ -224,29 +224,58 @@
         {
             "id": "vani",
             "name": "Vani",
-            "repo": "https://github.com/shivamd20/shvm-in/tree/main/src/vani",
+            "url": "/vani",
+            "repo": "https://github.com/shivamd20/shvm-in/tree/main/packages/vani-client",
             "type": "system",
             "status": "development",
             "stack": [
                 "Cloudflare Workers",
                 "Durable Objects",
                 "SQLite",
-                "STT/TTS/LLM"
+                "Workers AI"
             ],
-            "summary": "Cloudflare Worker voice runtime. A low-latency voice interaction framework built on Cloudflare Workers and Durable Objects enabling stateful AI voice conversations.",
-            "problem": "Voice interaction is often unreliable compared to text chat; lacks stateful session management.",
-            "architecture": "Durable Object state persistence via distributed SQLite; Edge-native STT, LLM, and TTS orchestration.",
+            "summary": "Cloudflare-native voice session runtime + client SDK. Stateful, resumable voice conversations backed by Durable Objects, with a shared client/server contract and a headless+UI client package.",
+            "problem": "Shipping reliable voice UX is hard when session state, streaming, and UI are all loosely coupled. Vani makes the session a first-class primitive with a typed contract.",
+            "motivation": "I wanted a minimal, self-hostable alternative for voice agents that keeps latency low, state deterministic, and the client/server contract shared — without building a full telephony platform.",
+            "cost_notes": "The goal is to make the control plane cheap and push cost into model usage (STT/LLM/TTS). Exact cost depends on models, audio volume, and concurrency.",
+            "comparisons": {
+                "vapi": "Vapi is a managed voice agent platform. Vani is lower-level: you own deployment, choose models, and keep a simple typed websocket contract.",
+                "livekit": "LiveKit is real-time media infrastructure (rooms/SFU/WebRTC). Vani is a per-session agent runtime over websocket + Durable Object state."
+            },
+            "links": {
+                "landing": "/vani",
+                "docs": "/vani/docs",
+                "playground": "/vani/playground",
+                "client_github": "https://github.com/shivamd20/shvm-in/tree/main/packages/vani-client"
+            },
+            "architecture": "A websocket route (/ws/:sessionId) fans into a Durable Object per session. The session machine orchestrates STT/LLM/TTS via Workers AI, persisting transcript/history in DO SQLite for recoverability.",
             "ownership": "sole-author",
             "complexity": "high",
             "notable_decisions": [
-                "Instant session recovery",
-                "Text ↔ voice multimodal continuity",
-                "Durable Object state persistence via distributed SQLite",
-                "Edge-native STT, LLM, and TTS orchestration"
+                "Durable Object per session (stateful primitive)",
+                "Shared client/server contract (@shvm/vani-client/shared)",
+                "Transcript/history persisted in DO SQLite for recovery",
+                "Headless hook + optional UI client package"
             ]
         }
     ],
     "open_source": [
+        {
+            "id": "vani-client",
+            "name": "@shvm/vani-client",
+            "repo": "https://github.com/shivamd20/shvm-in/tree/main/packages/vani-client",
+            "summary": "Shared contract + headless hook + optional UI for Vani voice sessions.",
+            "stack": [
+                "TypeScript",
+                "React",
+                "XState"
+            ],
+            "highlights": [
+                "Typed websocket contract (shared)",
+                "Headless React hook for session lifecycle",
+                "Reference UI for quick integration"
+            ]
+        },
         {
             "id": "excalidraw-live-sync",
             "name": "excalidraw-live-sync",

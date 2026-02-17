@@ -12,7 +12,8 @@
         "Spec-engineering workflows — generating code from LLD, Swagger, and Figma",
         "Figma-to-Code pipeline improving frontend integration speed by 50%",
         "Edge-native distributed systems on Cloudflare Workers",
-        "AI-first product architecture"
+        "AI-first product architecture",
+        "Vani: self-hostable voice agent runtime (Workers + Durable Objects)"
     ],
     "positioning_summary": [
         "Edge-native systems architecture",

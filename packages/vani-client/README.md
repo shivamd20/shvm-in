@@ -10,7 +10,7 @@ Minimal, opinionated **headless voice agent client** for the web:
   - server → client events (partial/final transcript, feedback, errors)
 - A small **shared contract** module (types + websocket message schema) to keep client/server in lockstep.
 
-This repo currently also contains an **internal UI layer** under `src/vani/ui` (used by the site). The long-term plan is to publish that separately and keep this package purely headless.
+This package also ships an optional UI layer at `@shvm/vani-client/ui` (used by the site). For now it intentionally relies on the host app’s Tailwind/CSS setup (no isolated CSS shipped yet).
 
 ---
 
@@ -182,7 +182,7 @@ It exposes:
 
 ## Roadmap
 
-- Publish a companion UI package (the current internal `src/vani/ui` layer)
+- Isolate UI styling (scoped + packaged CSS) and/or split UI into a separate package
 - Improve config surface for:
   - custom session ID strategy
   - custom audio encoding/container
@@ -194,4 +194,3 @@ It exposes:
 ## License
 
 MIT (see repository license).
-

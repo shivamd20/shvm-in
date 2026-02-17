@@ -1,0 +1,58 @@
+name: Publish @shvm/vani-client
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - "packages/vani-client/**"
+  workflow_dispatch:
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    if: github.actor != 'github-actions[bot]'
+    permissions:
+      contents: write
+    concurrency:
+      group: publish-vani-client
+      cancel-in-progress: false
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          registry-url: "https://registry.npmjs.org"
+
+      - run: npm ci
+
+      - name: Verify (lint / typecheck / tests)
+        run: |
+          npm run lint
+          npm run typecheck:vani
+          npm run test:vani
+
+      - name: Bump version (patch)
+        run: npm version patch -w @shvm/vani-client --no-git-tag-version
+
+      - name: Read version
+        id: version
+        run: echo "version=$(node -p \"JSON.parse(require('fs').readFileSync('packages/vani-client/package.json','utf8')).version\")" >> "$GITHUB_OUTPUT"
+
+      - name: Build package
+        run: npm -w @shvm/vani-client run build
+
+      - name: Publish to npm
+        run: npm -w @shvm/vani-client publish --access public
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+      - name: Commit version bump
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add packages/vani-client/package.json package-lock.json
+          git commit -m "chore(vani-client): release v${{ steps.version.outputs.version }}"
+          git push

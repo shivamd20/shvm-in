@@ -24,7 +24,6 @@ export default [
       "boundaries/include": ["src/vani/**/*"],
       "boundaries/elements": [
         { type: "public", pattern: "src/vani/index.ts" },
-        { type: "ui", pattern: "src/vani/ui/**" },
         { type: "server", pattern: "src/vani/server/**" },
       ],
     },
@@ -46,8 +45,7 @@ export default [
         {
           default: "disallow",
           rules: [
-            { from: "public", allow: ["public", "ui", "server"] },
-            { from: "ui", allow: ["ui"] },
+            { from: "public", allow: ["public", "server"] },
             { from: "server", allow: ["server"] },
           ],
         },
@@ -64,6 +62,30 @@ export default [
             {
               group: ["@shvm/vani-client/headless", "@shvm/vani-client/headless/*"],
               message: "Server must not import headless runtime; use @shvm/vani-client/shared only.",
+            },
+          ],
+        },
+      ],
+    },
+  },
+  {
+    files: ["packages/vani-client/src/ui/**/__boundary_fixtures__/**/*.{ts,tsx}"],
+    languageOptions: {
+      parser: tseslint.parser,
+      parserOptions: {
+        ecmaVersion: "latest",
+        sourceType: "module",
+        ecmaFeatures: { jsx: true },
+      },
+    },
+    rules: {
+      "no-restricted-imports": [
+        "error",
+        {
+          patterns: [
+            {
+              group: ["@vani/server", "@vani/server/*"],
+              message: "UI must not import server runtime; keep server and UI cleanly separated.",
             },
           ],
         },

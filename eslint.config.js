@@ -25,7 +25,6 @@ export default [
       "boundaries/include": ["src/vani/**/*"],
       "boundaries/elements": [
         { type: "public", pattern: "src/vani/index.ts" },
-        { type: "ui", pattern: "src/vani/ui/**" },
         { type: "server", pattern: "src/vani/server/**" },
       ],
     },
@@ -47,8 +46,7 @@ export default [
         {
           default: "disallow",
           rules: [
-            { from: "public", allow: ["public", "ui", "server"] },
-            { from: "ui", allow: ["ui"] },
+            { from: "public", allow: ["public", "server"] },
             { from: "server", allow: ["server"] },
           ],
         },

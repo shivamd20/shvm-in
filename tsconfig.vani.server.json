@@ -5,8 +5,6 @@
     "moduleResolution": "bundler",
     "paths": {
       "@/*": ["./src/*"],
-      "@vani/ui": ["./src/vani/ui/index.ts"],
-      "@vani/ui/*": ["./src/vani/ui/*"],
       "@vani/server": ["./src/vani/server/index.ts"],
       "@vani/server/*": ["./src/vani/server/*"],
       "@shvm/vani-client/shared": ["./packages/vani-client/src/shared/index.ts"],

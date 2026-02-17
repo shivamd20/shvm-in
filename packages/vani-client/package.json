@@ -22,6 +22,10 @@
     "./headless": {
       "types": "./dist/headless/index.d.ts",
       "default": "./dist/headless/index.js"
+    },
+    "./ui": {
+      "types": "./dist/ui/index.d.ts",
+      "default": "./dist/ui/index.js"
     }
   },
   "repository": {
@@ -53,6 +57,7 @@
   "dependencies": {
     "@ricky0123/vad-react": "^0.0.33",
     "@xstate/react": "^6.0.0",
+    "lucide-react": "^0.561.0",
     "onnxruntime-web": "^1.22.0",
     "xstate": "^5.28.0"
   },

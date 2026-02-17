@@ -18,9 +18,11 @@ vi.mock("@shvm/vani-client/headless", () => {
 });
 
 describe("<Vani /> (ui integration)", () => {
-  it("renders using headless state", async () => {
-    const { Vani } = await import("@vani/ui");
+  it("wraps in .vani-root and renders using headless state", async () => {
+    const { Vani } = await import("@shvm/vani-client/ui");
     render(<Vani defaultMode="full" />);
+    expect(document.querySelector(".vani-root")).toBeTruthy();
     expect(screen.getByText("Ready")).toBeTruthy();
   });
 });
+
