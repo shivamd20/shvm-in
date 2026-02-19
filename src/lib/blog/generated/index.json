@@ -1,0 +1,28 @@
+{
+  "generatedAt": "2026-02-19T09:56:10.119Z",
+  "posts": [
+    {
+      "title": "Building a Distributed Rate Limiter",
+      "slug": "distributed-rate-limiter",
+      "date": "2026-02-19",
+      "tags": [
+        "system-design",
+        "distributed-systems"
+      ],
+      "summary": "Rate limiting is a reliability feature, not a billing feature. Done well, it prevents cascading failure and keeps latency predictable under load.",
+      "readingTime": 1,
+      "published": true
+    },
+    {
+      "title": "Hello, Blogs",
+      "slug": "hello-blogs",
+      "date": "2026-02-18",
+      "tags": [
+        "meta"
+      ],
+      "summary": "This is the beginning of a static-first journal on systems, product engineering, and calm clarity.",
+      "readingTime": 1,
+      "published": true
+    }
+  ]
+}

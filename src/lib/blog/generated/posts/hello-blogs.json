@@ -1,0 +1,26 @@
+{
+  "meta": {
+    "title": "Hello, Blogs",
+    "slug": "hello-blogs",
+    "date": "2026-02-18",
+    "tags": [
+      "meta"
+    ],
+    "summary": "This is the beginning of a static-first journal on systems, product engineering, and calm clarity.",
+    "readingTime": 1,
+    "published": true
+  },
+  "html": "<p>This is the beginning of a static-first journal on systems, product engineering, and calm clarity.</p>\n<h2 id=\"what-this-is\"><a class=\"blog-heading-anchor\" href=\"#what-this-is\">What this is</a></h2>\n<p>Posts live as Markdown, compile to HTML at build time, and deploy as fully static pages. No runtime parsing, no revalidation, no regeneration.</p>\n<h2 id=\"what-to-expect\"><a class=\"blog-heading-anchor\" href=\"#what-to-expect\">What to expect</a></h2>\n<ul>\n<li>Technical deep dives (distributed systems, performance, tooling)</li>\n<li>Short field notes (design decisions, tradeoffs)</li>\n<li>A reading-first layout that stays out of your way</li>\n</ul>",
+  "toc": [
+    {
+      "id": "what-this-is",
+      "depth": 2,
+      "text": "What this is"
+    },
+    {
+      "id": "what-to-expect",
+      "depth": 2,
+      "text": "What to expect"
+    }
+  ]
+}

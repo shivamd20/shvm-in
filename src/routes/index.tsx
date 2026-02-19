@@ -19,7 +19,7 @@ function Index() {
     projectsData.projects.find((p) => p.id === "shvm-in"),
     projectsData.projects.find((p) => p.id === "vani"),
     ...projectsData.projects.filter((p) => p.id !== "shvm-in" && p.id !== "vani").slice(0, 2),
-  ].filter(Boolean);
+  ].filter((p): p is (typeof projectsData.projects)[number] => Boolean(p));
 
   const handlePromptSelect = (text: string) => {
     // @ts-ignore

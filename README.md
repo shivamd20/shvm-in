@@ -29,6 +29,28 @@ npm run test
 
 This project uses CSS for styling.
 
+## Publishing (Blogs)
+
+Blog posts live in `content/blog/` as Markdown files named:
+
+`YYYY-MM-DD-slug.md` (example: `2026-02-19-distributed-rate-limiter.md`)
+
+### Create a new post
+
+```bash
+pnpm new-post "My Title"
+```
+
+This generates a Markdown file with frontmatter (including `published: false`). The first paragraph becomes the summary.
+
+### Go live
+
+1. Set `published: true`
+2. Commit
+3. Deploy
+
+The blog is static-first: Markdown is compiled to HTML at build time. There is no runtime parsing, no revalidation, and no regeneration.
+
 
 
 

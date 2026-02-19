@@ -22,10 +22,11 @@ jobs:
 
       - uses: actions/setup-node@v4
         with:
-          node-version: 22
+          node-version: "22.12.0"
           cache: npm
           registry-url: "https://registry.npmjs.org"
 
+      - run: node -v && npm -v
       - run: npm ci
 
       - name: Verify (lint / typecheck / tests)

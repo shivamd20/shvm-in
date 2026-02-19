@@ -13,12 +13,16 @@ import { Route as VoiceRouteImport } from './routes/voice'
 import { Route as VaniHeadlessRouteImport } from './routes/vani-headless'
 import { Route as VaniRouteImport } from './routes/vani'
 import { Route as ChatRouteImport } from './routes/chat'
+import { Route as BlogsRouteImport } from './routes/blogs'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as BlogsIndexRouteImport } from './routes/blogs.index'
 import { Route as VaniPlaygroundRouteImport } from './routes/vani.playground'
 import { Route as VaniDocsRouteImport } from './routes/vani.docs'
+import { Route as BlogsSlugRouteImport } from './routes/blogs.$slug'
 import { Route as DemoStartServerFuncsRouteImport } from './routes/demo/start.server-funcs'
 import { Route as DemoStartApiRequestRouteImport } from './routes/demo/start.api-request'
 import { Route as DemoApiNamesRouteImport } from './routes/demo/api.names'
+import { Route as BlogsTagsTagRouteImport } from './routes/blogs.tags.$tag'
 import { Route as DemoStartSsrIndexRouteImport } from './routes/demo/start.ssr.index'
 import { Route as DemoStartSsrSpaModeRouteImport } from './routes/demo/start.ssr.spa-mode'
 import { Route as DemoStartSsrFullSsrRouteImport } from './routes/demo/start.ssr.full-ssr'
@@ -44,10 +48,20 @@ const ChatRoute = ChatRouteImport.update({
   path: '/chat',
   getParentRoute: () => rootRouteImport,
 } as any)
+const BlogsRoute = BlogsRouteImport.update({
+  id: '/blogs',
+  path: '/blogs',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => rootRouteImport,
+} as any)
+const BlogsIndexRoute = BlogsIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => BlogsRoute,
 } as any)
 const VaniPlaygroundRoute = VaniPlaygroundRouteImport.update({
   id: '/playground',
@@ -58,6 +72,11 @@ const VaniDocsRoute = VaniDocsRouteImport.update({
   id: '/docs',
   path: '/docs',
   getParentRoute: () => VaniRoute,
+} as any)
+const BlogsSlugRoute = BlogsSlugRouteImport.update({
+  id: '/$slug',
+  path: '/$slug',
+  getParentRoute: () => BlogsRoute,
 } as any)
 const DemoStartServerFuncsRoute = DemoStartServerFuncsRouteImport.update({
   id: '/demo/start/server-funcs',
@@ -73,6 +92,11 @@ const DemoApiNamesRoute = DemoApiNamesRouteImport.update({
   id: '/demo/api/names',
   path: '/demo/api/names',
   getParentRoute: () => rootRouteImport,
+} as any)
+const BlogsTagsTagRoute = BlogsTagsTagRouteImport.update({
+  id: '/tags/$tag',
+  path: '/tags/$tag',
+  getParentRoute: () => BlogsRoute,
 } as any)
 const DemoStartSsrIndexRoute = DemoStartSsrIndexRouteImport.update({
   id: '/demo/start/ssr/',
@@ -97,12 +121,16 @@ const DemoStartSsrDataOnlyRoute = DemoStartSsrDataOnlyRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/blogs': typeof BlogsRouteWithChildren
   '/chat': typeof ChatRoute
   '/vani': typeof VaniRouteWithChildren
   '/vani-headless': typeof VaniHeadlessRoute
   '/voice': typeof VoiceRoute
+  '/blogs/$slug': typeof BlogsSlugRoute
   '/vani/docs': typeof VaniDocsRoute
   '/vani/playground': typeof VaniPlaygroundRoute
+  '/blogs/': typeof BlogsIndexRoute
+  '/blogs/tags/$tag': typeof BlogsTagsTagRoute
   '/demo/api/names': typeof DemoApiNamesRoute
   '/demo/start/api-request': typeof DemoStartApiRequestRoute
   '/demo/start/server-funcs': typeof DemoStartServerFuncsRoute
@@ -117,8 +145,11 @@ export interface FileRoutesByTo {
   '/vani': typeof VaniRouteWithChildren
   '/vani-headless': typeof VaniHeadlessRoute
   '/voice': typeof VoiceRoute
+  '/blogs/$slug': typeof BlogsSlugRoute
   '/vani/docs': typeof VaniDocsRoute
   '/vani/playground': typeof VaniPlaygroundRoute
+  '/blogs': typeof BlogsIndexRoute
+  '/blogs/tags/$tag': typeof BlogsTagsTagRoute
   '/demo/api/names': typeof DemoApiNamesRoute
   '/demo/start/api-request': typeof DemoStartApiRequestRoute
   '/demo/start/server-funcs': typeof DemoStartServerFuncsRoute
@@ -130,12 +161,16 @@ export interface FileRoutesByTo {
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/blogs': typeof BlogsRouteWithChildren
   '/chat': typeof ChatRoute
   '/vani': typeof VaniRouteWithChildren
   '/vani-headless': typeof VaniHeadlessRoute
   '/voice': typeof VoiceRoute
+  '/blogs/$slug': typeof BlogsSlugRoute
   '/vani/docs': typeof VaniDocsRoute
   '/vani/playground': typeof VaniPlaygroundRoute
+  '/blogs/': typeof BlogsIndexRoute
+  '/blogs/tags/$tag': typeof BlogsTagsTagRoute
   '/demo/api/names': typeof DemoApiNamesRoute
   '/demo/start/api-request': typeof DemoStartApiRequestRoute
   '/demo/start/server-funcs': typeof DemoStartServerFuncsRoute
@@ -148,12 +183,16 @@ export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | '/blogs'
     | '/chat'
     | '/vani'
     | '/vani-headless'
     | '/voice'
+    | '/blogs/$slug'
     | '/vani/docs'
     | '/vani/playground'
+    | '/blogs/'
+    | '/blogs/tags/$tag'
     | '/demo/api/names'
     | '/demo/start/api-request'
     | '/demo/start/server-funcs'
@@ -168,8 +207,11 @@ export interface FileRouteTypes {
     | '/vani'
     | '/vani-headless'
     | '/voice'
+    | '/blogs/$slug'
     | '/vani/docs'
     | '/vani/playground'
+    | '/blogs'
+    | '/blogs/tags/$tag'
     | '/demo/api/names'
     | '/demo/start/api-request'
     | '/demo/start/server-funcs'
@@ -180,12 +222,16 @@ export interface FileRouteTypes {
   id:
     | '__root__'
     | '/'
+    | '/blogs'
     | '/chat'
     | '/vani'
     | '/vani-headless'
     | '/voice'
+    | '/blogs/$slug'
     | '/vani/docs'
     | '/vani/playground'
+    | '/blogs/'
+    | '/blogs/tags/$tag'
     | '/demo/api/names'
     | '/demo/start/api-request'
     | '/demo/start/server-funcs'
@@ -197,6 +243,7 @@ export interface FileRouteTypes {
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  BlogsRoute: typeof BlogsRouteWithChildren
   ChatRoute: typeof ChatRoute
   VaniRoute: typeof VaniRouteWithChildren
   VaniHeadlessRoute: typeof VaniHeadlessRoute
@@ -240,12 +287,26 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ChatRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/blogs': {
+      id: '/blogs'
+      path: '/blogs'
+      fullPath: '/blogs'
+      preLoaderRoute: typeof BlogsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/': {
       id: '/'
       path: '/'
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
+    }
+    '/blogs/': {
+      id: '/blogs/'
+      path: '/'
+      fullPath: '/blogs/'
+      preLoaderRoute: typeof BlogsIndexRouteImport
+      parentRoute: typeof BlogsRoute
     }
     '/vani/playground': {
       id: '/vani/playground'
@@ -260,6 +321,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/vani/docs'
       preLoaderRoute: typeof VaniDocsRouteImport
       parentRoute: typeof VaniRoute
+    }
+    '/blogs/$slug': {
+      id: '/blogs/$slug'
+      path: '/$slug'
+      fullPath: '/blogs/$slug'
+      preLoaderRoute: typeof BlogsSlugRouteImport
+      parentRoute: typeof BlogsRoute
     }
     '/demo/start/server-funcs': {
       id: '/demo/start/server-funcs'
@@ -281,6 +349,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/demo/api/names'
       preLoaderRoute: typeof DemoApiNamesRouteImport
       parentRoute: typeof rootRouteImport
+    }
+    '/blogs/tags/$tag': {
+      id: '/blogs/tags/$tag'
+      path: '/tags/$tag'
+      fullPath: '/blogs/tags/$tag'
+      preLoaderRoute: typeof BlogsTagsTagRouteImport
+      parentRoute: typeof BlogsRoute
     }
     '/demo/start/ssr/': {
       id: '/demo/start/ssr/'
@@ -313,6 +388,20 @@ declare module '@tanstack/react-router' {
   }
 }
 
+interface BlogsRouteChildren {
+  BlogsSlugRoute: typeof BlogsSlugRoute
+  BlogsIndexRoute: typeof BlogsIndexRoute
+  BlogsTagsTagRoute: typeof BlogsTagsTagRoute
+}
+
+const BlogsRouteChildren: BlogsRouteChildren = {
+  BlogsSlugRoute: BlogsSlugRoute,
+  BlogsIndexRoute: BlogsIndexRoute,
+  BlogsTagsTagRoute: BlogsTagsTagRoute,
+}
+
+const BlogsRouteWithChildren = BlogsRoute._addFileChildren(BlogsRouteChildren)
+
 interface VaniRouteChildren {
   VaniDocsRoute: typeof VaniDocsRoute
   VaniPlaygroundRoute: typeof VaniPlaygroundRoute
@@ -327,6 +416,7 @@ const VaniRouteWithChildren = VaniRoute._addFileChildren(VaniRouteChildren)
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  BlogsRoute: BlogsRouteWithChildren,
   ChatRoute: ChatRoute,
   VaniRoute: VaniRouteWithChildren,
   VaniHeadlessRoute: VaniHeadlessRoute,
