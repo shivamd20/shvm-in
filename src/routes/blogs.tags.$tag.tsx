@@ -4,18 +4,18 @@ import { getPostsByTag, getTagByName } from '@/lib/blog'
 import { createFileRoute, notFound, Link } from '@tanstack/react-router'
 
 export const Route = createFileRoute('/blogs/tags/$tag')({
-  // head: ({ params }) => ({
-  //   meta: [
-  //     { title: `Tag: ${params.tag} | shvm.in` },
-  //     { name: 'description', content: `Posts tagged “${params.tag}”.` },
-  //   ],
-  // }),
   loader: (ctx) => {
     const entry = getTagByName(ctx.params.tag)
     if (!entry) throw notFound()
     const posts = getPostsByTag(ctx.params.tag)
     return { entry, posts }
   },
+  head: ({ params }) => ({
+    meta: [
+      { title: `Tag: ${params.tag} | shvm.in` },
+      { name: 'description', content: `Posts tagged “${params.tag}”.` },
+    ],
+  }),
   component: TagRoute,
 })
 

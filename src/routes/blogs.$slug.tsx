@@ -1,9 +1,14 @@
 import { BlogLayout } from '@/components/blog/BlogLayout'
 import { BlogPost } from '@/components/blog/BlogPost'
-import {getPostBySlug, getPostMetaBySlug} from '@/lib/blog'
+import { getPostBySlug, getPostMetaBySlug } from '@/lib/blog'
 import { createFileRoute, notFound } from '@tanstack/react-router'
 
 export const Route = createFileRoute('/blogs/$slug')({
+  loader: async (ctx) => {
+    const post = (await getPostBySlug(ctx.params.slug))!
+    if (!post || !post.meta.published) throw notFound()
+    return post
+  },
   head: ({ params }) => {
     const meta = getPostMetaBySlug(params.slug)
     const title = meta?.published ? `${meta.title} | shvm.in` : 'Not Found | shvm.in'
@@ -16,11 +21,6 @@ export const Route = createFileRoute('/blogs/$slug')({
         { name: 'robots', content: meta?.published ? 'index,follow' : 'noindex' },
       ],
     }
-  },
-  loader: async (ctx) => {
-    const post = (await getPostBySlug(ctx.params.slug))!
-    if (!post || !post.meta.published) throw notFound()
-    return post
   },
   component: BlogPostRoute,
 })

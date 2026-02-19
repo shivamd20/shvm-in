@@ -136,19 +136,24 @@ body {
 }
 
 @keyframes conversation-shake {
+
   0%,
   100% {
     transform: translateX(0);
   }
+
   20% {
     transform: translateX(-2px);
   }
+
   40% {
     transform: translateX(2px);
   }
+
   60% {
     transform: translateX(-1px);
   }
+
   80% {
     transform: translateX(1px);
   }
@@ -178,14 +183,14 @@ body {
 
 @media (prefers-color-scheme: dark) {
   .blog-shell {
-    --blog-bg: #111214;
-    --blog-fg: rgba(255, 255, 255, 0.92);
-    --blog-muted: rgba(255, 255, 255, 0.64);
-    --blog-border: rgba(255, 255, 255, 0.12);
-    --blog-accent: #ff7a3d;
-    --blog-accent-soft: rgba(255, 122, 61, 0.2);
-    --blog-code-bg: rgba(255, 255, 255, 0.06);
-    --blog-shadow: 0 1px 0 rgba(255, 255, 255, 0.06);
+    --blog-bg: var(--color-background);
+    --blog-fg: var(--color-foreground);
+    --blog-muted: var(--color-muted-foreground);
+    --blog-border: var(--color-secondary);
+    --blog-accent: var(--color-accent);
+    --blog-accent-soft: rgba(255, 107, 43, 0.18);
+    --blog-code-bg: var(--color-secondary);
+    --blog-shadow: none;
   }
 }
 
@@ -460,6 +465,7 @@ body {
   .blog-post__body {
     grid-template-columns: 1fr;
   }
+
   .blog-post__aside {
     display: none;
   }
@@ -628,6 +634,7 @@ body {
   .blog-code-pre--light {
     display: none;
   }
+
   .blog-code-pre--dark {
     display: block;
   }
@@ -682,6 +689,7 @@ body {
   .blog-progress__bar {
     transition: none;
   }
+
   .blog-header {
     backdrop-filter: none;
     -webkit-backdrop-filter: none;

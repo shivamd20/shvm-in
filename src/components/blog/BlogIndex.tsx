@@ -1,7 +1,6 @@
 import { getAllPosts, getAllTags } from '@/lib/blog'
 import { Link } from '@tanstack/react-router'
 import { TagChip } from './TagChip'
-import { CodeBlock } from './CodeBlock'
 
 export function BlogIndex() {
   const posts = getAllPosts()
@@ -11,12 +10,8 @@ export function BlogIndex() {
     <div className="blog-container">
       <div className="blog-index__hero">
         <h1 className="blog-index__title">Blogs</h1>
-        <p className="blog-index__subtitle">
-          Calm, static-first notes on systems and product engineering.
+        <p className="blog-index__subtitle"> Notes on systems and product engineering.
         </p>
-        <div className="blog-index__hint" aria-label="Authoring hint">
-          <CodeBlock code={'pnpm new-post "My Title"'} language="bash" />
-        </div>
       </div>
 
       {tags.length ? (

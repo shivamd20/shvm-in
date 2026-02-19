@@ -1,4 +1,4 @@
-import { createFileRoute, useNavigate } from '@tanstack/react-router'
+import { createFileRoute, useNavigate, Link } from '@tanstack/react-router'
 import { Hero } from '@/components/Hero'
 import { HeroInput } from '@/components/HeroInput'
 import { PromptChips } from '@/components/PromptChips'
@@ -8,6 +8,7 @@ import { ExperienceItem } from '@/components/ExperienceItem'
 import projectsData from '@/data/projects.json'
 import experienceData from '@/data/experience.json'
 import profileData from '@/data/profile.json'
+import { getAllPosts } from '@/lib/blog'
 
 export const Route = createFileRoute('/')({
   component: Index,
@@ -15,6 +16,7 @@ export const Route = createFileRoute('/')({
 
 function Index() {
   const navigate = useNavigate();
+  const recentPosts = getAllPosts().slice(0, 3)
   const featuredProjects = [
     projectsData.projects.find((p) => p.id === "shvm-in"),
     projectsData.projects.find((p) => p.id === "vani"),
@@ -95,6 +97,41 @@ function Index() {
             </div>
             <div className="text-center mt-12">
               <button onClick={() => handlePromptSelect("Show all projects")} className="btn-secondary cursor-pointer">View All via Chat</button>
+            </div>
+          </section>
+
+          {/* Recent Writings */}
+          <section id="writings">
+            <SectionHeader
+              title="Recent Writings"
+              subtitle="Notes on systems, product engineering, and patterns."
+            />
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              {recentPosts.map((p) => (
+                <Link
+                  key={p.slug}
+                  to="/blogs/$slug"
+                  params={{ slug: p.slug }}
+                  className="group relative p-6 rounded-2xl border border-white/5 bg-white/5 hover:border-accent/20 transition-all hover:bg-white/10 flex flex-col justify-between h-full"
+                >
+                  <div>
+                    <div className="text-xs font-mono text-zinc-500 mb-3">{p.date}</div>
+                    <h3 className="text-lg font-display font-medium text-white group-hover:text-accent transition-colors mb-2">
+                      {p.title}
+                    </h3>
+                    <p className="text-sm text-zinc-400 line-clamp-3 leading-relaxed">
+                      {p.summary}
+                    </p>
+                  </div>
+                  <div className="mt-4 flex items-center gap-2 text-xs font-mono text-zinc-500 group-hover:text-zinc-300">
+                    <span>Read post</span>
+                    <span className="group-hover:translate-x-1 transition-transform">→</span>
+                  </div>
+                </Link>
+              ))}
+            </div>
+            <div className="text-center mt-12">
+              <Link to="/blogs" className="btn-secondary">View All Posts</Link>
             </div>
           </section>
 
