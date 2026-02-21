@@ -1,89 +1,22 @@
-import { useState } from "react";
-import { useVoiceSession } from "@shvm/vani-client/headless";
-import { FullScreenMode } from "../modes/FullScreenMode";
-import { PipMode } from "../modes/PipMode";
-import type { ClientMessage, VoiceConfig } from "@shvm/vani-client/shared";
+import { useState, useEffect, Suspense, lazy } from "react";
+import type { VaniProps } from "../types";
 
-export interface VaniProps {
-  onError?: (error: string) => void;
-  onMessage?: (msg: { role: "user" | "assistant"; content: string }) => void;
-  initialTranscript?: ClientMessage[];
-  defaultMode?: "full" | "pip";
-  mode?: "full" | "pip";
-  onModeChange?: (mode: "full" | "pip") => void;
-  initialConfig?: VoiceConfig;
-  /**
-   * Base server URL for websocket URL construction.
-   *
-   * Default: `https://shvm.in`
-   */
-  serverUrl?: string;
-}
+const VaniClient = lazy(() => import("./VaniClient"));
 
-export function Vani({
-  onError,
-  onMessage,
-  initialTranscript,
-  defaultMode = "full",
-  mode: controlledMode,
-  onModeChange,
-  initialConfig,
-  serverUrl,
-}: VaniProps) {
-  const [internalMode, setInternalMode] = useState<"full" | "pip">(defaultMode);
-  const [config, setConfig] = useState<VoiceConfig>(
-    initialConfig || {
-      sttModel: "@cf/openai/whisper-tiny-en",
-      llmModel: "@cf/meta/llama-3.1-8b-instruct",
-      tts: { model: "@cf/deepgram/aura-2-en", speaker: "luna" },
-    },
-  );
-  const [feedback, setFeedback] = useState<string | null>(null);
+export type { VaniProps };
 
-  const currentMode = controlledMode ?? internalMode;
+export function Vani(props: VaniProps) {
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
-  const handleFeedback = (message: string) => {
-    setFeedback(message);
-    setTimeout(() => setFeedback(null), 3000);
-  };
-
-  const session = useVoiceSession({
-    onError,
-    onMessage,
-    initialTranscript,
-    config,
-    onFeedback: handleFeedback,
-    serverUrl,
-  });
-
-  const handleToggleMode = () => {
-    const newMode = currentMode === "full" ? "pip" : "full";
-    if (controlledMode === undefined) {
-      setInternalMode(newMode);
-    }
-    onModeChange?.(newMode);
-  };
+  if (!mounted) return null;
 
   return (
-    <div className="vani-root">
-      {currentMode === "pip" ? (
-        <PipMode
-          {...session}
-          onTogglePip={handleToggleMode}
-          config={config}
-          setConfig={setConfig}
-          feedback={feedback}
-        />
-      ) : (
-        <FullScreenMode
-          {...session}
-          onTogglePip={handleToggleMode}
-          config={config}
-          setConfig={setConfig}
-          feedback={feedback}
-        />
-      )}
-    </div>
+    <Suspense fallback={null}>
+      <VaniClient {...props} />
+    </Suspense>
   );
 }
 

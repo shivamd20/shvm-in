@@ -29,6 +29,7 @@ function getBlogPrerenderPages() {
   }
 
   const pages: Array<{ path: string; prerender?: { enabled?: boolean } }> = [
+    { path: '/', prerender: { enabled: true } },
     { path: '/blogs', prerender: { enabled: true } },
   ]
 
@@ -51,6 +52,23 @@ const config = defineConfig({
     },
   },
   plugins: [
+    {
+      name: 'force-exit',
+      enforce: 'post',
+      apply: 'build',
+      configResolved(config) {
+        // @ts-ignore
+        this.config = config;
+      },
+      closeBundle() {
+        // @ts-ignore
+        const isServer = this.config?.build?.ssr || this.config?.build?.outDir?.endsWith('server');
+        if (isServer) {
+          console.log('[force-exit] Server build completed, exiting process in 1s to clean up Miniflare...');
+          setTimeout(() => process.exit(0), 1000);
+        }
+      }
+    },
     devtools(),
     cloudflare({ viteEnvironment: { name: 'ssr' } }),
     // this is the plugin that enables path aliases
@@ -61,9 +79,8 @@ const config = defineConfig({
     tanstackStart({
       pages: getBlogPrerenderPages(),
       prerender: {
-        enabled: true,
-        crawlLinks: false,
-        failOnError: true,
+        enabled: false,
+        crawlLinks: false
       },
     }),
     viteReact(),

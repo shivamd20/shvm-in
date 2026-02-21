@@ -14,12 +14,17 @@ const VAD_BASE_ASSET_PATH = 'https://cdn.jsdelivr.net/npm/@ricky0123/vad-web@0.0
 const VAD_MODEL_URL = 'https://cdn.jsdelivr.net/npm/@ricky0123/vad-web@0.0.29/dist/silero_vad_v5.onnx';
 
 // Set WASM paths for ONNX Runtime
-if (typeof window !== 'undefined') {
-    ort.env.wasm.wasmPaths = ONNX_WASM_BASE_PATH;
-    // Disable proxy to avoid dynamic import of worker scripts which Vite tries to optimize
-    ort.env.wasm.proxy = false;
-    // Avoid SIMD if it's causing issues, though usually SIMD is better
-    // ort.env.wasm.simd = false; 
+let ortConfigured = false;
+function ensureOrtConfig() {
+    if (ortConfigured) return;
+    if (typeof window !== 'undefined') {
+        ort.env.wasm.wasmPaths = ONNX_WASM_BASE_PATH;
+        // Disable proxy to avoid dynamic import of worker scripts which Vite tries to optimize
+        ort.env.wasm.proxy = false;
+        // Avoid SIMD if it's causing issues, though usually SIMD is better
+        // ort.env.wasm.simd = false; 
+    }
+    ortConfigured = true;
 }
 
 // --- Types ---
@@ -109,6 +114,9 @@ export function useVoiceSession(props: UseVoiceSessionProps = {}) {
         sessionId,
         wsPath
     } = props;
+
+    // Initialize ORT config lazily
+    ensureOrtConfig();
 
     // 1. Initialize Machine
     const [snapshot, send, actorRef] = useActor(clientMachine);

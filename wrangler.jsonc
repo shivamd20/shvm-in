@@ -11,10 +11,11 @@
 	],
 	"main": "src/server.ts",
 	"observability": {
-		"enabled": true
+		"enabled": false
 	},
 	"ai": {
-		"binding": "AI"
+		"binding": "AI",
+		"remote": true
 	},
 	/**
 	 * Durable Objects

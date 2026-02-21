@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useMemo, useState } from "react";
-import { Vani } from "@shvm/vani-client/ui";
+import React, { useMemo, useState, useEffect, Suspense } from "react";
+const Vani = React.lazy(() => import("@shvm/vani-client/ui").then(m => ({ default: m.Vani })));
 
 const DEFAULT_SERVER_URL = "https://shvm.in";
 
@@ -15,6 +15,11 @@ function VaniPlaygroundRoute() {
   const [instance, setInstance] = useState(0);
 
   const vaniKey = useMemo(() => `${instance}:${serverUrl}:${mode}`, [instance, mode, serverUrl]);
+
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   return (
     <div className="min-h-screen bg-black text-zinc-100 overflow-x-hidden">
@@ -87,7 +92,11 @@ function VaniPlaygroundRoute() {
         </div>
       </div>
 
-      <Vani key={vaniKey} serverUrl={serverUrl} defaultMode={mode} />
+      {mounted && (
+        <Suspense fallback={<div className="fixed bottom-4 right-4 text-xs text-zinc-500">Loading Vani...</div>}>
+          <Vani key={vaniKey} serverUrl={serverUrl} defaultMode={mode} />
+        </Suspense>
+      )}
     </div>
   );
 }
