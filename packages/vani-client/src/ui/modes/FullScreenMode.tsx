@@ -75,8 +75,7 @@ export function FullScreenMode({
       <div className="fixed inset-0 pointer-events-none">
         <div
           className={`absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[60vh] h-[60vh] blur-[120px] rounded-full opacity-20 transition-all duration-700
-          ${
-            isListening
+          ${isListening
               ? "bg-green-500 scale-125"
               : isThinking
                 ? "bg-yellow-500 scale-110"
@@ -87,7 +86,7 @@ export function FullScreenMode({
                     : isDisconnected
                       ? "bg-zinc-800 scale-90"
                       : "bg-zinc-800 scale-100"
-          }`}
+            }`}
         />
       </div>
 
@@ -184,6 +183,17 @@ export function FullScreenMode({
                   ))}
                 </select>
               </div>
+
+              <div>
+                <label className="block text-xs font-mono text-zinc-500 mb-1 uppercase">MCP Server Proxy URL</label>
+                <input
+                  type="text"
+                  placeholder="https://shvm.in/mcp"
+                  value={localConfig.mcpServer || ""}
+                  onChange={(e) => setLocalConfig({ ...localConfig, mcpServer: e.target.value })}
+                  className="w-full bg-zinc-950 border border-zinc-800 rounded px-3 py-2 text-sm focus:border-blue-500 outline-none"
+                />
+              </div>
             </div>
 
             <div className="mt-6 flex justify-end gap-2">
@@ -222,26 +232,25 @@ export function FullScreenMode({
 
       <div className="relative z-10 flex flex-col items-center gap-6">
         <div className="text-center">
-            <h1 className="text-3xl md:text-4xl font-display font-semibold tracking-tight">
-              {isListening
-                ? "Listening"
-                : isThinking
-                  ? "Processing"
-                  : isSpeaking
-                    ? "Speaking"
-                    : isConnecting
-                      ? "Connecting"
-                      : isError
-                        ? "Error"
-                        : isDisconnected
-                          ? "Ready"
-                          : "Ready"}
-            </h1>
+          <h1 className="text-3xl md:text-4xl font-display font-semibold tracking-tight">
+            {isListening
+              ? "Listening"
+              : isThinking
+                ? "Processing"
+                : isSpeaking
+                  ? "Speaking"
+                  : isConnecting
+                    ? "Connecting"
+                    : isError
+                      ? "Error"
+                      : isDisconnected
+                        ? "Ready"
+                        : "Ready"}
+          </h1>
 
           <div className="mt-3 flex justify-center">
             <div
-              className={`h-1.5 rounded-full transition-all duration-500 ${
-                isListening
+              className={`h-1.5 rounded-full transition-all duration-500 ${isListening
                   ? "w-16 bg-green-500"
                   : isThinking
                     ? "w-16 bg-yellow-500 animate-pulse"
@@ -252,7 +261,7 @@ export function FullScreenMode({
                         : isError
                           ? "w-16 bg-red-500 conversation-shake"
                           : "w-2 bg-zinc-700"
-              }`}
+                }`}
             />
           </div>
         </div>
@@ -261,18 +270,17 @@ export function FullScreenMode({
           disabled={isConnecting || isError || isDisconnected}
           onClick={() => (isThinking || isSpeaking) && cancel()}
           className={`group relative w-48 h-48 rounded-full flex items-center justify-center border-4 transition-all duration-300 outline-none
-            ${
-              isListening
-                ? "border-green-500/50 bg-green-500/10 scale-105 shadow-[0_0_40px_rgba(34,197,94,0.3)]"
-                : isThinking
-                  ? "border-yellow-500/50 bg-yellow-500/10 shadow-[0_0_40px_rgba(234,179,8,0.3)] animate-pulse cursor-pointer hover:border-red-500/50 hover:bg-red-500/10"
-                  : isSpeaking
-                    ? "border-blue-500/50 bg-blue-500/10 shadow-[0_0_40px_rgba(59,130,246,0.3)] cursor-pointer hover:border-red-500/50 hover:bg-red-500/10"
-                    : isError
-                      ? "border-red-500/50 bg-red-500/10 hover:border-red-400 cursor-not-allowed"
-                      : isDisconnected
-                        ? "border-zinc-800/50 bg-black/50 cursor-not-allowed"
-                        : "border-zinc-800 bg-zinc-900 hover:border-zinc-700 hover:bg-zinc-800"
+            ${isListening
+              ? "border-green-500/50 bg-green-500/10 scale-105 shadow-[0_0_40px_rgba(34,197,94,0.3)]"
+              : isThinking
+                ? "border-yellow-500/50 bg-yellow-500/10 shadow-[0_0_40px_rgba(234,179,8,0.3)] animate-pulse cursor-pointer hover:border-red-500/50 hover:bg-red-500/10"
+                : isSpeaking
+                  ? "border-blue-500/50 bg-blue-500/10 shadow-[0_0_40px_rgba(59,130,246,0.3)] cursor-pointer hover:border-red-500/50 hover:bg-red-500/10"
+                  : isError
+                    ? "border-red-500/50 bg-red-500/10 hover:border-red-400 cursor-not-allowed"
+                    : isDisconnected
+                      ? "border-zinc-800/50 bg-black/50 cursor-not-allowed"
+                      : "border-zinc-800 bg-zinc-900 hover:border-zinc-700 hover:bg-zinc-800"
             }`}
         >
           {isListening ? (
@@ -318,18 +326,16 @@ export function FullScreenMode({
             transcript.map((msg: any) => (
               <div
                 key={msg.id}
-                className={`flex flex-col space-y-1 animate-in slide-in-from-bottom-2 fade-in duration-300 ${
-                  msg.role === "user" ? "items-end" : "items-start"
-                }`}
+                className={`flex flex-col space-y-1 animate-in slide-in-from-bottom-2 fade-in duration-300 ${msg.role === "user" ? "items-end" : "items-start"
+                  }`}
               >
                 <span className="text-[10px] font-mono text-zinc-600 uppercase tracking-widest">{msg.role}</span>
                 <div
                   className={`px-4 py-2 rounded-2xl max-w-[90%] text-sm leading-relaxed shadow-lg break-words
-                ${
-                  msg.role === "user"
-                    ? "bg-zinc-800/80 text-zinc-200 rounded-tr-sm border border-zinc-700/50"
-                    : "bg-blue-900/20 text-blue-100 border border-blue-500/20 rounded-tl-sm backdrop-blur-sm"
-                }`}
+                ${msg.role === "user"
+                      ? "bg-zinc-800/80 text-zinc-200 rounded-tr-sm border border-zinc-700/50"
+                      : "bg-blue-900/20 text-blue-100 border border-blue-500/20 rounded-tl-sm backdrop-blur-sm"
+                    }`}
                 >
                   {msg.content}
                 </div>

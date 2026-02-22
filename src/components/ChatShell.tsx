@@ -13,6 +13,7 @@ export interface Message {
     uiData?: any;
     followUps?: string[];
     isHidden?: boolean;
+    toolCalls?: { name: string, status: 'calling' | 'finished' }[];
 }
 
 export function ChatShell() {
@@ -104,28 +105,29 @@ export function ChatShell() {
 
                         if (chunk.type === 'TOOL_CALL_START') {
                             if (!assistantMessageCreated) {
-                                finalMessages = [...finalMessages, { role: 'assistant', content: "" }];
+                                finalMessages = [...finalMessages, { role: 'assistant', content: "", toolCalls: [] }];
                                 setMessages(finalMessages);
                                 assistantMessageCreated = true;
                             }
-                            assistantContent += `\n\n> ⏳ *Using tool:* \`${chunk.toolName}\`...\n\n`;
                             setMessages(prev => {
                                 const newMessages = [...prev];
                                 const lastMsg = newMessages[newMessages.length - 1];
                                 if (lastMsg.role === 'assistant') {
-                                    lastMsg.content = assistantContent;
+                                    lastMsg.toolCalls = lastMsg.toolCalls || [];
+                                    lastMsg.toolCalls.push({ name: chunk.toolName, status: 'calling' });
                                 }
                                 return newMessages;
                             });
                         }
 
                         if (chunk.type === 'TOOL_CALL_END') {
-                            assistantContent += `\n\n> ✅ *Tool finished.* \n\n`;
                             setMessages(prev => {
                                 const newMessages = [...prev];
                                 const lastMsg = newMessages[newMessages.length - 1];
-                                if (lastMsg.role === 'assistant') {
-                                    lastMsg.content = assistantContent;
+                                if (lastMsg.role === 'assistant' && lastMsg.toolCalls) {
+                                    // only finish the un-finished one to prevent double finish issues
+                                    const activeTool = lastMsg.toolCalls.slice().reverse().find(t => t.name === chunk.toolName && t.status === 'calling');
+                                    if (activeTool) activeTool.status = 'finished';
                                 }
                                 return newMessages;
                             });

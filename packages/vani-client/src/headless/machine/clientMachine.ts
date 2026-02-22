@@ -3,11 +3,11 @@ import { createBlobUrl } from "../adapters/blobUrl";
 import type { ClientMessage, SessionStatus, VoiceStatus } from "../../shared/types/voice";
 
 export const socketActor = fromCallback(() => {
-  return () => {};
+  return () => { };
 });
 
 export const audioActor = fromCallback(() => {
-  return () => {};
+  return () => { };
 });
 
 export interface DebugEvent {
@@ -42,7 +42,9 @@ export type ClientEvent =
   | { type: "AUDIO_PLAYBACK_END" }
   | { type: "LOG_EVENT"; eventType: DebugEvent["type"]; details: unknown; blob?: Blob }
   | { type: "TIMEOUT" }
-  | { type: "CANCEL" };
+  | { type: "CANCEL" }
+  | { type: "TOOL_CALL_START"; toolName: string }
+  | { type: "TOOL_CALL_END"; toolName: string };
 
 
 // --- Machine ---
@@ -152,6 +154,40 @@ export const clientMachine = setup({
         ];
       },
     }),
+    addToolCallStart: assign({
+      transcript: ({ context, event }) => {
+        if (event.type !== "TOOL_CALL_START") return context.transcript;
+        const newTranscript = [...context.transcript];
+        if (newTranscript.length === 0 || newTranscript[newTranscript.length - 1].role !== "assistant") {
+          newTranscript.push({
+            id: Math.random().toString(36).slice(2),
+            role: "assistant",
+            content: "",
+            timestamp: Date.now(),
+            toolCalls: []
+          });
+        }
+
+        const lastMsg = newTranscript[newTranscript.length - 1];
+        lastMsg.toolCalls = lastMsg.toolCalls || [];
+        lastMsg.toolCalls.push({ name: event.toolName, status: "calling" });
+        return newTranscript;
+      }
+    }),
+    addToolCallEnd: assign({
+      transcript: ({ context, event }) => {
+        if (event.type !== "TOOL_CALL_END") return context.transcript;
+        const newTranscript = [...context.transcript];
+        if (newTranscript.length > 0) {
+          const lastMsg = newTranscript[newTranscript.length - 1];
+          if (lastMsg.role === "assistant" && lastMsg.toolCalls) {
+            const activeTool = lastMsg.toolCalls.slice().reverse().find((t: any) => t.name === event.toolName && t.status === 'calling');
+            if (activeTool) activeTool.status = 'finished';
+          }
+        }
+        return newTranscript;
+      }
+    }),
     clearError: assign({
       error: null,
     }),
@@ -176,6 +212,8 @@ export const clientMachine = setup({
   on: {
     LOG_EVENT: { actions: "logEvent" },
     ADD_MESSAGE: { actions: ["addMessage", "clearError"] },
+    TOOL_CALL_START: { actions: "addToolCallStart" },
+    TOOL_CALL_END: { actions: "addToolCallEnd" },
     SET_ERROR: { target: ".error", actions: "setError" },
     DISCONNECT: { target: ".disconnected", actions: "setDisconnected" },
   },

@@ -3,6 +3,25 @@ import { createActor } from 'xstate';
 import { serverMachine } from '@vani/server/runtime/machine';
 import type { VoiceConfig } from '@shvm/vani-client/shared';
 
+import { runAgentWithMCP } from '../../../lib/chat';
+import { toHttpStream } from '@tanstack/ai';
+
+// Mock tanstack/ai to avoid window references in vitest
+vi.mock('@tanstack/ai', async (importOriginal) => {
+    return {
+        ...(await importOriginal()) as any,
+        toHttpStream: vi.fn(),
+    };
+});
+
+vi.mock('../../../lib/chat', () => ({
+    runAgentWithMCP: vi.fn(),
+}));
+
+vi.mock('../../../lib/mcp-client', () => ({
+    createMCPConsumer: vi.fn(),
+}));
+
 describe('Server Machine', () => {
     let mockEnv: any;
     let mockStorage: any;
@@ -10,6 +29,7 @@ describe('Server Machine', () => {
     let sendBinarySpy: any;
 
     beforeEach(() => {
+        vi.clearAllMocks();
         mockEnv = {
             AI: {
                 run: vi.fn(async (_model: string, input: any) => {
@@ -17,15 +37,6 @@ describe('Server Machine', () => {
                         await new Promise((r) => setTimeout(r, 10));
                         return { text: 'Hello' };
                     }
-
-                    if (input?.stream) {
-                        return new ReadableStream({
-                            start(controller) {
-                                controller.close();
-                            }
-                        });
-                    }
-
                     return { text: 'Hello' };
                 }),
             }
@@ -37,6 +48,17 @@ describe('Server Machine', () => {
         };
         broadcastSpy = vi.fn();
         sendBinarySpy = vi.fn();
+
+        (toHttpStream as any).mockReturnValue(
+            new ReadableStream({
+                start(controller) {
+                    controller.enqueue(new TextEncoder().encode(''));
+                    controller.close();
+                }
+            })
+        );
+
+        (runAgentWithMCP as any).mockResolvedValue({});
     });
 
     const createServer = () => {
@@ -91,5 +113,41 @@ describe('Server Machine', () => {
         expect(feedbackCalls2.length).toBeGreaterThan(feedbackCalls1.length);
 
         actor.stop();
+    });
+
+    it('should handle STT errors properly and transition to listening', async () => {
+        const actor = createServer();
+        mockEnv.AI.run.mockRejectedValueOnce(new Error('STT Service Unavailable'));
+
+        actor.start();
+        actor.send({ type: 'START' });
+        actor.send({ type: 'AUDIO_CHUNK', data: new ArrayBuffer(10) });
+        actor.send({ type: 'STOP' }); // triggers thinking, calls sttActor
+
+        // wait for promise to reject
+        await new Promise(r => setTimeout(r, 20));
+
+        // on error, it goes back to listening and emits an error broadcast
+        expect(actor.getSnapshot().value).toBe('listening');
+        expect(broadcastSpy).toHaveBeenCalledWith(expect.objectContaining({ type: 'error', reason: expect.stringContaining('STT Service Unavailable') }));
+    });
+
+    it('should handle LLM errors properly and transition to listening', async () => {
+        const actor = createServer();
+
+        (runAgentWithMCP as any).mockRejectedValueOnce(new Error('LLM Service Unavailable'));
+
+        actor.start();
+        actor.send({ type: 'START' });
+        actor.send({ type: 'TEXT_MESSAGE', content: 'Say hello' }); // Bypass STT straight to speaking
+
+        expect(actor.getSnapshot().value).toBe('speaking');
+
+        // wait for LLM promise to reject (it's inside actor fromCallback)
+        await new Promise(r => setTimeout(r, 20));
+
+        // on error.platform.llm, it goes to listening
+        expect(actor.getSnapshot().value).toBe('listening');
+        expect(broadcastSpy).toHaveBeenCalledWith(expect.objectContaining({ type: 'error', reason: expect.stringContaining('LLM Service Unavailable') }));
     });
 });

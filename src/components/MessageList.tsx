@@ -9,6 +9,7 @@ interface Message {
     uiData?: any;
     followUps?: string[];
     isHidden?: boolean;
+    toolCalls?: { name: string, status: 'calling' | 'finished' }[];
 }
 
 export function MessageList({ messages, loading, onFollowUp }: { messages: Message[], loading: boolean, onFollowUp: (q: string) => void }) {
@@ -17,34 +18,56 @@ export function MessageList({ messages, loading, onFollowUp }: { messages: Messa
             {messages.filter(m => !m.isHidden).map((msg, idx) => (
                 <div key={idx} className={`flex flex-col w-full ${msg.role === 'user' ? 'items-end' : 'items-start'} animate-fade-in space-y-3`}>
 
+                    {/* Tool Calls */}
+                    {msg.role === 'assistant' && msg.toolCalls && msg.toolCalls.length > 0 && (
+                        <div className="flex flex-col space-y-2 mb-1 pl-2">
+                            {msg.toolCalls.map((tc, i) => (
+                                <div key={i} className="flex items-center space-x-2 text-xs font-mono text-zinc-500">
+                                    {tc.status === 'calling' ? (
+                                        <div className="w-3 h-3 rounded-full border-2 border-zinc-500 border-t-accent animate-spin" />
+                                    ) : (
+                                        <div className="text-zinc-600">✓</div>
+                                    )}
+                                    <span>
+                                        {tc.status === 'calling'
+                                            ? `MCP Server analyzing via \`${tc.name}\`...`
+                                            : `MCP Server finished \`${tc.name}\``}
+                                    </span>
+                                </div>
+                            ))}
+                        </div>
+                    )}
+
                     {/* Main Bubble */}
-                    <div className={`
-            responsive-message px-5 py-4 rounded-3xl max-w-[85%] text-sm leading-relaxed shadow-sm
-            ${msg.role === 'user'
-                            ? 'bg-zinc-800 text-white rounded-tr-sm self-end border border-zinc-700/50'
-                            : 'bg-zinc-900/40 text-zinc-100 rounded-tl-sm self-start border border-white/5 backdrop-blur-sm'
-                        }
-          `}>
-                        {/* If assistant, render markdown */}
-                        {msg.role === 'assistant' ? (
-                            <div className="prose prose-invert prose-sm max-w-none">
-                                <ReactMarkdown
-                                    components={{
-                                        h3: ({ ...props }) => <h3 className="font-display font-medium text-white mb-2 text-base border-b border-white/5 pb-2 inline-block" {...props} />,
-                                        strong: ({ ...props }) => <strong className="font-medium text-accent" {...props} />,
-                                        a: ({ ...props }) => <a className="text-accent hover:text-white underline underline-offset-4 transition-colors" target="_blank" rel="noopener noreferrer" {...props} />,
-                                        code: ({ ...props }) => <code className="bg-zinc-950 px-1.5 py-0.5 rounded text-xs font-mono text-zinc-300 border border-white/5" {...props} />,
-                                        ul: ({ ...props }) => <ul className="list-disc pl-4 space-y-1 my-2 marker:text-zinc-600" {...props} />,
-                                        li: ({ ...props }) => <li className="pl-1" {...props} />
-                                    }}
-                                >
-                                    {msg.content}
-                                </ReactMarkdown>
-                            </div>
-                        ) : (
-                            <p className="font-mono text-xs md:text-sm">{msg.content}</p>
-                        )}
-                    </div>
+                    {msg.content && (
+                        <div className={`
+                responsive-message px-5 py-4 rounded-3xl max-w-[85%] text-sm leading-relaxed shadow-sm
+                ${msg.role === 'user'
+                                ? 'bg-zinc-800 text-white rounded-tr-sm self-end border border-zinc-700/50'
+                                : 'bg-zinc-900/40 text-zinc-100 rounded-tl-sm self-start border border-white/5 backdrop-blur-sm'
+                            }
+            `}>
+                            {/* If assistant, render markdown */}
+                            {msg.role === 'assistant' ? (
+                                <div className="prose prose-invert prose-sm max-w-none">
+                                    <ReactMarkdown
+                                        components={{
+                                            h3: ({ ...props }) => <h3 className="font-display font-medium text-white mb-2 text-base border-b border-white/5 pb-2 inline-block" {...props} />,
+                                            strong: ({ ...props }) => <strong className="font-medium text-accent" {...props} />,
+                                            a: ({ ...props }) => <a className="text-accent hover:text-white underline underline-offset-4 transition-colors" target="_blank" rel="noopener noreferrer" {...props} />,
+                                            code: ({ ...props }) => <code className="bg-zinc-950 px-1.5 py-0.5 rounded text-xs font-mono text-zinc-300 border border-white/5" {...props} />,
+                                            ul: ({ ...props }) => <ul className="list-disc pl-4 space-y-1 my-2 marker:text-zinc-600" {...props} />,
+                                            li: ({ ...props }) => <li className="pl-1" {...props} />
+                                        }}
+                                    >
+                                        {msg.content}
+                                    </ReactMarkdown>
+                                </div>
+                            ) : (
+                                <p className="font-mono text-xs md:text-sm">{msg.content}</p>
+                            )}
+                        </div>
+                    )}
 
                     {/* UI Attachment (Cards, Timeline, etc.) */}
                     {msg.uiType && msg.uiData && (

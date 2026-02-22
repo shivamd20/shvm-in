@@ -1,6 +1,6 @@
 {
   "name": "@shvm/vani-client",
-  "version": "0.0.0",
+  "version": "0.0.2",
   "private": false,
   "description": "Minimal, opinionated headless voice agent client for the web (React hook + shared contracts).",
   "type": "module",

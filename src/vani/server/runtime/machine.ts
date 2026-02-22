@@ -1,235 +1,9 @@
-import { assign, fromCallback, fromPromise, setup } from "xstate";
-import { LLM_MODELS, STT_MODELS, TTS_MODELS } from "@shvm/vani-client/shared";
+import { assign, setup } from "xstate";
 import type { ServerToClientJson } from "@shvm/vani-client/shared";
-import type { ServerMessage, SessionStatus, VoiceConfig } from "@shvm/vani-client/shared";
-
-// --- Types ---
-
-export interface ServerContext {
-    status: SessionStatus;
-    messages: ServerMessage[];
-    audioBuffer: Uint8Array[];
-    env: any; // Cloudflare Env
-    storage: any; // Durable Object Storage
-    broadcast: (msg: ServerToClientJson) => void;
-    sendBinary: (data: ArrayBuffer) => void;
-    config: VoiceConfig;
-}
-
-export type ServerEvent =
-    | { type: "START"; config?: VoiceConfig }
-    | { type: "STOP" }
-    | { type: "AUDIO_CHUNK"; data: ArrayBuffer }
-    | { type: "TEXT_MESSAGE"; content: string }
-    | { type: "TRANSCRIPT_READY"; text: string }
-    | { type: "LLM_PARTIAL"; text: string }
-    | { type: "TTS_AUDIO"; data: ArrayBuffer }
-    | { type: "llm.complete"; output: string }
-    | { type: "error.platform.stt"; data: unknown }
-    | { type: "error.platform.llm"; data: unknown }
-    | { type: "RESET" };
-
-// --- Logic Helpers ---
-
-const SYSTEM_PROMPT = "You are a helpful, concise voice assistant. Respond in short, conversational sentences. NEVER MORE THAN 2 sentence.";
-
-const withTimeout = <T>(promise: Promise<T>, ms: number, errorMessage = "Operation timed out"): Promise<T> => {
-    return new Promise((resolve, reject) => {
-        const timer = setTimeout(() => reject(new Error(errorMessage)), ms);
-        promise.then(
-            (val) => { clearTimeout(timer); resolve(val); },
-            (err) => { clearTimeout(timer); reject(err); }
-        );
-    });
-};
-
-async function runSTT(audioBuffer: Uint8Array[], env: any, model?: string): Promise<string> {
-    if (audioBuffer.length === 0) return "";
-
-    const totalLength = audioBuffer.reduce((acc, chunk) => acc + chunk.length, 0);
-    console.log(`[STT] Processing audio buffer of length: ${totalLength}`);
-
-    if (totalLength === 0) return "";
-
-    const fullAudio = new Uint8Array(totalLength);
-    let offset = 0;
-    for (const chunk of audioBuffer) {
-        fullAudio.set(chunk, offset);
-        offset += chunk.length;
-    }
-
-    try {
-        const Model = model || STT_MODELS[0];
-        console.log(`[STT] Invoking env.AI.run(${Model})`);
-
-        // @ts-ignore
-        const response = await withTimeout(
-            env.AI.run(Model, { audio: [...fullAudio] }),
-            15000,
-            "STT timed out"
-        );
-        console.log(`[STT] Response received:`, JSON.stringify(response));
-
-        // @ts-ignore
-        const text = response.text || "";
-        return text.trim();
-    } catch (e: any) {
-        console.error("[STT] Error during AI run:", e);
-        throw e; // Re-throw to be caught by actor
-    }
-}
-
-async function runTTS(text: string, env: any, config?: VoiceConfig['tts']): Promise<ArrayBuffer | null> {
-    try {
-        // Default to a specific model that is known to work
-        const MODEL = config?.model || TTS_MODELS[0];
-
-        // Options construction
-        const options: any = {
-            text: text // Default for standard models
-        };
-
-        // Deepgram specific handling
-        if (MODEL.includes('deepgram') || MODEL.includes('aura')) {
-            // Deepgram aura models use 'text' property? Or prompt?
-            // Cloudflare AI docs say inputs: { text: "string" } for aura models. 
-            // Previous code used 'prompt', let's stick to 'text' as standard, but confirm?
-            // Actually standard for text-generation is prompt, but for TTS it is text usually.
-            // Let's use 'text'.
-            options.text = text;
-        }
-
-        if (config?.speaker) options.speaker = config.speaker;
-        if (config?.sample_rate) options.sample_rate = config.sample_rate;
-        if (config?.encoding) options.encoding = config.encoding;
-
-        console.log(`[TTS] Generating with ${MODEL}`, JSON.stringify(options));
-
-        // @ts-ignore
-        const ttsResponse = await withTimeout(
-            env.AI.run(MODEL, options),
-            15000,
-            "TTS timed out"
-        );
-
-        // @ts-ignore
-        if (ttsResponse.audio) {
-            // JSON response with base64
-            // @ts-ignore
-            const binaryString = atob(ttsResponse.audio);
-            const len = binaryString.length;
-            const bytes = new Uint8Array(len);
-            for (let i = 0; i < len; i++) {
-                bytes[i] = binaryString.charCodeAt(i);
-            }
-            return bytes.buffer;
-        } else {
-            // Stream response
-            // @ts-ignore
-            return await new Response(ttsResponse).arrayBuffer();
-        }
-    } catch (e) {
-        console.error("TTS Error", e);
-        return null;
-    }
-}
-
-// --- Actors ---
-
-const sttActor = fromPromise<string, { audioBuffer: Uint8Array[]; env: any; model?: string }>(
-    async ({ input }) => {
-        return await runSTT(input.audioBuffer, input.env, input.model);
-    }
-);
-
-const llmActor = fromCallback<ServerEvent, { messages: ServerMessage[]; env: any; config: VoiceConfig }>(
-    ({ input, sendBack }) => {
-        const { messages, env, config } = input;
-
-        const aiMessages = messages.map(m => ({ role: m.role, content: m.content }));
-        const Model = config.llmModel || LLM_MODELS[0];
-
-        (async () => {
-            try {
-                // @ts-ignore
-                const responseStream = await withTimeout(
-                    env.AI.run(
-                        Model,
-                        {
-                            messages: aiMessages,
-                            stream: true
-                        }
-                    ),
-                    20000, // 20s timeout for initial response
-                    "LLM start timed out"
-                );
-
-                // @ts-ignore
-                const reader = responseStream.getReader();
-                const decoder = new TextDecoder();
-                let buffer = "";
-                let sentenceBuffer = "";
-                let fullResponse = "";
-                // Safety watchdog for stream processing
-                const STREAM_TIMEOUT_MS = 60 * 1000;
-                const streamStart = Date.now();
-
-                while (true) {
-                    if (Date.now() - streamStart > STREAM_TIMEOUT_MS) throw new Error("LLM Streaming timed out");
-
-                    const { done, value } = await reader.read();
-                    if (done) break;
-
-                    buffer += decoder.decode(value, { stream: true });
-                    const lines = buffer.split("\n");
-                    buffer = lines.pop() || "";
-
-                    for (const line of lines) {
-                        const trimmed = line.trim();
-                        if (!trimmed || trimmed === "data: [DONE]") continue;
-                        if (trimmed.startsWith("data: ")) {
-                            try {
-                                const jsonStr = trimmed.slice(6);
-                                const data = JSON.parse(jsonStr);
-                                const text = data.response;
-
-                                if (text) {
-                                    fullResponse += text;
-                                    sentenceBuffer += text;
-                                    sendBack({ type: "LLM_PARTIAL", text });
-
-                                    if (sentenceBuffer.match(/[.!?](\s+|\n)/)) {
-                                        const audio = await runTTS(sentenceBuffer, env, config.tts);
-                                        if (audio) sendBack({ type: "TTS_AUDIO", data: audio });
-                                        sentenceBuffer = "";
-                                    }
-                                }
-                            } catch (e) { console.error("SSE Parse Error", e); }
-                        }
-                    }
-                }
-
-                if (sentenceBuffer.trim()) {
-                    const audio = await runTTS(sentenceBuffer, env, config.tts);
-                    if (audio) sendBack({ type: "TTS_AUDIO", data: audio });
-                }
-
-                sendBack({ type: "llm.complete", output: fullResponse });
-
-            } catch (e) {
-                console.error("LLM Error", e);
-                // Send specific error so machine can handle it
-                sendBack({ type: "error.platform.llm", data: e });
-            }
-        })();
-
-        return () => {
-            // cleanup
-        };
-    }
-);
-
-// --- Machine ---
+import type { ServerMessage } from "@shvm/vani-client/shared";
+import type { ServerContext, ServerEvent } from "./types";
+import { sttActor, llmActor } from "./actors";
+import { SYSTEM_PROMPT } from "./constants";
 
 export const serverMachine = setup({
     types: {
@@ -335,13 +109,24 @@ export const serverMachine = setup({
                 context.broadcast({ type: "assistant.partial", text: event.text });
             }
         },
+        emitToolCallStart: ({ context, event }) => {
+            if (event.type === 'TOOL_CALL_START') {
+                context.broadcast({ type: "tool.call.start", toolName: event.toolName });
+            }
+        },
+        emitToolCallEnd: ({ context, event }) => {
+            if (event.type === 'TOOL_CALL_END') {
+                context.broadcast({ type: "tool.call.end", toolName: event.toolName });
+            }
+        },
         emitAudio: ({ context, event }) => {
             if (event.type === 'TTS_AUDIO') {
                 context.sendBinary(event.data);
             }
         },
         emitError: ({ context, event }) => {
-            const reason = (event as any).data ? String((event as any).data) : "An error occurred";
+            const errData = (event as any).error || (event as any).data;
+            const reason = errData ? String(errData) : "An error occurred";
 
             console.error("Error", {
                 context,
@@ -456,6 +241,8 @@ export const serverMachine = setup({
             },
             on: {
                 LLM_PARTIAL: { actions: 'emitPartial' },
+                TOOL_CALL_START: { actions: 'emitToolCallStart' },
+                TOOL_CALL_END: { actions: 'emitToolCallEnd' },
                 TTS_AUDIO: { actions: 'emitAudio' },
                 "llm.complete": {
                     target: 'listening',

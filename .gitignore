@@ -17,3 +17,4 @@ todos.json
 !.env.example
 /.idea/
 .codex
+.npmrc

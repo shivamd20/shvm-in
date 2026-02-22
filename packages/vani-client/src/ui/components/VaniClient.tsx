@@ -21,6 +21,7 @@ export default function VaniClient({
             sttModel: "@cf/openai/whisper-tiny-en",
             llmModel: "@cf/meta/llama-3.1-8b-instruct",
             tts: { model: "@cf/deepgram/aura-2-en", speaker: "luna" },
+            mcpServer: "https://shvm.in/mcp"
         },
     );
     const [feedback, setFeedback] = useState<string | null>(null);

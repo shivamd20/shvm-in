@@ -1,7 +1,7 @@
 import handler from "@tanstack/react-start/server-entry";
 import { handleMcpRequest } from "./mcp";
-import { chat, toolDefinition, toHttpStream, maxIterations } from "@tanstack/ai";
-import { getChatAdapter } from "./lib/chat";
+import { toHttpStream } from "@tanstack/ai";
+import { runAgentWithMCP } from "./lib/chat";
 import { createMCPConsumer } from "./lib/mcp-client";
 import { getSystemPrompt } from "./lib/system-prompt";
 
@@ -33,8 +33,6 @@ export default {
             try {
                 console.log("[Chat] Request received");
 
-                // Debug Env
-                const adapter = getChatAdapter(env as any);
                 const body: any = await request.json();
                 let messages = body.messages;
                 // Currently defaults to 'engineer'
@@ -48,22 +46,7 @@ export default {
                 const mcpUrl = `${protocol}://${new URL(request.url).host}/mcp`;
                 const mcp = await createMCPConsumer({ servers: [mcpUrl] });
 
-                const mcpTools = mcp.getTools();
-                const activeTools = mcpTools.map(t => toolDefinition({
-                    name: t.name,
-                    description: t.description,
-                    inputSchema: t.parameters as any
-                }).server(async (args) => {
-                    const result = await mcp.execute({ name: t.name, arguments: args });
-                    return result.success ? result.output : { error: result.error };
-                }));
-
-                const stream = await chat({
-                    adapter,
-                    messages,
-                    tools: activeTools as any,
-                    agentLoopStrategy: maxIterations(5),
-                });
+                const stream = await runAgentWithMCP(env as any, messages, mcp);
 
                 return new Response(toHttpStream(stream), {
                     headers: { "Content-Type": "application/x-ndjson" },

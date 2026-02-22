@@ -15,4 +15,6 @@ export type ServerToClientJson =
   | { type: "assistant.message"; message: { role: "assistant"; content: string } }
   | { type: "assistant.partial"; text: string }
   | { type: "feedback"; message: string }
-  | { type: "error"; reason: string };
+  | { type: "error"; reason: string }
+  | { type: "tool.call.start"; toolName: string }
+  | { type: "tool.call.end"; toolName: string };

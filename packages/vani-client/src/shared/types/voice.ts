@@ -16,6 +16,7 @@ export type SessionStatus = "idle" | "listening" | "thinking" | "speaking" | "er
 export interface VoiceConfig {
   sttModel?: STTModelId;
   llmModel?: LLMModelId;
+  mcpServer?: string; // Optional MCP server
   tts?: {
     speaker?: TtsVoiceId;
     encoding?: "mp3" | "opus" | "aac" | "lossless";
@@ -31,6 +32,7 @@ export interface ClientMessage {
   role: ChatRole;
   content: string;
   timestamp: number;
+  toolCalls?: { name: string, status: 'calling' | 'finished' }[];
 }
 
 export interface ServerMessage {
@@ -38,4 +40,5 @@ export interface ServerMessage {
   role: ChatRole;
   content: string;
   created_at: number;
+  toolCalls?: { name: string, status: 'calling' | 'finished' }[];
 }

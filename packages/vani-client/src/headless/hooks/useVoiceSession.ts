@@ -219,18 +219,9 @@ export function useVoiceSession(props: UseVoiceSessionProps = {}) {
             // Optional reset logic
         }
 
-        // Interruption / Busy Handling
+        // No interruption handling. Turn-by-turn only.
         if (status === 'speaking' || status === 'processing') {
-            // Reject input and give feedback
-            const msg = "I'm listening, but give me a sec to finish this thought...";
-            // onFeedbackCallbackRef.current?.(msg);
-            // Or send a temporary error/status to UI?
-            // Since we have onFeedback, use it.
-            if (onFeedbackCallbackRef.current) {
-                onFeedbackCallbackRef.current(msg);
-            } else {
-                console.log("[Voice] Busy, rejecting speech input.");
-            }
+            console.log("[Voice] Busy, rejecting speech input (strict turn-by-turn).");
             return;
         }
 
@@ -390,6 +381,12 @@ export function useVoiceSession(props: UseVoiceSessionProps = {}) {
                 break;
             case 'feedback':
                 onFeedbackCallbackRef.current?.(data.message);
+                break;
+            case 'tool.call.start':
+                send({ type: 'TOOL_CALL_START', toolName: data.toolName });
+                break;
+            case 'tool.call.end':
+                send({ type: 'TOOL_CALL_END', toolName: data.toolName });
                 break;
         }
     };
