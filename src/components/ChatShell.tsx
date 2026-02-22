@@ -192,6 +192,7 @@ export function ChatShell() {
             {isVoiceMode ? (
                 <div className="flex-1 w-full h-full animate-fade-in relative z-40">
                     <Vani
+                        serverUrl={window.location.origin}
                         defaultMode="full"
                         onMessage={handleVoiceMessage}
                         initialTranscript={messages.map((m, i) => ({

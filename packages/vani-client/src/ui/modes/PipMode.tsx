@@ -1,8 +1,8 @@
 import { useState } from "react";
-import { Maximize2, X, Mic, Volume2, Radio, Loader2, AlertCircle, WifiOff } from "lucide-react";
+import { Maximize2, X, Mic, MicOff, Volume2, Radio, Loader2, AlertCircle, WifiOff } from "lucide-react";
 import type { VaniViewProps } from "../types";
 
-export function PipMode({ status, transcript, error, connect, cancel, onTogglePip }: VaniViewProps) {
+export function PipMode({ status, transcript, error, connect, cancel, onTogglePip, isMuted, toggleMute }: VaniViewProps) {
   const [isExpanded, setIsExpanded] = useState(true);
 
   const isListening = status === "listening";
@@ -48,11 +48,22 @@ export function PipMode({ status, transcript, error, connect, cancel, onTogglePi
       <div className="flex items-center justify-between px-3 py-2 bg-zinc-950/50 border-b border-zinc-800">
         <div className="flex items-center gap-2">
           <div className={`w-2 h-2 rounded-full ${getStatusColor()} ${isListening || isSpeaking ? "animate-pulse" : ""}`} />
-          <span className="text-xs font-mono text-zinc-400 font-medium">
+          <span className="text-xs font-mono text-zinc-400 font-medium truncate max-w-[120px]">
             {isListening ? "Listening" : isThinking ? "Processing" : isSpeaking ? "Speaking" : "Idle"}
+            {isMuted && <span className="text-red-400 ml-1">(Muted)</span>}
           </span>
         </div>
-        <div className="flex items-center gap-1">
+        <div className="flex items-center gap-0.5">
+          {toggleMute && (
+            <button
+              onClick={toggleMute}
+              className={`p-1.5 hover:bg-zinc-800 rounded transition-colors ${isMuted ? "text-red-500 hover:text-red-400" : "text-zinc-500 hover:text-zinc-300"
+                }`}
+              title={isMuted ? "Unmute" : "Mute"}
+            >
+              {isMuted ? <MicOff className="w-3.5 h-3.5" /> : <Mic className="w-3.5 h-3.5" />}
+            </button>
+          )}
           {onTogglePip && (
             <button
               onClick={onTogglePip}

@@ -4,13 +4,14 @@ import { serverMachine } from '@vani/server/runtime/machine';
 import type { VoiceConfig } from '@shvm/vani-client/shared';
 
 import { runAgentWithMCP } from '../../../lib/chat';
-import { toHttpStream } from '@tanstack/ai';
+import { toHttpStream, chat } from '@tanstack/ai';
 
 // Mock tanstack/ai to avoid window references in vitest
 vi.mock('@tanstack/ai', async (importOriginal) => {
     return {
         ...(await importOriginal()) as any,
         toHttpStream: vi.fn(),
+        chat: vi.fn()
     };
 });
 
@@ -57,6 +58,10 @@ describe('Server Machine', () => {
                 }
             })
         );
+
+        (chat as any).mockReturnValue((async function* () {
+            yield { type: 'text-delta', textDelta: 'Hi' };
+        })());
 
         (runAgentWithMCP as any).mockResolvedValue({});
     });
@@ -135,18 +140,22 @@ describe('Server Machine', () => {
     it('should handle LLM errors properly and transition to listening', async () => {
         const actor = createServer();
 
-        (runAgentWithMCP as any).mockRejectedValueOnce(new Error('LLM Service Unavailable'));
+        // Mock a broken stream
+        (chat as any).mockReturnValueOnce((async function* () {
+            throw new Error('LLM Service Unavailable');
+        })());
 
         actor.start();
         actor.send({ type: 'START' });
         actor.send({ type: 'TEXT_MESSAGE', content: 'Say hello' }); // Bypass STT straight to speaking
 
+        // XState should immediately invoke the new llmActor and transition to speaking
         expect(actor.getSnapshot().value).toBe('speaking');
 
-        // wait for LLM promise to reject (it's inside actor fromCallback)
-        await new Promise(r => setTimeout(r, 20));
+        // wait for the stream consumption to throw and the machine to handle the error event
+        await new Promise(r => setTimeout(r, 50));
 
-        // on error.platform.llm, it goes to listening
+        // on error.platform.llmRef (or error from actor), it goes to listening
         expect(actor.getSnapshot().value).toBe('listening');
         expect(broadcastSpy).toHaveBeenCalledWith(expect.objectContaining({ type: 'error', reason: expect.stringContaining('LLM Service Unavailable') }));
     });

@@ -24,4 +24,6 @@ export type ServerEvent =
     | { type: "llm.complete"; output: string }
     | { type: "error.platform.stt"; data: unknown }
     | { type: "error.platform.llm"; data: unknown }
+    | { type: "TOOL_EXECUTE_RESPONSE"; callId: string; result: any }
+    | { type: "TOOL_EXECUTE_ERROR"; callId: string; error: string }
     | { type: "RESET" };

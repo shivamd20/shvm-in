@@ -134,6 +134,20 @@ export class VoiceSessionDO extends DurableObject<any> {
                     this.actor.send({ type: "TEXT_MESSAGE", content: data.content });
                 }
                 break;
+            case "tool.execute.response":
+                this.actor.send({
+                    type: "TOOL_EXECUTE_RESPONSE",
+                    callId: data.callId,
+                    result: data.result
+                });
+                break;
+            case "tool.execute.error":
+                this.actor.send({
+                    type: "TOOL_EXECUTE_ERROR",
+                    callId: data.callId,
+                    error: data.error
+                });
+                break;
             default:
                 break;
         }

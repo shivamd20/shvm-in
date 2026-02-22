@@ -15,6 +15,11 @@ export interface VaniProps {
    * Default: `https://shvm.in`
    */
   serverUrl?: string;
+
+  /**
+   * Client-side tool handlers to be executed by the LLM
+   */
+  clientTools?: Record<string, (args: any) => Promise<any>>;
 }
 
 export interface VaniViewProps {
@@ -29,5 +34,6 @@ export interface VaniViewProps {
   config?: VoiceConfig;
   setConfig?: (config: VoiceConfig) => void;
   feedback?: string | null;
+  isMuted?: boolean;
+  toggleMute?: () => void;
 }
-

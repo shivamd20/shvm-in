@@ -11,6 +11,10 @@ vi.mock("@shvm/vani-client/headless", () => {
       error: null,
       isPlaying: false,
       vadLoading: false,
+      vadErrored: false,
+      userSpeaking: false,
+      isMuted: false,
+      toggleMute: vi.fn(),
       connect: vi.fn(),
       cancel: vi.fn(),
     }),
@@ -21,8 +25,8 @@ describe("<Vani /> (ui integration)", () => {
   it("wraps in .vani-root and renders using headless state", async () => {
     const { Vani } = await import("@shvm/vani-client/ui");
     render(<Vani defaultMode="full" />);
+    expect(await screen.findByText("Ready")).toBeTruthy();
     expect(document.querySelector(".vani-root")).toBeTruthy();
-    expect(screen.getByText("Ready")).toBeTruthy();
   });
 });
 

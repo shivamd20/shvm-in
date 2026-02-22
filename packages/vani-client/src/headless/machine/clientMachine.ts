@@ -25,6 +25,7 @@ export interface ClientContext {
   history: DebugEvent[];
   error: string | null;
   isPlaying: boolean;
+  isMuted: boolean;
 }
 
 // --- Events ---
@@ -44,7 +45,8 @@ export type ClientEvent =
   | { type: "TIMEOUT" }
   | { type: "CANCEL" }
   | { type: "TOOL_CALL_START"; toolName: string }
-  | { type: "TOOL_CALL_END"; toolName: string };
+  | { type: "TOOL_CALL_END"; toolName: string }
+  | { type: "TOGGLE_MUTE" };
 
 
 // --- Machine ---
@@ -191,6 +193,9 @@ export const clientMachine = setup({
     clearError: assign({
       error: null,
     }),
+    toggleMute: assign({
+      isMuted: ({ context }) => !context.isMuted,
+    }),
   },
   guards: {
     isServerThinkingOrSpeaking: ({ context, event }) => {
@@ -208,12 +213,14 @@ export const clientMachine = setup({
     history: [],
     error: null,
     isPlaying: false,
+    isMuted: false,
   },
   on: {
     LOG_EVENT: { actions: "logEvent" },
     ADD_MESSAGE: { actions: ["addMessage", "clearError"] },
     TOOL_CALL_START: { actions: "addToolCallStart" },
     TOOL_CALL_END: { actions: "addToolCallEnd" },
+    TOGGLE_MUTE: { actions: "toggleMute" },
     SET_ERROR: { target: ".error", actions: "setError" },
     DISCONNECT: { target: ".disconnected", actions: "setDisconnected" },
   },

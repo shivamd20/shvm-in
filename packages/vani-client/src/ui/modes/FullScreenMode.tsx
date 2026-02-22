@@ -1,5 +1,6 @@
 import {
   Mic,
+  MicOff,
   Volume2,
   Loader2,
   Radio,
@@ -30,6 +31,8 @@ export function FullScreenMode({
   config,
   setConfig,
   feedback,
+  isMuted,
+  toggleMute,
 }: VaniViewProps) {
   const [isDebugOpen, setIsDebugOpen] = useState(false);
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
@@ -98,6 +101,16 @@ export function FullScreenMode({
         >
           <Settings className="w-5 h-5" />
         </button>
+        {toggleMute && (
+          <button
+            onClick={toggleMute}
+            className={`p-2 rounded-full hover:bg-zinc-900 transition-colors ${isMuted ? "text-red-500 hover:text-red-400" : "text-zinc-500 hover:text-zinc-300"
+              }`}
+            title={isMuted ? "Unmute Microphone" : "Mute Microphone"}
+          >
+            {isMuted ? <MicOff className="w-5 h-5" /> : <Mic className="w-5 h-5" />}
+          </button>
+        )}
         {onTogglePip && (
           <button
             onClick={onTogglePip}
@@ -183,17 +196,6 @@ export function FullScreenMode({
                   ))}
                 </select>
               </div>
-
-              <div>
-                <label className="block text-xs font-mono text-zinc-500 mb-1 uppercase">MCP Server Proxy URL</label>
-                <input
-                  type="text"
-                  placeholder="https://shvm.in/mcp"
-                  value={localConfig.mcpServer || ""}
-                  onChange={(e) => setLocalConfig({ ...localConfig, mcpServer: e.target.value })}
-                  className="w-full bg-zinc-950 border border-zinc-800 rounded px-3 py-2 text-sm focus:border-blue-500 outline-none"
-                />
-              </div>
             </div>
 
             <div className="mt-6 flex justify-end gap-2">
@@ -251,16 +253,16 @@ export function FullScreenMode({
           <div className="mt-3 flex justify-center">
             <div
               className={`h-1.5 rounded-full transition-all duration-500 ${isListening
-                  ? "w-16 bg-green-500"
-                  : isThinking
-                    ? "w-16 bg-yellow-500 animate-pulse"
-                    : isSpeaking
-                      ? "w-24 bg-blue-500"
-                      : isConnecting
-                        ? "w-8 bg-zinc-500 animate-pulse"
-                        : isError
-                          ? "w-16 bg-red-500 conversation-shake"
-                          : "w-2 bg-zinc-700"
+                ? "w-16 bg-green-500"
+                : isThinking
+                  ? "w-16 bg-yellow-500 animate-pulse"
+                  : isSpeaking
+                    ? "w-24 bg-blue-500"
+                    : isConnecting
+                      ? "w-8 bg-zinc-500 animate-pulse"
+                      : isError
+                        ? "w-16 bg-red-500 conversation-shake"
+                        : "w-2 bg-zinc-700"
                 }`}
             />
           </div>

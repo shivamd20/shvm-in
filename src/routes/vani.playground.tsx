@@ -14,6 +14,17 @@ function VaniPlaygroundRoute() {
   const [mode, setMode] = useState<"full" | "pip">("full");
   const [instance, setInstance] = useState(0);
 
+  const clientTools = useMemo(() => ({
+    changeTheme: async ({ theme }: { theme: "dark" | "light" | "system" }) => {
+      console.log("[Playground] Client tool executed: changeTheme:", theme);
+      document.documentElement.classList.remove("dark", "light");
+      if (theme !== "system") {
+        document.documentElement.classList.add(theme);
+      }
+      return { success: true, message: `Theme changed to ${theme}` };
+    }
+  }), []);
+
   const vaniKey = useMemo(() => `${instance}:${serverUrl}:${mode}`, [instance, mode, serverUrl]);
 
   const [mounted, setMounted] = useState(false);
@@ -94,7 +105,38 @@ function VaniPlaygroundRoute() {
 
       {mounted && (
         <Suspense fallback={<div className="fixed bottom-4 right-4 text-xs text-zinc-500">Loading Vani...</div>}>
-          <Vani key={vaniKey} serverUrl={serverUrl} defaultMode={mode} />
+          <Vani
+            key={vaniKey}
+            serverUrl={serverUrl}
+            defaultMode={mode}
+            clientTools={clientTools}
+            initialConfig={{
+              sttModel: "@cf/openai/whisper-tiny-en",
+              llmModel: "@cf/meta/llama-3.1-8b-instruct",
+              tts: { model: "@cf/deepgram/aura-2-en", speaker: "luna" },
+              systemPrompt: "You are Vani, a helpful voice assistant. You are currently running in the playground. The user can test your abilities here. You have access to a tool called 'changeTheme' which can change the color theme of the website. If the user asks to change the theme, color scheme, or switch to dark/light mode, use the changeTheme tool.",
+              tools: [
+                {
+                  type: "function",
+                  function: {
+                    name: "changeTheme",
+                    description: "Change the website's color theme to dark, light, or system default.",
+                    parameters: {
+                      type: "object",
+                      properties: {
+                        theme: {
+                          type: "string",
+                          enum: ["dark", "light", "system"],
+                          description: "The theme to apply."
+                        }
+                      },
+                      required: ["theme"]
+                    }
+                  }
+                }
+              ]
+            }}
+          />
         </Suspense>
       )}
     </div>

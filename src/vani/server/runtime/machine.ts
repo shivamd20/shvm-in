@@ -1,4 +1,4 @@
-import { assign, setup } from "xstate";
+import { assign, setup, sendTo } from "xstate";
 import type { ServerToClientJson } from "@shvm/vani-client/shared";
 import type { ServerMessage } from "@shvm/vani-client/shared";
 import type { ServerContext, ServerEvent } from "./types";
@@ -8,7 +8,10 @@ import { SYSTEM_PROMPT } from "./constants";
 export const serverMachine = setup({
     types: {
         context: {} as ServerContext,
-        events: {} as ServerEvent,
+        events: {} as ServerEvent |
+        { type: "TOOL_EXECUTE_REQUEST", toolName: string, callId: string, parameters: any } |
+        { type: "TOOL_EXECUTE_RESPONSE", callId: string, result: any } |
+        { type: "TOOL_EXECUTE_ERROR", callId: string, error: string },
         input: {} as {
             env: any;
             storage: any;
@@ -37,7 +40,14 @@ export const serverMachine = setup({
         updateConfig: assign({
             config: ({ context, event }) => {
                 if (event.type === 'START' && event.config) {
-                    return { ...context.config, ...event.config };
+                    const newConfig = { ...context.config, ...event.config };
+                    console.log(`[Machine] updateConfig:`, JSON.stringify({
+                        llmModel: newConfig.llmModel,
+                        systemPromptLength: newConfig.systemPrompt?.length ?? 0,
+                        toolsCount: newConfig.tools?.length ?? 0,
+                        toolNames: newConfig.tools?.map((t: any) => t.function?.name ?? t.name) ?? []
+                    }));
+                    return newConfig;
                 }
                 return context.config;
             }
@@ -54,6 +64,7 @@ export const serverMachine = setup({
                     content: SYSTEM_PROMPT,
                     created_at: Date.now()
                 };
+                console.log(`[Machine] addSystemMessage: inserted fallback system prompt (${SYSTEM_PROMPT.length} chars)`);
                 return [msg];
             }
         }),
@@ -63,6 +74,7 @@ export const serverMachine = setup({
                 // Note: STT transcript is handled in thinking state logic
                 if (!text) return context.messages;
 
+                console.log(`[Machine] addUserMessage: "${text.slice(0, 100)}"`);
                 const msg: ServerMessage = {
                     id: crypto.randomUUID(),
                     role: "user",
@@ -84,6 +96,7 @@ export const serverMachine = setup({
                 const text = event.output;
                 if (!text) return context.messages;
 
+                console.log(`[Machine] addAssistantMessage: "${text.slice(0, 100)}"`);
                 const msg: ServerMessage = {
                     id: crypto.randomUUID(),
                     role: "assistant",
@@ -117,6 +130,16 @@ export const serverMachine = setup({
         emitToolCallEnd: ({ context, event }) => {
             if (event.type === 'TOOL_CALL_END') {
                 context.broadcast({ type: "tool.call.end", toolName: event.toolName });
+            }
+        },
+        emitToolExecuteRequest: ({ context, event }) => {
+            if (event.type === 'TOOL_EXECUTE_REQUEST') {
+                context.broadcast({
+                    type: "tool.execute.request",
+                    toolName: event.toolName,
+                    callId: event.callId,
+                    parameters: event.parameters
+                });
             }
         },
         emitAudio: ({ context, event }) => {
@@ -154,10 +177,13 @@ export const serverMachine = setup({
         idle: {
             entry: [assign({ status: 'idle' }), 'broadcastState', 'addSystemMessage'],
             on: {
-                START: { target: 'listening', actions: 'updateConfig' },
+                START: {
+                    target: 'listening',
+                    actions: ['updateConfig', () => console.log('[Machine] idle → listening (START)')]
+                },
                 TEXT_MESSAGE: {
                     target: 'speaking',
-                    actions: ['addUserMessage']
+                    actions: ['addUserMessage', () => console.log('[Machine] idle → speaking (TEXT_MESSAGE)')]
                 },
                 RESET: { target: 'idle', actions: 'clearAudio' },
                 AUDIO_CHUNK: { actions: 'clearAudio' } // Ignore or clear leaks
@@ -165,13 +191,13 @@ export const serverMachine = setup({
         },
         listening: {
             // @ts-ignore
-            entry: [assign({ status: 'listening' }), 'broadcastState', 'clearAudio'],
+            entry: [assign({ status: 'listening' }), 'broadcastState', 'clearAudio', () => console.log('[Machine] → listening')],
             on: {
-                STOP: { target: 'thinking' },
+                STOP: { target: 'thinking', actions: () => console.log('[Machine] listening → thinking (STOP)') },
                 AUDIO_CHUNK: { actions: 'appendAudio' },
                 TEXT_MESSAGE: {
                     target: 'speaking',
-                    actions: 'addUserMessage'
+                    actions: ['addUserMessage', () => console.log('[Machine] listening → speaking (TEXT_MESSAGE)')]
                 },
                 RESET: { target: 'idle', actions: 'clearAudio' },
                 START: { actions: 'updateConfig' } // Allow re-start or config update?
@@ -179,7 +205,7 @@ export const serverMachine = setup({
         },
         thinking: {
             // @ts-ignore
-            entry: [assign({ status: 'thinking' }), 'broadcastState'],
+            entry: [assign({ status: 'thinking' }), 'broadcastState', () => console.log('[Machine] → thinking (STT)')],
             invoke: {
                 src: 'sttActor',
                 input: ({ context }) => ({
@@ -230,8 +256,9 @@ export const serverMachine = setup({
             }
         },
         speaking: {
-            entry: [assign({ status: 'speaking' }), 'broadcastState'],
+            entry: [assign({ status: 'speaking' }), 'broadcastState', () => console.log('[Machine] → speaking (LLM)')],
             invoke: {
+                id: 'llmActorRef',
                 src: 'llmActor',
                 input: ({ context }) => ({
                     messages: context.messages,
@@ -247,6 +274,13 @@ export const serverMachine = setup({
                 "llm.complete": {
                     target: 'listening',
                     actions: 'addAssistantMessage'
+                },
+                TOOL_EXECUTE_REQUEST: { actions: 'emitToolExecuteRequest' },
+                TOOL_EXECUTE_RESPONSE: {
+                    actions: sendTo('llmActorRef', ({ event }) => event)
+                },
+                TOOL_EXECUTE_ERROR: {
+                    actions: sendTo('llmActorRef', ({ event }) => event)
                 },
                 "error.platform.llm": {
                     target: 'listening',

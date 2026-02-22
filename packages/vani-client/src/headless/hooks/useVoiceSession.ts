@@ -64,6 +64,10 @@ export interface UseVoiceSessionProps {
      * Default: `/ws/${sessionId}`
      */
     wsPath?: (sessionId: string) => string;
+    /**
+     * Client-side tool handlers to be executed by the LLM
+     */
+    clientTools?: Record<string, (args: any) => Promise<any>>;
 }
 
 const VAD_SAMPLE_RATE = 16000;
@@ -112,7 +116,8 @@ export function useVoiceSession(props: UseVoiceSessionProps = {}) {
         serverUrl,
         getWebSocketUrl: getWebSocketUrlOverride,
         sessionId,
-        wsPath
+        wsPath,
+        clientTools
     } = props;
 
     // Initialize ORT config lazily
@@ -131,6 +136,7 @@ export function useVoiceSession(props: UseVoiceSessionProps = {}) {
     const onMessageCallbackRef = useRef(onMessage);
     const onFeedbackCallbackRef = useRef(onFeedback);
     const configRef = useRef(config);
+    const clientToolsRef = useRef(clientTools);
     const turnActiveRef = useRef(false);
     const lastVADErrorRef = useRef<string | null>(null);
     const hasSeededTranscriptRef = useRef(false);
@@ -160,7 +166,8 @@ export function useVoiceSession(props: UseVoiceSessionProps = {}) {
         onMessageCallbackRef.current = onMessage;
         onFeedbackCallbackRef.current = onFeedback;
         configRef.current = config;
-    }, [onError, onMessage, onFeedback, config]);
+        clientToolsRef.current = clientTools;
+    }, [onError, onMessage, onFeedback, config, clientTools]);
 
     // Seed initial transcript once, if provided and machine is empty.
     useEffect(() => {
@@ -222,6 +229,11 @@ export function useVoiceSession(props: UseVoiceSessionProps = {}) {
         // No interruption handling. Turn-by-turn only.
         if (status === 'speaking' || status === 'processing') {
             console.log("[Voice] Busy, rejecting speech input (strict turn-by-turn).");
+            return;
+        }
+
+        if (currentContext.isMuted) {
+            console.log("[Voice] Muted, rejecting speech input.");
             return;
         }
 
@@ -303,13 +315,13 @@ export function useVoiceSession(props: UseVoiceSessionProps = {}) {
     }, [vad.errored, send]);
 
     useEffect(() => {
-        const shouldListen = state.status === 'idle' || state.status === 'listening';
+        const shouldListen = !state.isMuted && (state.status === 'idle' || state.status === 'listening');
         if (shouldListen && !vad.listening && !vad.loading && !vad.errored) {
             vad.start();
         } else if (!shouldListen && vad.listening) {
             vad.pause();
         }
-    }, [state.status, vad.listening, vad.loading, vad.errored, vad.start, vad.pause]);
+    }, [state.status, state.isMuted, vad.listening, vad.loading, vad.errored, vad.start, vad.pause]);
 
     const connect = useCallback(() => {
         if (wsRef.current) wsRef.current.close();
@@ -358,7 +370,7 @@ export function useVoiceSession(props: UseVoiceSessionProps = {}) {
         };
     }, [buildWebSocketUrl, send]);
 
-    const handleMessage = (data: ServerToClientJson) => {
+    const handleMessage = async (data: ServerToClientJson) => {
         // send({ type: 'LOG_EVENT', eventType: 'socket_event', details: data });
         switch (data.type) {
             case 'state':
@@ -388,10 +400,20 @@ export function useVoiceSession(props: UseVoiceSessionProps = {}) {
             case 'tool.call.end':
                 send({ type: 'TOOL_CALL_END', toolName: data.toolName });
                 break;
+            case 'tool.execute.request':
+                if (clientToolsRef.current && clientToolsRef.current[data.toolName]) {
+                    try {
+                        const result = await clientToolsRef.current[data.toolName](data.parameters);
+                        wsRef.current?.send(JSON.stringify({ type: 'tool.execute.response', callId: data.callId, result }));
+                    } catch (err: any) {
+                        wsRef.current?.send(JSON.stringify({ type: 'tool.execute.error', callId: data.callId, error: err.message || String(err) }));
+                    }
+                } else {
+                    wsRef.current?.send(JSON.stringify({ type: 'tool.execute.error', callId: data.callId, error: `Tool ${data.toolName} not found on client` }));
+                }
+                break;
         }
     };
-
-
     const queueAudio = (buffer: ArrayBuffer) => {
         audioQueueRef.current.push(buffer);
         if (!isPlaybackLoopRunning.current) {
@@ -462,6 +484,10 @@ export function useVoiceSession(props: UseVoiceSessionProps = {}) {
         send({ type: 'CANCEL' });
     }, [send]);
 
+    const toggleMute = useCallback(() => {
+        send({ type: 'TOGGLE_MUTE' });
+    }, [send]);
+
     return {
         ...state,
         vadListening: vad.listening,
@@ -471,6 +497,7 @@ export function useVoiceSession(props: UseVoiceSessionProps = {}) {
         connect,
         disconnect,
         sendMessage,
-        cancel
+        cancel,
+        toggleMute
     };
 }

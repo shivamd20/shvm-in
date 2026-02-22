@@ -16,7 +16,8 @@ export type SessionStatus = "idle" | "listening" | "thinking" | "speaking" | "er
 export interface VoiceConfig {
   sttModel?: STTModelId;
   llmModel?: LLMModelId;
-  mcpServer?: string; // Optional MCP server
+  systemPrompt?: string; // Optional custom system prompt
+  tools?: any[]; // Optional tanstack/ai style JSON schema tool definitions
   tts?: {
     speaker?: TtsVoiceId;
     encoding?: "mp3" | "opus" | "aac" | "lossless";

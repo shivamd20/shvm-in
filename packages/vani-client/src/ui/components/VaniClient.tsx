@@ -14,6 +14,7 @@ export default function VaniClient({
     onModeChange,
     initialConfig,
     serverUrl,
+    clientTools,
 }: VaniProps) {
     const [internalMode, setInternalMode] = useState<"full" | "pip">(defaultMode);
     const [config, setConfig] = useState<VoiceConfig>(
@@ -21,7 +22,6 @@ export default function VaniClient({
             sttModel: "@cf/openai/whisper-tiny-en",
             llmModel: "@cf/meta/llama-3.1-8b-instruct",
             tts: { model: "@cf/deepgram/aura-2-en", speaker: "luna" },
-            mcpServer: "https://shvm.in/mcp"
         },
     );
     const [feedback, setFeedback] = useState<string | null>(null);
@@ -40,6 +40,7 @@ export default function VaniClient({
         config,
         onFeedback: handleFeedback,
         serverUrl,
+        clientTools,
     });
 
     const handleToggleMode = () => {
