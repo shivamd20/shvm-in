@@ -12,6 +12,7 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as VoiceRouteImport } from './routes/voice'
 import { Route as VaniHeadlessRouteImport } from './routes/vani-headless'
 import { Route as VaniRouteImport } from './routes/vani'
+import { Route as McpPlaygroundRouteImport } from './routes/mcp-playground'
 import { Route as ChatRouteImport } from './routes/chat'
 import { Route as BlogsRouteImport } from './routes/blogs'
 import { Route as IndexRouteImport } from './routes/index'
@@ -34,6 +35,11 @@ const VaniHeadlessRoute = VaniHeadlessRouteImport.update({
 const VaniRoute = VaniRouteImport.update({
   id: '/vani',
   path: '/vani',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const McpPlaygroundRoute = McpPlaygroundRouteImport.update({
+  id: '/mcp-playground',
+  path: '/mcp-playground',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ChatRoute = ChatRouteImport.update({
@@ -81,6 +87,7 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/blogs': typeof BlogsRouteWithChildren
   '/chat': typeof ChatRoute
+  '/mcp-playground': typeof McpPlaygroundRoute
   '/vani': typeof VaniRouteWithChildren
   '/vani-headless': typeof VaniHeadlessRoute
   '/voice': typeof VoiceRoute
@@ -93,6 +100,7 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/chat': typeof ChatRoute
+  '/mcp-playground': typeof McpPlaygroundRoute
   '/vani': typeof VaniRouteWithChildren
   '/vani-headless': typeof VaniHeadlessRoute
   '/voice': typeof VoiceRoute
@@ -107,6 +115,7 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/blogs': typeof BlogsRouteWithChildren
   '/chat': typeof ChatRoute
+  '/mcp-playground': typeof McpPlaygroundRoute
   '/vani': typeof VaniRouteWithChildren
   '/vani-headless': typeof VaniHeadlessRoute
   '/voice': typeof VoiceRoute
@@ -122,6 +131,7 @@ export interface FileRouteTypes {
     | '/'
     | '/blogs'
     | '/chat'
+    | '/mcp-playground'
     | '/vani'
     | '/vani-headless'
     | '/voice'
@@ -134,6 +144,7 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/chat'
+    | '/mcp-playground'
     | '/vani'
     | '/vani-headless'
     | '/voice'
@@ -147,6 +158,7 @@ export interface FileRouteTypes {
     | '/'
     | '/blogs'
     | '/chat'
+    | '/mcp-playground'
     | '/vani'
     | '/vani-headless'
     | '/voice'
@@ -161,6 +173,7 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   BlogsRoute: typeof BlogsRouteWithChildren
   ChatRoute: typeof ChatRoute
+  McpPlaygroundRoute: typeof McpPlaygroundRoute
   VaniRoute: typeof VaniRouteWithChildren
   VaniHeadlessRoute: typeof VaniHeadlessRoute
   VoiceRoute: typeof VoiceRoute
@@ -187,6 +200,13 @@ declare module '@tanstack/react-router' {
       path: '/vani'
       fullPath: '/vani'
       preLoaderRoute: typeof VaniRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/mcp-playground': {
+      id: '/mcp-playground'
+      path: '/mcp-playground'
+      fullPath: '/mcp-playground'
+      preLoaderRoute: typeof McpPlaygroundRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/chat': {
@@ -278,6 +298,7 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   BlogsRoute: BlogsRouteWithChildren,
   ChatRoute: ChatRoute,
+  McpPlaygroundRoute: McpPlaygroundRoute,
   VaniRoute: VaniRouteWithChildren,
   VaniHeadlessRoute: VaniHeadlessRoute,
   VoiceRoute: VoiceRoute,

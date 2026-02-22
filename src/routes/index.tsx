@@ -53,7 +53,7 @@ function Index() {
 
           <div className="mt-6 text-xs font-mono text-zinc-500 px-4 z-10">
             Prefer tooling? Use my MCP server at{" "}
-            <a href="/mcp" className="text-zinc-300 hover:text-accent transition-colors underline underline-offset-4">
+            <a href="/mcp-playground" className="text-zinc-300 hover:text-accent transition-colors underline underline-offset-4">
               shvm.in/mcp
             </a>
             .
