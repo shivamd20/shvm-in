@@ -1,12 +1,11 @@
-import { CustomWorkersAiAdapter } from "./worker-ai-adapter";
+import { createWorkersAiChat } from "@cloudflare/tanstack-ai";
 
 export const getChatAdapter = (env: ChatEnv) => {
-    const model = "@cf/meta/llama-3-8b-instruct";
-    console.log("[ChatAdapter] Using custom adapter with model:", model);
-    return new CustomWorkersAiAdapter(
-        model,
-        env.AI
-    );
+    const model = "@cf/openai/gpt-oss-120b";
+    console.log("[ChatAdapter] Using Cloudflare adapter with model:", model);
+    return createWorkersAiChat(model, {
+        binding: env.AI,
+    });
 };
 import { introDefinition } from "../mcp/definitions/intro";
 import { systemDesignProbeDefinition } from "../mcp/definitions/system-design-probe";

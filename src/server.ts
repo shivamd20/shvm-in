@@ -1,7 +1,8 @@
 import handler from "@tanstack/react-start/server-entry";
 import { handleMcpRequest } from "./mcp";
-import { chat } from "@tanstack/ai";
-import { getChatAdapter, getTools } from "./lib/chat";
+import { chat, toolDefinition, toHttpStream, maxIterations } from "@tanstack/ai";
+import { getChatAdapter } from "./lib/chat";
+import { createMCPConsumer } from "./lib/mcp-client";
 import { getSystemPrompt } from "./lib/system-prompt";
 
 // Re-export the MessageStore Durable Object for wrangler binding
@@ -34,8 +35,6 @@ export default {
 
                 // Debug Env
                 const adapter = getChatAdapter(env as any);
-                const tools = getTools(env as any);
-
                 const body: any = await request.json();
                 let messages = body.messages;
                 // Currently defaults to 'engineer'
@@ -44,41 +43,30 @@ export default {
                 const systemPrompt = getSystemPrompt(mode);
                 messages = [{ role: 'system', content: systemPrompt }, ...messages];
 
+                // Initialize MCP consumer in the backend pointing to its own /mcp origin
+                const protocol = request.url.startsWith("https") ? "https" : "http";
+                const mcpUrl = `${protocol}://${new URL(request.url).host}/mcp`;
+                const mcp = await createMCPConsumer({ servers: [mcpUrl] });
+
+                const mcpTools = mcp.getTools();
+                const activeTools = mcpTools.map(t => toolDefinition({
+                    name: t.name,
+                    description: t.description,
+                    inputSchema: t.parameters as any
+                }).server(async (args) => {
+                    const result = await mcp.execute({ name: t.name, arguments: args });
+                    return result.success ? result.output : { error: result.error };
+                }));
+
                 const stream = await chat({
                     adapter,
                     messages,
-                    tools: tools as any,
+                    tools: activeTools as any,
+                    agentLoopStrategy: maxIterations(5),
                 });
 
-                const { readable, writable } = new TransformStream();
-                const writer = writable.getWriter();
-                const encoder = new TextEncoder();
-
-                (async () => {
-                    try {
-                        for await (const chunk of stream) {
-                            // Handle text deltas
-                            // @ts-ignore - access safe property
-                            if (chunk.type === 'text-delta') {
-                                // @ts-ignore
-                                const text = chunk.text;
-                                if (text) {
-                                    await writer.write(encoder.encode(text));
-                                }
-                            }
-                        }
-                    } catch (e) {
-                        console.error('[Chat] Chat stream error:', e);
-                        // @ts-ignore
-                        if (e.message) console.error('[Chat] Error message:', e.message);
-                        await writer.write(encoder.encode("\n[Error generating response]"));
-                    } finally {
-                        await writer.close();
-                    }
-                })();
-
-                return new Response(readable, {
-                    headers: { "Content-Type": "text/plain; charset=utf-8" },
+                return new Response(toHttpStream(stream), {
+                    headers: { "Content-Type": "application/x-ndjson" },
                 });
             } catch (err) {
                 console.error("[Chat] Top-level handler error:", err);

@@ -8,12 +8,13 @@ interface Message {
     uiType?: 'cards' | 'timeline' | 'profile' | 'tech_stack' | 'none';
     uiData?: any;
     followUps?: string[];
+    isHidden?: boolean;
 }
 
 export function MessageList({ messages, loading, onFollowUp }: { messages: Message[], loading: boolean, onFollowUp: (q: string) => void }) {
     return (
         <div className="flex flex-col space-y-8 w-full">
-            {messages.map((msg, idx) => (
+            {messages.filter(m => !m.isHidden).map((msg, idx) => (
                 <div key={idx} className={`flex flex-col w-full ${msg.role === 'user' ? 'items-end' : 'items-start'} animate-fade-in space-y-3`}>
 
                     {/* Main Bubble */}

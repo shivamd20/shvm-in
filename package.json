@@ -8,7 +8,7 @@
 	"workspaces": [
 		"packages/*"
 	],
-		"scripts": {
+	"scripts": {
 		"predev": "node scripts/blog-generate.mjs",
 		"dev": "vite dev --port 3200",
 		"prebuild": "node scripts/blog-generate.mjs",
@@ -24,7 +24,7 @@
 		"cf-typegen": "wrangler types"
 	},
 	"dependencies": {
-		"@cloudflare/tanstack-ai": "^0.1.1",
+		"@cloudflare/tanstack-ai": "^0.1.2",
 		"@cloudflare/vite-plugin": "^1.13.8",
 		"@modelcontextprotocol/sdk": "^1.26.0",
 		"@ricky0123/vad-react": "^0.0.33",

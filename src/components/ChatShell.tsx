@@ -12,6 +12,7 @@ export interface Message {
     uiType?: 'cards' | 'timeline' | 'profile' | 'tech_stack' | 'none';
     uiData?: any;
     followUps?: string[];
+    isHidden?: boolean;
 }
 
 export function ChatShell() {
@@ -38,17 +39,19 @@ export function ChatShell() {
         }
     }, [location]);
 
-    const handleSend = async (text: string) => {
-        if (!text.trim()) return;
+    const handleSend = async (text: string, overrideMessages?: Message[]) => {
+        if (!text.trim() && !overrideMessages) return;
 
-        // Immediate user message
-        const userMsg: Message = { role: 'user', content: text };
-        setMessages(prev => [...prev, userMsg]);
+        let currentMessages = overrideMessages || [...messages];
+        if (text.trim()) {
+            const userMsg: Message = { role: 'user', content: text };
+            currentMessages = [...currentMessages, userMsg];
+            setMessages(currentMessages);
+        }
         setLoading(true);
 
         try {
-            // Include full history + new message
-            const apiMessages = [...messages, userMsg].map(m => ({
+            const apiMessages = currentMessages.map(m => ({
                 role: m.role,
                 content: m.content
             }));
@@ -59,40 +62,79 @@ export function ChatShell() {
                 body: JSON.stringify({ messages: apiMessages, mode })
             });
 
-            if (!response.body) {
-                throw new Error("No response body");
-            }
+            if (!response.body) throw new Error("No response body");
 
             const reader = response.body.getReader();
             const decoder = new TextDecoder();
-            let assistantContent = "";
 
-            // Create placeholder for assistant message
-            setMessages(prev => [...prev, { role: 'assistant', content: "" }]);
+            let assistantMessageCreated = false;
+            let assistantContent = "";
+            let buffer = "";
+            let finalMessages = [...currentMessages];
 
             while (true) {
                 const { done, value } = await reader.read();
                 if (done) break;
 
-                const chunk = decoder.decode(value, { stream: true });
-                assistantContent += chunk;
+                buffer += decoder.decode(value, { stream: true });
+                const lines = buffer.split('\n');
+                buffer = lines.pop() || "";
 
-                // Update the last message with new content
-                setMessages(prev => {
-                    const newMessages = [...prev];
-                    const lastMsg = newMessages[newMessages.length - 1];
-                    if (lastMsg.role === 'assistant') {
-                        lastMsg.content = assistantContent;
+                for (const line of lines) {
+                    if (!line.trim()) continue;
+                    try {
+                        const chunk = JSON.parse(line);
+
+                        if (chunk.type === 'TEXT_MESSAGE_CONTENT' && chunk.delta) {
+                            if (!assistantMessageCreated) {
+                                finalMessages = [...finalMessages, { role: 'assistant', content: "" }];
+                                setMessages(finalMessages);
+                                assistantMessageCreated = true;
+                            }
+                            assistantContent += chunk.delta;
+                            setMessages(prev => {
+                                const newMessages = [...prev];
+                                const lastMsg = newMessages[newMessages.length - 1];
+                                if (lastMsg.role === 'assistant') {
+                                    lastMsg.content = assistantContent;
+                                }
+                                return newMessages;
+                            });
+                        }
+
+                        if (chunk.type === 'TOOL_CALL_START') {
+                            if (!assistantMessageCreated) {
+                                finalMessages = [...finalMessages, { role: 'assistant', content: "" }];
+                                setMessages(finalMessages);
+                                assistantMessageCreated = true;
+                            }
+                            assistantContent += `\n\n> ⏳ *Using tool:* \`${chunk.toolName}\`...\n\n`;
+                            setMessages(prev => {
+                                const newMessages = [...prev];
+                                const lastMsg = newMessages[newMessages.length - 1];
+                                if (lastMsg.role === 'assistant') {
+                                    lastMsg.content = assistantContent;
+                                }
+                                return newMessages;
+                            });
+                        }
+
+                        if (chunk.type === 'TOOL_CALL_END') {
+                            assistantContent += `\n\n> ✅ *Tool finished.* \n\n`;
+                            setMessages(prev => {
+                                const newMessages = [...prev];
+                                const lastMsg = newMessages[newMessages.length - 1];
+                                if (lastMsg.role === 'assistant') {
+                                    lastMsg.content = assistantContent;
+                                }
+                                return newMessages;
+                            });
+                        }
+                    } catch (e) {
+                        // ignore unparseable
                     }
-                    return newMessages;
-                });
+                }
             }
-
-            // Post-process response to extract UI elements if strictly adhering to previous format (optional)
-            // For now, we assume the AI returns raw text which is rendered as markdown.
-            // If we want to restore specific UI Types (cards, timeline), we should teach the AI to output specific markers
-            // or use a structured output tool.
-            // For this iteration, we focus on the text stream.
 
         } catch (error) {
             console.error("Chat error:", error);
