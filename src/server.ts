@@ -8,6 +8,7 @@ import { getSystemPrompt } from "./lib/system-prompt";
 // Re-export the MessageStore Durable Object for wrangler binding
 export { MessageStore } from "./mcp/message-store";
 export { VoiceSessionDO } from "./vani/server/handlers/VoiceSessionDO";
+export { Vani2SessionDO } from "./vani2/server/Vani2SessionDO";
 
 export default {
     async fetch(request: Request, env: Env, ctx: ExecutionContext) {
@@ -18,14 +19,21 @@ export default {
             return handleMcpRequest(request, env, ctx);
         }
 
-        // Voice session websocket route
+        // Voice session websocket route (Vani 1)
         const wsMatch = url.pathname.match(/^\/ws\/([^/]+)$/);
         if (wsMatch) {
             const sessionId = wsMatch[1];
-            // Get the Durable Object stub
             const id = env.VOICE_SESSIONS.idFromName(sessionId);
             const stub = env.VOICE_SESSIONS.get(id);
-            // Forward the request
+            return stub.fetch(request);
+        }
+
+        // Vani 2 websocket route
+        const ws2Match = url.pathname.match(/^\/v2\/ws\/([^/]+)$/);
+        if (ws2Match) {
+            const sessionId = ws2Match[1];
+            const id = env.VANI2_SESSIONS.idFromName(sessionId);
+            const stub = env.VANI2_SESSIONS.get(id);
             return stub.fetch(request);
         }
 

@@ -1,0 +1,54 @@
+{
+  "meta": {
+    "title": "building my own lsm tree in java",
+    "slug": "lsm-tree-v1",
+    "date": "2026-02-24",
+    "tags": [
+      "system-design",
+      "database",
+      "lsm-tree",
+      "write-amplification"
+    ],
+    "summary": "I have read about LSM trees for years. I have skimmed papers, looked at production code, and nodded along as people explained compaction strategies on conference stages. But reading about storage engines and building one are very different experiences. So I decided to stop consuming and start implementing.",
+    "readingTime": 4,
+    "published": true
+  },
+  "html": "<h1 id=\"building-my-own-lsm-tree-in-java\"><a class=\"blog-heading-anchor\" href=\"#building-my-own-lsm-tree-in-java\">building my own lsm tree in java</a></h1>\n<p>I have read about LSM trees for years. I have skimmed papers, looked at production code, and nodded along as people explained compaction strategies on conference stages. But reading about storage engines and building one are very different experiences. So I decided to stop consuming and start implementing.</p>\n<p>This is not a side project for a weekend. I want to understand what it actually takes to approach LevelDB class performance. That means starting embarrassingly simple and earning every optimization.</p>\n<h2 id=\"what-i-am-building\"><a class=\"blog-heading-anchor\" href=\"#what-i-am-building\">what i am building</a></h2>\n<p>A persistent key value store in Java.</p>\n<p>That is it.</p>\n<p>No distributed layer. No replication. No transactions. No concurrency in the beginning. Just PUT and GET. If those two operations are not solid, everything else is noise.</p>\n<p>I am following the same basic constraints as LevelDB:</p>\n<ul>\n<li>Sorted keys</li>\n<li>Byte array values</li>\n<li>Write optimized design</li>\n<li>Immutable SSTables on disk</li>\n<li>Compaction later</li>\n</ul>\n<p>I am not trying to beat C++. I am trying to understand the shape of the problem.</p>\n<h2 id=\"phase-1-the-naive-lsm\"><a class=\"blog-heading-anchor\" href=\"#phase-1-the-naive-lsm\">phase 1: the naive lsm</a></h2>\n<p>The first version is intentionally unsophisticated.</p>\n<p>In memory, I use a TreeMap. I briefly considered a HashMap, but that would force me to sort during every flush. I would rather pay O(log n) during writes than get hit with a sorting spike at the worst possible moment.</p>\n<p>When the memtable crosses a size threshold, I flush it to disk as a new SSTable file.</p>\n<p>The file format is simple:</p>\n<ul>\n<li>int key_length</li>\n<li>key bytes</li>\n<li>int value_length</li>\n<li>value bytes</li>\n</ul>\n<p>Repeated in sorted order.</p>\n<p>No blocks. No compression. No bloom filters. No fancy footer.</p>\n<p>Just a sorted stream of records.</p>\n<h2 id=\"read-path-deliberately-painful\"><a class=\"blog-heading-anchor\" href=\"#read-path-deliberately-painful\">read path, deliberately painful</a></h2>\n<p>Reads follow the standard LSM order:</p>\n<ol>\n<li>Check the memtable</li>\n<li>If not found, scan SSTables from newest to oldest</li>\n</ol>\n<p>Newer files win because newer writes override older ones.</p>\n<p>Right now, the SSTable lookup is a linear scan.</p>\n<p>Yes, that is slow.</p>\n<p>I am keeping it that way on purpose. I want to feel what read amplification actually means instead of treating it like a bullet point in a slide deck. When I have 50 SSTables and a random GET touches half of them, I want that frustration. That is the signal telling me what to build next.</p>\n<h2 id=\"what-i-am-not-building-yet\"><a class=\"blog-heading-anchor\" href=\"#what-i-am-not-building-yet\">what i am not building yet</a></h2>\n<p>No WAL. If the process crashes, the memtable is gone. I am accepting that risk for now because durability changes the performance profile and adds complexity around fsync behavior.</p>\n<p>No compaction. Which means the number of SSTables will grow without bound. That is fine for this stage. I want to measure how quickly read performance degrades as files accumulate.</p>\n<p>No bloom filters. So negative lookups will hurt.</p>\n<p>This version is supposed to expose weaknesses.</p>\n<h2 id=\"directory-layout\"><a class=\"blog-heading-anchor\" href=\"#directory-layout\">directory layout</a></h2>\n<p>The on disk structure is minimal:</p>\n<p>/data\n/sstables\n00001.sst\n00002.sst</p>\n<p>Each flush increments a monotonically increasing file number. Larger numbers mean newer data. That simple ordering defines precedence during reads.</p>\n<p>Nothing clever. Just predictable.</p>\n<h2 id=\"benchmarking-plan\"><a class=\"blog-heading-anchor\" href=\"#benchmarking-plan\">benchmarking plan</a></h2>\n<p>I will benchmark under the same basic constraints as LevelDB:</p>\n<ul>\n<li>Fixed size keys</li>\n<li>Fixed size values for consistency</li>\n<li>Dataset larger than memory</li>\n<li>Random read workload after heavy writes</li>\n</ul>\n<p>I care about:</p>\n<ul>\n<li>Write throughput</li>\n<li>Read latency</li>\n<li>Flush time</li>\n<li>Number of SSTables over time</li>\n</ul>\n<p>I am not expecting miracles. I am expecting to discover bottlenecks I did not anticipate.</p>\n<h2 id=\"why-i-am-doing-this\"><a class=\"blog-heading-anchor\" href=\"#why-i-am-doing-this\">why i am doing this</a></h2>\n<p>It is easy to say \"LSM trees convert random writes into sequential disk IO.\" It is harder to watch your own implementation stall because compaction is not implemented. It is easy to talk about read amplification. It is different to trace through ten files just to confirm a key does not exist.</p>\n<p>I want that experience.</p>\n<p>If this first version feels primitive, good. It should. Every feature I add next sparse indexes, WAL, compaction, bloom filters will be justified by a specific pain I can measure in this baseline.</p>\n<p>This is version one. It will be slow in places. It will be incomplete. But it will be honest, and that is where I am starting.</p>",
+  "toc": [
+    {
+      "id": "what-i-am-building",
+      "depth": 2,
+      "text": "what i am building"
+    },
+    {
+      "id": "phase-1-the-naive-lsm",
+      "depth": 2,
+      "text": "phase 1: the naive lsm"
+    },
+    {
+      "id": "read-path-deliberately-painful",
+      "depth": 2,
+      "text": "read path, deliberately painful"
+    },
+    {
+      "id": "what-i-am-not-building-yet",
+      "depth": 2,
+      "text": "what i am not building yet"
+    },
+    {
+      "id": "directory-layout",
+      "depth": 2,
+      "text": "directory layout"
+    },
+    {
+      "id": "benchmarking-plan",
+      "depth": 2,
+      "text": "benchmarking plan"
+    },
+    {
+      "id": "why-i-am-doing-this",
+      "depth": 2,
+      "text": "why i am doing this"
+    }
+  ]
+}

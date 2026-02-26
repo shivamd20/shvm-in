@@ -30,6 +30,10 @@
 			{
 				"name": "VOICE_SESSIONS",
 				"class_name": "VoiceSessionDO"
+			},
+			{
+				"name": "VANI2_SESSIONS",
+				"class_name": "Vani2SessionDO"
 			}
 		]
 	},
@@ -47,6 +51,12 @@
 			"tag": "v2",
 			"new_sqlite_classes": [
 				"VoiceSessionDO"
+			]
+		},
+		{
+			"tag": "v3",
+			"new_classes": [
+				"Vani2SessionDO"
 			]
 		}
 	]

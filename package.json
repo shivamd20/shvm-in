@@ -18,6 +18,8 @@
 		"new-post": "node scripts/new-post.mjs",
 		"test": "vitest run",
 		"test:vani": "vitest run src/vani packages/vani-client",
+		"test:vani2": "vitest run src/vani2",
+		"test:vani2:integration": "vitest run --config vitest.integration.config.ts",
 		"build:vani-client": "npm -w @shvm/vani-client run build",
 		"typecheck:vani": "npm -w @shvm/vani-client run typecheck && tsc -p tsconfig.vani.ui.json --noEmit && tsc -p tsconfig.vani.server.json --noEmit",
 		"deploy": "npm run build && wrangler deploy",
@@ -39,6 +41,7 @@
 		"@tanstack/router-plugin": "^1.132.0",
 		"@xstate/react": "^6.0.0",
 		"agents": "^0.4.1",
+		"ai": "^6.0.101",
 		"gray-matter": "^4.0.3",
 		"hast-util-to-html": "^9.0.5",
 		"lucide-react": "^0.561.0",
@@ -78,6 +81,7 @@
 		"vite": "^7.1.7",
 		"vitest": "^3.0.5",
 		"web-vitals": "^5.1.0",
-		"wrangler": "^4.65.0"
+		"wrangler": "^4.65.0",
+		"ws": "^8.19.0"
 	}
 }

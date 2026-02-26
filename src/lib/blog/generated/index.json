@@ -1,6 +1,20 @@
 {
-  "generatedAt": "2026-02-22T17:30:53.373Z",
+  "generatedAt": "2026-02-26T12:23:26.135Z",
   "posts": [
+    {
+      "title": "building my own lsm tree in java",
+      "slug": "lsm-tree-v1",
+      "date": "2026-02-24",
+      "tags": [
+        "system-design",
+        "database",
+        "lsm-tree",
+        "write-amplification"
+      ],
+      "summary": "I have read about LSM trees for years. I have skimmed papers, looked at production code, and nodded along as people explained compaction strategies on conference stages. But reading about storage engines and building one are very different experiences. So I decided to stop consuming and start implementing.",
+      "readingTime": 4,
+      "published": true
+    },
     {
       "title": "Building a Distributed Rate Limiter",
       "slug": "distributed-rate-limiter",
