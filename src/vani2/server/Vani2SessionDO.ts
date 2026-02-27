@@ -175,7 +175,11 @@ export class Vani2SessionDO extends DurableObject {
     this.sessionActor?.send({ type: "BINARY", chunk: message as ArrayBuffer });
   }
 
-  /** Single async loop: process queue; on transcript_speculative run speculative stream and race with queue. */
+  /**
+   * Single async loop: process queue; on transcript_speculative run speculative stream and race with queue.
+   * On control.interrupt we set aborted; in-flight streams are discarded (we stop consuming and sending).
+   * Only the next transcript_final starts a new turn; no stale tokens or audio from the old stream are sent.
+   */
   private async runProcessorLoop(): Promise<void> {
     const queue = this.messageQueue;
     if (!queue) return;
@@ -183,7 +187,7 @@ export class Vani2SessionDO extends DurableObject {
       const msg = await queue.get();
       if (msg.type === "control.mute") continue;
       if (msg.type === "control.interrupt") {
-        if (this.llmStreaming) {
+        if (this.llmStreaming || this.speculativeActive) {
           this.sendBenchmarkEvent({
             type: "benchmark.turn_interrupted",
             ts: Date.now(),
@@ -217,7 +221,10 @@ export class Vani2SessionDO extends DurableObject {
     }
   }
 
-  /** Speculative run: stream LLM on speculative text, buffer tokens; race with queue; on transcript_final commit or discard. */
+  /**
+   * Speculative run: stream LLM on speculative text, buffer tokens; race with queue; on transcript_final commit or discard.
+   * On interrupt we discard this run (aborted = true, no commit). Next transcript_final is handled as a fresh turn.
+   */
   private async runSpeculative(speculativeText: string, queue: AsyncQueue<ClientToServerJson>): Promise<void> {
     this.speculativeActive = true;
     this.aborted = false;
@@ -361,7 +368,10 @@ export class Vani2SessionDO extends DurableObject {
     }
   }
 
-  /** Run a full turn from transcript_final (no speculative). */
+  /**
+   * Run a full turn from transcript_final (no speculative).
+   * On interrupt we stop consuming the LLM stream and sending output; only the next transcript_final starts a new stream.
+   */
   private async runNormalTurn(parsed: Extract<ClientToServerJson, { type: "transcript_final" }>): Promise<void> {
     const turnId = parsed.turnId ?? undefined;
     this.lastProcessedTurnId = parsed.turnId ?? null;
