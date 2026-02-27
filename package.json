@@ -34,7 +34,7 @@
 		"@minceraftmc/opus-encoder": "^0.0.7-rc.1",
 		"@modelcontextprotocol/sdk": "^1.26.0",
 		"@ricky0123/vad-react": "^0.0.33",
-		"@shvm/vani-client": "file:packages/vani-client",
+		"@shvm/vani-client": "^0.0.2",
 		"@tailwindcss/typography": "^0.5.19",
 		"@tanstack/ai": "^0.5.0",
 		"@tanstack/query-core": "^5.90.0",
