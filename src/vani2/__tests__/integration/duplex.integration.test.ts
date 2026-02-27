@@ -111,6 +111,27 @@ describe("Vani 2 duplex (integration)", () => {
     expect(typeof errMsg.reason).toBe("string");
   });
 
+  it("sends error for transcript_speculative (unknown message type)", async () => {
+    const sessionId = "spec-" + Date.now();
+    const ws = await openWs(sessionId);
+    await new Promise<string>((resolve) => {
+      ws.onmessage = (e: WsMessageEvent) => {
+        if (typeof e.data === "string") resolve(e.data);
+      };
+    });
+    const next = await new Promise<string>((resolve, reject) => {
+      ws.onmessage = (e: WsMessageEvent) => {
+        if (typeof e.data === "string") resolve(e.data);
+      };
+      ws.send(JSON.stringify({ type: "transcript_speculative", text: "hello" }));
+      setTimeout(() => reject(new Error("timeout")), 3000);
+    });
+    ws.close();
+    const errMsg = JSON.parse(next);
+    expect(errMsg.type).toBe("error");
+    expect(typeof errMsg.reason).toBe("string");
+  });
+
   it("sends error for empty transcript_final", async () => {
     const sessionId = "empty-tf-" + Date.now();
     const ws = await openWs(sessionId);
@@ -130,5 +151,37 @@ describe("Vani 2 duplex (integration)", () => {
     const errMsg = JSON.parse(next);
     expect(errMsg.type).toBe("error");
     expect(errMsg.reason).toContain("non-empty");
+  });
+
+  it("accepts session.init and completes a turn with custom prompt", async () => {
+    const sessionId = "session-init-" + Date.now();
+    const ws = await openWs(sessionId);
+    const stateMsg = await new Promise<string>((resolve) => {
+      ws.onmessage = (e: WsMessageEvent) => {
+        if (typeof e.data === "string") resolve(e.data);
+      };
+    });
+    expect(JSON.parse(stateMsg).type).toBe("state");
+
+    ws.send(JSON.stringify({ type: "session.init", systemPrompt: "You are a helpful assistant. Reply in one short sentence." }));
+    ws.send(JSON.stringify({ type: "transcript_final", text: "Say hello.", turnId: "turn-1" }));
+
+    const llmCompleteOrError = await new Promise<string>((resolve, reject) => {
+      ws.onmessage = (e: WsMessageEvent) => {
+        if (typeof e.data !== "string") return;
+        const msg = JSON.parse(e.data);
+        if (msg.type === "llm_complete" || msg.type === "llm_error") resolve(e.data);
+      };
+      setTimeout(() => reject(new Error("timeout waiting for llm_complete or llm_error")), 25_000);
+    });
+    ws.close();
+
+    const msg = JSON.parse(llmCompleteOrError);
+    if (msg.type === "llm_error") {
+      throw new Error("Expected llm_complete but got llm_error: " + msg.reason);
+    }
+    expect(msg.type).toBe("llm_complete");
+    expect(typeof msg.text).toBe("string");
+    expect(msg.text.length).toBeGreaterThan(0);
   });
 });

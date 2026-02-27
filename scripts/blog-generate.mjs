@@ -8,7 +8,6 @@ import remarkParse from 'remark-parse'
 import remarkGfm from 'remark-gfm'
 import remarkRehype from 'remark-rehype'
 import rehypeSlug from 'rehype-slug'
-import rehypeAutolinkHeadings from 'rehype-autolink-headings'
 import rehypeStringify from 'rehype-stringify'
 import { visit } from 'unist-util-visit'
 import { toString as mdastToString } from 'mdast-util-to-string'
@@ -84,19 +83,23 @@ function rehypeBlogTransforms({ highlighter }) {
 
     const loadedLangs = new Set(highlighter.getLoadedLanguages())
 
-    // Collect headings and transform nodes in one pass.
+    /** Collect heading wrappers: replace h1–h6 with id by div.blog-heading-wrapper + copy button */
+    const headingWrappers = []
     visit(tree, 'element', (node, index, parent) => {
       if (!parent || typeof index !== 'number') return
 
       // TOC (use ids injected by rehype-slug)
       if (node.tagName && /^h[1-6]$/.test(node.tagName)) {
         const depth = Number(node.tagName.slice(1))
+        const id = node.properties?.id
         if (depth >= 2 && depth <= 4) {
-          const id = node.properties?.id
           const text = getTextFromHast(node).trim()
           if (typeof id === 'string' && id && text) {
             toc.push({ id, depth, text })
           }
+        }
+        if (typeof id === 'string' && id) {
+          headingWrappers.push({ parent, index, node, id })
         }
       }
 
@@ -203,6 +206,30 @@ function rehypeBlogTransforms({ highlighter }) {
       r.parent.children[r.index] = wrapper
     }
 
+    /** Wrap headings with id in div + copy-link button (replace from high index to low) */
+    headingWrappers
+      .sort((a, b) => b.index - a.index)
+      .forEach(({ parent, index, node, id }) => {
+        const copyBtn = {
+          type: 'element',
+          tagName: 'button',
+          properties: {
+            type: 'button',
+            className: ['blog-heading-copy'],
+            'data-heading-id': id,
+            'aria-label': 'Copy link to section',
+          },
+          children: [{ type: 'text', value: 'Copy link' }],
+        }
+        const wrapper = {
+          type: 'element',
+          tagName: 'div',
+          properties: { className: ['blog-heading-wrapper'] },
+          children: [node, copyBtn],
+        }
+        parent.children[index] = wrapper
+      })
+
     file.data.toc = toc
   }
 }
@@ -261,10 +288,6 @@ async function main() {
     .use(remarkRehype)
     .use(rehypeSlug)
     .use(rehypeBlogTransforms, { highlighter })
-    .use(rehypeAutolinkHeadings, {
-      behavior: 'wrap',
-      properties: { className: ['blog-heading-anchor'] },
-    })
     .use(rehypeStringify)
 
   for (const filename of files) {

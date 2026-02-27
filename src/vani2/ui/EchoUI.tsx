@@ -44,7 +44,6 @@ export function EchoUI() {
     connect: connectSession,
     disconnect: disconnectSession,
     sendTranscriptFinal,
-    sendTranscriptSpeculative,
     sendInterrupt,
     llmText,
     llmError,
@@ -60,13 +59,6 @@ export function EchoUI() {
       turnIdRef.current += 1;
     }
   }, [lastEvent?.type]);
-
-  useEffect(() => {
-    if (lastEvent?.type === "EagerEndOfTurn") {
-      const t = (lastEvent.payload.transcript ?? liveTranscript ?? "").trim();
-      if (t) sendTranscriptSpeculative(t, String(turnIdRef.current));
-    }
-  }, [lastEvent?.type, lastEvent?.payload?.transcript, liveTranscript, sendTranscriptSpeculative]);
 
   useEffect(() => {
     if (lastEvent?.type !== "EndOfTurn" || !lastEvent.payload.transcript) return;

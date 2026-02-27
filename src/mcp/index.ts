@@ -18,7 +18,7 @@ export async function handleMcpRequest(
     ctx: ExecutionContext
 ): Promise<Response> {
     // Create a new server instance per request (MCP SDK 1.26.0+ requirement)
-    const server = createShvmMcpServer(env as unknown as { AI?: unknown });
+    const server = createShvmMcpServer(env as unknown as { AI?: unknown; BLOG_STORE?: unknown });
 
     // Use the Cloudflare Agents SDK streamable HTTP handler
     const handler = createMcpHandler(server);

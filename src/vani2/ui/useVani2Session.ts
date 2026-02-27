@@ -16,7 +16,7 @@ export type SessionStatus = "disconnected" | "connecting" | "connected" | "error
 /** Server "still working" status (idea 7). */
 export type ServerStatus = "thinking" | "synthesizing" | null;
 
-export function useVani2Session(serverBaseUrl?: string, sessionId?: string) {
+export function useVani2Session(serverBaseUrl?: string, sessionId?: string, systemPrompt?: string) {
   const baseUrl = serverBaseUrl ?? (typeof window !== "undefined" ? window.location.origin : "");
   const sessionIdVal = sessionId ?? (typeof window !== "undefined" ? `v2-${Date.now()}-${Math.random().toString(36).slice(2, 9)}` : "v2-session");
   const [status, setStatus] = useState<SessionStatus>("disconnected");
@@ -78,6 +78,14 @@ export function useVani2Session(serverBaseUrl?: string, sessionId?: string) {
     ws.onopen = () => {
       setStatus("connected");
       setError(null);
+      if (typeof systemPrompt === "string" && systemPrompt.trim().length > 0) {
+        try {
+          ws.send(JSON.stringify({ type: "session.init", systemPrompt: systemPrompt.trim() }));
+        } catch (e) {
+          console.error("[Vani2Session] session.init failed", e instanceof Error ? e.stack : e);
+          setError("Failed to send system prompt");
+        }
+      }
       if (!audioContextRef.current) {
         audioContextRef.current = new AudioContext();
         audioContextRef.current.resume?.();
@@ -161,7 +169,7 @@ export function useVani2Session(serverBaseUrl?: string, sessionId?: string) {
       setError(errMsg);
       console.error("[Vani2Session] WebSocket error", ev);
     };
-  }, [baseUrl, sessionIdVal, drainPlayback, stopPlayback]);
+  }, [baseUrl, sessionIdVal, systemPrompt, drainPlayback, stopPlayback]);
 
   const disconnect = useCallback(() => {
     if (wsRef.current) {
@@ -200,16 +208,6 @@ export function useVani2Session(serverBaseUrl?: string, sessionId?: string) {
     }
   }, []);
 
-  const sendTranscriptSpeculative = useCallback((text: string, turnId?: string) => {
-    const ws = wsRef.current;
-    if (!ws || ws.readyState !== WebSocket.OPEN || !text.trim()) return;
-    try {
-      ws.send(JSON.stringify({ type: "transcript_speculative", text: text.trim(), ...(turnId != null ? { turnId } : {}) }));
-    } catch (e) {
-      console.error("[Vani2Session] sendTranscriptSpeculative failed", e instanceof Error ? e.stack : e);
-    }
-  }, []);
-
   const sendInterrupt = useCallback(() => {
     const ws = wsRef.current;
     if (!ws || ws.readyState !== WebSocket.OPEN) return;
@@ -220,6 +218,16 @@ export function useVani2Session(serverBaseUrl?: string, sessionId?: string) {
       console.error("[Vani2Session] sendInterrupt failed", e instanceof Error ? e.stack : e);
     }
   }, [stopPlayback]);
+
+  const sendMute = useCallback((value: boolean) => {
+    const ws = wsRef.current;
+    if (!ws || ws.readyState !== WebSocket.OPEN) return;
+    try {
+      ws.send(JSON.stringify({ type: "control.mute", value }));
+    } catch (e) {
+      console.error("[Vani2Session] sendMute failed", e instanceof Error ? e.stack : e);
+    }
+  }, []);
 
   useEffect(() => {
     return () => disconnect();
@@ -232,8 +240,8 @@ export function useVani2Session(serverBaseUrl?: string, sessionId?: string) {
     connect,
     disconnect,
     sendTranscriptFinal,
-    sendTranscriptSpeculative,
     sendInterrupt,
+    sendMute,
     llmText,
     llmCompleteText,
     llmError,

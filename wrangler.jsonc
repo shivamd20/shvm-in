@@ -30,6 +30,10 @@
 			{
 				"name": "VANI2_SESSIONS",
 				"class_name": "Vani2SessionDO"
+			},
+			{
+				"name": "BLOG_STORE",
+				"class_name": "BlogStoreDO"
 			}
 		]
 	},
@@ -47,6 +51,12 @@
 			"tag": "v3",
 			"new_sqlite_classes": [
 				"Vani2SessionDO"
+			]
+		},
+		{
+			"tag": "v4",
+			"new_sqlite_classes": [
+				"BlogStoreDO"
 			]
 		}
 	]

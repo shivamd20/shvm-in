@@ -56,6 +56,10 @@ describe("protocol", () => {
       expect(parseClientJson('{"type":"other"}')).toBeNull();
     });
 
+    it("returns null for transcript_speculative (no longer accepted)", () => {
+      expect(parseClientJson('{"type":"transcript_speculative","text":"hi"}')).toBeNull();
+    });
+
     it("returns null when value is not boolean", () => {
       expect(parseClientJson('{"type":"control.mute","value":1}')).toBeNull();
     });
@@ -83,6 +87,33 @@ describe("protocol", () => {
       expect(parseClientJson('{"type":"control.interrupt"}')).toEqual({
         type: "control.interrupt",
       });
+    });
+
+    it("parses session.init with non-empty systemPrompt", () => {
+      expect(parseClientJson('{"type":"session.init","systemPrompt":"You are helpful."}')).toEqual({
+        type: "session.init",
+        systemPrompt: "You are helpful.",
+      });
+    });
+
+    it("session.init trims whitespace", () => {
+      expect(parseClientJson('{"type":"session.init","systemPrompt":"  Be concise.  "}')).toEqual({
+        type: "session.init",
+        systemPrompt: "Be concise.",
+      });
+    });
+
+    it("returns null for session.init when systemPrompt is empty string", () => {
+      expect(parseClientJson('{"type":"session.init","systemPrompt":""}')).toBeNull();
+    });
+
+    it("returns null for session.init when systemPrompt is whitespace only", () => {
+      expect(parseClientJson('{"type":"session.init","systemPrompt":"   "}')).toBeNull();
+    });
+
+    it("returns null for session.init when systemPrompt is not a string", () => {
+      expect(parseClientJson('{"type":"session.init","systemPrompt":123}')).toBeNull();
+      expect(parseClientJson('{"type":"session.init"}')).toBeNull();
     });
 
     it("returns null for malformed JSON", () => {

@@ -16,6 +16,7 @@ import { Route as BlogsRouteImport } from './routes/blogs'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as BlogsIndexRouteImport } from './routes/blogs.index'
 import { Route as Vani2BenchmarksRouteImport } from './routes/vani2.benchmarks'
+import { Route as BlogsNewRouteImport } from './routes/blogs.new'
 import { Route as BlogsSlugRouteImport } from './routes/blogs.$slug'
 import { Route as BlogsTagsTagRouteImport } from './routes/blogs.tags.$tag'
 
@@ -54,6 +55,11 @@ const Vani2BenchmarksRoute = Vani2BenchmarksRouteImport.update({
   path: '/benchmarks',
   getParentRoute: () => Vani2Route,
 } as any)
+const BlogsNewRoute = BlogsNewRouteImport.update({
+  id: '/new',
+  path: '/new',
+  getParentRoute: () => BlogsRoute,
+} as any)
 const BlogsSlugRoute = BlogsSlugRouteImport.update({
   id: '/$slug',
   path: '/$slug',
@@ -72,6 +78,7 @@ export interface FileRoutesByFullPath {
   '/mcp-playground': typeof McpPlaygroundRoute
   '/vani2': typeof Vani2RouteWithChildren
   '/blogs/$slug': typeof BlogsSlugRoute
+  '/blogs/new': typeof BlogsNewRoute
   '/vani2/benchmarks': typeof Vani2BenchmarksRoute
   '/blogs/': typeof BlogsIndexRoute
   '/blogs/tags/$tag': typeof BlogsTagsTagRoute
@@ -82,6 +89,7 @@ export interface FileRoutesByTo {
   '/mcp-playground': typeof McpPlaygroundRoute
   '/vani2': typeof Vani2RouteWithChildren
   '/blogs/$slug': typeof BlogsSlugRoute
+  '/blogs/new': typeof BlogsNewRoute
   '/vani2/benchmarks': typeof Vani2BenchmarksRoute
   '/blogs': typeof BlogsIndexRoute
   '/blogs/tags/$tag': typeof BlogsTagsTagRoute
@@ -94,6 +102,7 @@ export interface FileRoutesById {
   '/mcp-playground': typeof McpPlaygroundRoute
   '/vani2': typeof Vani2RouteWithChildren
   '/blogs/$slug': typeof BlogsSlugRoute
+  '/blogs/new': typeof BlogsNewRoute
   '/vani2/benchmarks': typeof Vani2BenchmarksRoute
   '/blogs/': typeof BlogsIndexRoute
   '/blogs/tags/$tag': typeof BlogsTagsTagRoute
@@ -107,6 +116,7 @@ export interface FileRouteTypes {
     | '/mcp-playground'
     | '/vani2'
     | '/blogs/$slug'
+    | '/blogs/new'
     | '/vani2/benchmarks'
     | '/blogs/'
     | '/blogs/tags/$tag'
@@ -117,6 +127,7 @@ export interface FileRouteTypes {
     | '/mcp-playground'
     | '/vani2'
     | '/blogs/$slug'
+    | '/blogs/new'
     | '/vani2/benchmarks'
     | '/blogs'
     | '/blogs/tags/$tag'
@@ -128,6 +139,7 @@ export interface FileRouteTypes {
     | '/mcp-playground'
     | '/vani2'
     | '/blogs/$slug'
+    | '/blogs/new'
     | '/vani2/benchmarks'
     | '/blogs/'
     | '/blogs/tags/$tag'
@@ -192,6 +204,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof Vani2BenchmarksRouteImport
       parentRoute: typeof Vani2Route
     }
+    '/blogs/new': {
+      id: '/blogs/new'
+      path: '/new'
+      fullPath: '/blogs/new'
+      preLoaderRoute: typeof BlogsNewRouteImport
+      parentRoute: typeof BlogsRoute
+    }
     '/blogs/$slug': {
       id: '/blogs/$slug'
       path: '/$slug'
@@ -211,12 +230,14 @@ declare module '@tanstack/react-router' {
 
 interface BlogsRouteChildren {
   BlogsSlugRoute: typeof BlogsSlugRoute
+  BlogsNewRoute: typeof BlogsNewRoute
   BlogsIndexRoute: typeof BlogsIndexRoute
   BlogsTagsTagRoute: typeof BlogsTagsTagRoute
 }
 
 const BlogsRouteChildren: BlogsRouteChildren = {
   BlogsSlugRoute: BlogsSlugRoute,
+  BlogsNewRoute: BlogsNewRoute,
   BlogsIndexRoute: BlogsIndexRoute,
   BlogsTagsTagRoute: BlogsTagsTagRoute,
 }

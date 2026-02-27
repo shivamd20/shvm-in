@@ -4,12 +4,13 @@
 declare namespace Cloudflare {
 	interface GlobalProps {
 		mainModule: typeof import("./src/server");
-		durableNamespaces: "MessageStore" | "Vani2SessionDO";
+		durableNamespaces: "MessageStore" | "Vani2SessionDO" | "BlogStoreDO";
 	}
 	interface Env {
 		AI: Ai;
 		MESSAGE_STORE: DurableObjectNamespace<import("./src/server").MessageStore>;
 		VANI2_SESSIONS: DurableObjectNamespace<import("./src/server").Vani2SessionDO>;
+		BLOG_STORE: DurableObjectNamespace<import("./src/server").BlogStoreDO>;
 	}
 }
 interface Env extends Cloudflare.Env {}

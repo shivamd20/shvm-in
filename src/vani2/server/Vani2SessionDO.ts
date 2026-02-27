@@ -59,7 +59,8 @@ export class Vani2SessionDO extends DurableObject {
   /** Last processed turnId for idempotency (idea 9). */
   private lastProcessedTurnId: string | null = null;
   private messageQueue: AsyncQueue<ClientToServerJson> | null = null;
-  private speculativeActive = false;
+  /** System prompt from client session.init; null until set (then use default in llm-adapter). */
+  private systemPrompt: string | null = null;
 
   constructor(ctx: DurableObjectState, env: Env) {
     super(ctx, env);
@@ -176,18 +177,20 @@ export class Vani2SessionDO extends DurableObject {
   }
 
   /**
-   * Single async loop: process queue; on transcript_speculative run speculative stream and race with queue.
-   * On control.interrupt we set aborted; in-flight streams are discarded (we stop consuming and sending).
-   * Only the next transcript_final starts a new turn; no stale tokens or audio from the old stream are sent.
+   * Process queue in order. Only transcript_final starts a turn (runNormalTurn). control.interrupt sets aborted so in-flight stream is discarded.
    */
   private async runProcessorLoop(): Promise<void> {
     const queue = this.messageQueue;
     if (!queue) return;
     while (!this.sessionState?.isClosed() && this.messageQueue) {
       const msg = await queue.get();
+      if (msg.type === "session.init") {
+        this.systemPrompt = msg.systemPrompt;
+        continue;
+      }
       if (msg.type === "control.mute") continue;
       if (msg.type === "control.interrupt") {
-        if (this.llmStreaming || this.speculativeActive) {
+        if (this.llmStreaming) {
           this.sendBenchmarkEvent({
             type: "benchmark.turn_interrupted",
             ts: Date.now(),
@@ -195,12 +198,6 @@ export class Vani2SessionDO extends DurableObject {
           });
         }
         this.aborted = true;
-        continue;
-      }
-      if (msg.type === "transcript_speculative") {
-        const text = msg.text.trim();
-        if (!text || this.llmStreaming || this.speculativeActive) continue;
-        await this.runSpeculative(text, queue);
         continue;
       }
       if (msg.type === "transcript_final") {
@@ -222,154 +219,7 @@ export class Vani2SessionDO extends DurableObject {
   }
 
   /**
-   * Speculative run: stream LLM on speculative text, buffer tokens; race with queue; on transcript_final commit or discard.
-   * On interrupt we discard this run (aborted = true, no commit). Next transcript_final is handled as a fresh turn.
-   */
-  private async runSpeculative(speculativeText: string, queue: AsyncQueue<ClientToServerJson>): Promise<void> {
-    this.speculativeActive = true;
-    this.aborted = false;
-    const speculativeMessages: LlmMessage[] = [...this.messages, { role: "user", content: speculativeText }];
-    const stream = streamLlmResponse({ binding: this.env.AI, messages: speculativeMessages });
-    const iter = stream[Symbol.asyncIterator]();
-    const buffer: string[] = [];
-    let pendingFinal: Extract<ClientToServerJson, { type: "transcript_final" }> | null = null;
-
-    try {
-      while (true) {
-        const nextPromise = iter.next();
-        const racePromise = queue.get().then((m) => ({ msg: m } as const));
-        const result = await Promise.race([nextPromise.then((r) => ({ iterResult: r } as const)), racePromise]);
-
-        if ("msg" in result) {
-          const m = result.msg;
-          if (m.type === "control.interrupt") {
-            this.aborted = true;
-            break;
-          }
-          if (m.type === "transcript_final") {
-            pendingFinal = m;
-            break;
-          }
-          if (m.type === "control.mute") continue;
-          if (m.type === "transcript_speculative") continue;
-          continue;
-        }
-
-        const { iterResult } = result;
-        if (iterResult.done) break;
-        if (this.aborted) break;
-        buffer.push(iterResult.value);
-      }
-    } finally {
-      this.speculativeActive = false;
-    }
-
-    if (!pendingFinal) {
-      while (!this.sessionState?.isClosed()) {
-        const m = await queue.get();
-        if (m.type === "transcript_final") {
-          pendingFinal = m;
-          break;
-        }
-        if (m.type === "control.interrupt") this.aborted = true;
-      }
-    }
-
-    if (!pendingFinal) return;
-
-    const finalText = pendingFinal.text.trim();
-    const turnId = pendingFinal.turnId ?? undefined;
-    const canCommit =
-      speculativeText.length > 0 &&
-      (finalText === speculativeText || finalText.startsWith(speculativeText));
-
-    if (canCommit && buffer.length > 0 && !this.aborted) {
-      this.lastProcessedTurnId = pendingFinal.turnId ?? null;
-      this.llmStreaming = true;
-      this.turnIndex += 1;
-      const tTurnStart = Date.now();
-      this.sendBenchmarkEvent({
-        type: "benchmark.turn_start",
-        ts: tTurnStart,
-        turnIndex: this.turnIndex,
-        transcriptLength: finalText.length,
-      });
-      this.messages.push({ role: "user", content: finalText });
-      let fullText = "";
-      let sentenceBuffer = "";
-      let ttsFirstSent = false;
-      let llmFirstSent = false;
-      this.sendStatus("thinking");
-      try {
-        for (const delta of buffer) {
-          if (!llmFirstSent) {
-            llmFirstSent = true;
-            this.sendBenchmarkEvent({
-              type: "benchmark.llm_first_token",
-              ts: Date.now(),
-              turnIndex: this.turnIndex,
-            });
-          }
-          fullText += delta;
-          this.sendJson({ type: "llm_partial", text: delta, ...(turnId ? { turnId } : {}) });
-          sentenceBuffer += delta;
-          let match: RegExpExecArray | null;
-          while ((match = SENTENCE_END.exec(sentenceBuffer)) !== null) {
-            const end = match.index + match[0].length;
-            const sentence = sentenceBuffer.slice(0, end).trim();
-            sentenceBuffer = sentenceBuffer.slice(end);
-            if (sentence && !this.aborted) {
-              if (!ttsFirstSent) {
-                ttsFirstSent = true;
-                this.sendStatus("synthesizing");
-                this.sendBenchmarkEvent({
-                  type: "benchmark.tts_first_chunk",
-                  ts: Date.now(),
-                  turnIndex: this.turnIndex,
-                });
-                const audio = await this.runAura2WithTimeout(TTS_FIRST_CHUNK_TIMEOUT_MS, sentence);
-                if (audio && !this.aborted) this.sendBinary(audio);
-              } else {
-                const audio = await runAura2(this.env as any, { text: sentence });
-                if (audio && !this.aborted) this.sendBinary(audio);
-              }
-            }
-          }
-          SENTENCE_END.lastIndex = 0;
-        }
-        if (sentenceBuffer.trim() && !this.aborted) {
-          if (!ttsFirstSent) {
-            ttsFirstSent = true;
-            this.sendStatus("synthesizing");
-            this.sendBenchmarkEvent({ type: "benchmark.tts_first_chunk", ts: Date.now(), turnIndex: this.turnIndex });
-          }
-          const text = sentenceBuffer.trim();
-          const audio = ttsFirstSent
-            ? await runAura2(this.env as any, { text })
-            : await this.runAura2WithTimeout(TTS_FIRST_CHUNK_TIMEOUT_MS, text);
-          if (audio && !this.aborted) this.sendBinary(audio);
-        }
-        if (!this.aborted) {
-          this.sendBenchmarkEvent({ type: "benchmark.turn_end", ts: Date.now(), turnIndex: this.turnIndex });
-          this.messages.push({ role: "assistant", content: fullText });
-          this.sendJson({ type: "llm_complete", text: fullText, ...(turnId ? { turnId } : {}) });
-        }
-      } catch (e) {
-        const reason = e instanceof Error ? e.message : String(e);
-        this.sendJson({ type: "llm_error", reason, ...(turnId ? { turnId } : {}) });
-      } finally {
-        if (this.aborted && fullText.trim().length >= MIN_PARTIAL_LENGTH) {
-          this.messages = appendInterruptedAssistantMessage(this.messages, fullText.trim());
-        }
-        this.llmStreaming = false;
-      }
-    } else {
-      await this.runNormalTurn(pendingFinal);
-    }
-  }
-
-  /**
-   * Run a full turn from transcript_final (no speculative).
+   * Run a full turn from transcript_final.
    * On interrupt we stop consuming the LLM stream and sending output; only the next transcript_final starts a new stream.
    */
   private async runNormalTurn(parsed: Extract<ClientToServerJson, { type: "transcript_final" }>): Promise<void> {
@@ -395,6 +245,7 @@ export class Vani2SessionDO extends DurableObject {
       const stream = streamLlmResponse({
         binding: this.env.AI,
         messages: this.messages,
+        systemPrompt: this.systemPrompt ?? undefined,
       });
       const iter = stream[Symbol.asyncIterator]();
       const firstTokenPromise = iter.next();

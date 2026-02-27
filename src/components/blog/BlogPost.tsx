@@ -13,16 +13,20 @@ export function BlogPost({ post }: { post: BlogPostType }) {
       <header className="blog-post__header">
         <h1 className="blog-post__title">{post.meta.title}</h1>
         <BlogMeta meta={post.meta} />
-        <ShareBar title={post.meta.title} />
       </header>
 
       <div className="blog-post__body">
         <div className="blog-post__content">
           <Prose post={post} />
+          <div className="blog-post__share-footer">
+            <ShareBar title={post.meta.title} />
+          </div>
         </div>
-        <aside className="blog-post__aside">
-          <TableOfContents toc={post.toc} />
-        </aside>
+        {post.toc.length > 0 && (
+          <aside className="blog-post__aside" aria-label="On this page">
+            <TableOfContents toc={post.toc} />
+          </aside>
+        )}
       </div>
     </div>
   )

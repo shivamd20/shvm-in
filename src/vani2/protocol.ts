@@ -6,10 +6,10 @@
 
 /** Client → Server JSON */
 export type ClientToServerJson =
+  | { type: "session.init"; systemPrompt: string }
   | { type: "control.mute"; value: boolean }
   | { type: "control.interrupt" }
-  | { type: "transcript_final"; text: string; turnId?: string }
-  | { type: "transcript_speculative"; text: string; turnId?: string };
+  | { type: "transcript_final"; text: string; turnId?: string };
 
 /** Benchmark events (server → client); ts in ms, turnIndex per turn. */
 export type BenchmarkEvent =
@@ -112,20 +112,22 @@ export function payloadAfterTimestamp(buffer: ArrayBuffer): Uint8Array {
 
 export function parseClientJson(data: string): ClientToServerJson | null {
   try {
-    const obj = JSON.parse(data) as { type?: string; value?: boolean; text?: string; turnId?: string };
+    const obj = JSON.parse(data) as {
+      type?: string;
+      value?: boolean;
+      text?: string;
+      turnId?: string;
+      systemPrompt?: string;
+    };
+    if (obj.type === "session.init" && typeof obj.systemPrompt === "string" && obj.systemPrompt.trim().length > 0) {
+      return { type: "session.init", systemPrompt: obj.systemPrompt.trim() };
+    }
     if (obj.type === "control.mute" && typeof obj.value === "boolean") {
       return { type: "control.mute", value: obj.value };
     }
     if (obj.type === "transcript_final" && typeof obj.text === "string") {
       return {
         type: "transcript_final",
-        text: obj.text,
-        ...(typeof obj.turnId === "string" ? { turnId: obj.turnId } : {}),
-      };
-    }
-    if (obj.type === "transcript_speculative" && typeof obj.text === "string") {
-      return {
-        type: "transcript_speculative",
         text: obj.text,
         ...(typeof obj.turnId === "string" ? { turnId: obj.turnId } : {}),
       };
