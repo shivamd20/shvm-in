@@ -59,6 +59,8 @@ export class Vani2SessionDO extends DurableObject {
   /** Last processed turnId for idempotency (idea 9). */
   private lastProcessedTurnId: string | null = null;
   private messageQueue: AsyncQueue<ClientToServerJson> | null = null;
+  /** When a transcript_final arrives during a turn, we abort and store it here so the loop runs it next. */
+  private pendingTranscriptFinal: Extract<ClientToServerJson, { type: "transcript_final" }> | null = null;
   /** System prompt from client session.init; null until set (then use default in llm-adapter). */
   private systemPrompt: string | null = null;
 
@@ -215,6 +217,14 @@ export class Vani2SessionDO extends DurableObject {
         }
         await this.runNormalTurn(msg);
       }
+      while (this.pendingTranscriptFinal) {
+        const next = this.pendingTranscriptFinal;
+        this.pendingTranscriptFinal = null;
+        if (!next.text.trim()) continue;
+        if (next.turnId != null && next.turnId === this.lastProcessedTurnId) continue;
+        if (this.llmStreaming) continue;
+        await this.runNormalTurn(next);
+      }
     }
   }
 
@@ -248,13 +258,35 @@ export class Vani2SessionDO extends DurableObject {
         systemPrompt: this.systemPrompt ?? undefined,
       });
       const iter = stream[Symbol.asyncIterator]();
+      const queue = this.messageQueue;
       const firstTokenPromise = iter.next();
       const timeoutPromise = new Promise<never>((_, reject) =>
         setTimeout(() => reject(new Error("LLM first token timeout")), LLM_FIRST_TOKEN_TIMEOUT_MS)
       );
+      const firstRace = queue
+        ? Promise.race([
+            firstTokenPromise.then((r) => ({ kind: "token" as const, value: r })),
+            queue.get().then((m) => ({ kind: "msg" as const, value: m })),
+            timeoutPromise.then(() => ({ kind: "timeout" as const })),
+          ])
+        : Promise.race([
+            firstTokenPromise.then((r) => ({ kind: "token" as const, value: r })),
+            timeoutPromise.then(() => ({ kind: "timeout" as const })),
+          ]);
       let firstResult: IteratorResult<string, string>;
       try {
-        firstResult = await Promise.race([firstTokenPromise, timeoutPromise]);
+        const raced = await firstRace;
+        if (raced.kind === "timeout") throw new Error("LLM first token timeout");
+        if (raced.kind === "msg") {
+          if (raced.value.type === "control.interrupt") this.aborted = true;
+          if (raced.value.type === "transcript_final") {
+            this.messages.pop();
+            this.pendingTranscriptFinal = raced.value;
+          }
+          this.llmStreaming = false;
+          return;
+        }
+        firstResult = raced.value;
       } catch (e) {
         const reason = e instanceof Error ? e.message : String(e);
         this.sendJson({ type: "llm_error", reason, ...(turnId ? { turnId } : {}) });
@@ -271,9 +303,35 @@ export class Vani2SessionDO extends DurableObject {
       fullText += delta;
       this.sendJson({ type: "llm_partial", text: delta, ...(turnId ? { turnId } : {}) });
       sentenceBuffer += delta;
-      for await (const d of stream) {
+
+      while (queue && !this.sessionState?.isClosed()) {
+        const raced = await Promise.race([
+          iter.next().then((r) => ({ kind: "iter" as const, value: r })),
+          queue.get().then((m) => ({ kind: "msg" as const, value: m })),
+        ]);
+        if (raced.kind === "msg") {
+          const m = raced.value;
+          if (m.type === "control.interrupt") {
+            this.aborted = true;
+            break;
+          }
+          if (m.type === "transcript_final") {
+            this.aborted = true;
+            this.sendBenchmarkEvent({
+              type: "benchmark.turn_interrupted",
+              ts: Date.now(),
+              turnIndex: this.turnIndex,
+            });
+            this.pendingTranscriptFinal = m;
+            break;
+          }
+          if (m.type === "session.init") this.systemPrompt = m.systemPrompt;
+          continue;
+        }
+        const iterResult = raced.value;
+        if (iterResult.done) break;
         if (this.aborted) break;
-        delta = d;
+        delta = iterResult.value;
         fullText += delta;
         this.sendJson({ type: "llm_partial", text: delta, ...(turnId ? { turnId } : {}) });
         sentenceBuffer += delta;

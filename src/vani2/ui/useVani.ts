@@ -110,8 +110,9 @@ export function useVani(
     const t = lastEvent.payload.transcript.trim();
     if (!t || t === lastSentTranscriptRef.current) return;
     lastSentTranscriptRef.current = t;
+    if (llmText || isPlaying) sendInterrupt();
     sendTranscriptFinal(t, String(turnIdRef.current));
-  }, [lastEvent, sendTranscriptFinal]);
+  }, [lastEvent, sendTranscriptFinal, sendInterrupt, llmText, isPlaying]);
 
   useEffect(() => {
     if (lastEvent?.type !== "StartOfTurn" && lastEvent?.type !== "TurnResumed") return;
