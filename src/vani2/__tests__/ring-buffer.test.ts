@@ -62,4 +62,20 @@ describe("RingBuffer", () => {
   it("throws if capacity < 1", () => {
     expect(() => new RingBuffer(0)).toThrow("capacity must be >= 1");
   });
+
+  it("push after takeAll works", () => {
+    const rb = new RingBuffer(5);
+    rb.push(buf(1));
+    rb.takeAll();
+    rb.push(buf(2));
+    const out = rb.takeAll();
+    expect(out.length).toBe(1);
+    expect(new Uint8Array(out[0])[0]).toBe(2);
+  });
+
+  it("takeAll when empty returns empty array", () => {
+    const rb = new RingBuffer(3);
+    expect(rb.takeAll()).toEqual([]);
+    expect(rb.takeAll()).toEqual([]);
+  });
 });

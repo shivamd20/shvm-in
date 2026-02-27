@@ -59,6 +59,42 @@ describe("protocol", () => {
     it("returns null when value is not boolean", () => {
       expect(parseClientJson('{"type":"control.mute","value":1}')).toBeNull();
     });
+
+    it("parses transcript_final with text", () => {
+      expect(parseClientJson('{"type":"transcript_final","text":"Hello"}')).toEqual({
+        type: "transcript_final",
+        text: "Hello",
+      });
+    });
+
+    it("parses transcript_final with empty string", () => {
+      expect(parseClientJson('{"type":"transcript_final","text":""}')).toEqual({
+        type: "transcript_final",
+        text: "",
+      });
+    });
+
+    it("returns null for transcript_final when text is not string", () => {
+      expect(parseClientJson('{"type":"transcript_final","text":123}')).toBeNull();
+      expect(parseClientJson('{"type":"transcript_final"}')).toBeNull();
+    });
+
+    it("parses control.interrupt", () => {
+      expect(parseClientJson('{"type":"control.interrupt"}')).toEqual({
+        type: "control.interrupt",
+      });
+    });
+
+    it("returns null for malformed JSON", () => {
+      expect(parseClientJson("{")).toBeNull();
+      expect(parseClientJson("")).toBeNull();
+    });
+
+    it("ignores extra fields and parses known types", () => {
+      expect(parseClientJson('{"type":"control.interrupt","extra":1}')).toEqual({
+        type: "control.interrupt",
+      });
+    });
   });
 
   describe("encodeAudioFrame / decodeAudioFrame", () => {

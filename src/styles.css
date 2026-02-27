@@ -1,6 +1,5 @@
 @import "tailwindcss";
 @plugin "@tailwindcss/typography";
-@source "../packages/vani-client/src/ui/**/*.{ts,tsx}";
 
 @theme {
   --color-background: #000000;

@@ -13,11 +13,15 @@ function buildSessionWsUrl(baseUrl: string, sessionId: string): string {
 
 export type SessionStatus = "disconnected" | "connecting" | "connected" | "error";
 
+/** Server "still working" status (idea 7). */
+export type ServerStatus = "thinking" | "synthesizing" | null;
+
 export function useVani2Session(serverBaseUrl?: string, sessionId?: string) {
   const baseUrl = serverBaseUrl ?? (typeof window !== "undefined" ? window.location.origin : "");
   const sessionIdVal = sessionId ?? (typeof window !== "undefined" ? `v2-${Date.now()}-${Math.random().toString(36).slice(2, 9)}` : "v2-session");
   const [status, setStatus] = useState<SessionStatus>("disconnected");
   const [error, setError] = useState<string | null>(null);
+  const [serverStatus, setServerStatus] = useState<ServerStatus>(null);
   const [llmText, setLlmText] = useState("");
   const [llmCompleteText, setLlmCompleteText] = useState<string | null>(null);
   const [llmError, setLlmError] = useState<string | null>(null);
@@ -66,6 +70,7 @@ export function useVani2Session(serverBaseUrl?: string, sessionId?: string) {
   const connect = useCallback(() => {
     setError(null);
     setLlmError(null);
+    setServerStatus(null);
     setStatus("connecting");
     const url = buildSessionWsUrl(baseUrl, sessionIdVal);
     const ws = new WebSocket(url);
@@ -81,24 +86,40 @@ export function useVani2Session(serverBaseUrl?: string, sessionId?: string) {
     ws.onmessage = (event: MessageEvent) => {
       if (typeof event.data === "string") {
         try {
-          const msg = JSON.parse(event.data) as { type: string; text?: string; reason?: string };
+          const msg = JSON.parse(event.data) as { type: string; text?: string; reason?: string; value?: string };
           if (isBenchmarkEvent(msg)) {
             benchmarkStore.push(sessionIdVal, msg);
             return;
           }
+          if (msg.type === "error" && typeof msg.reason === "string") {
+            setError(msg.reason);
+            console.error("[Vani2Session] Server error:", msg.reason);
+            return;
+          }
+          if (msg.type === "status" && (msg.value === "thinking" || msg.value === "synthesizing")) {
+            setServerStatus(msg.value);
+            return;
+          }
           if (msg.type === "llm_partial" && typeof msg.text === "string") {
+            setServerStatus(null);
             setLlmText((prev) => prev + msg.text);
           }
           if (msg.type === "llm_complete" && typeof msg.text === "string") {
             setLlmCompleteText(msg.text);
             setAssistantHistory((prev) => [msg.text!, ...prev].slice(0, 20));
             setLlmText("");
+            setServerStatus(null);
           }
           if (msg.type === "llm_error" && typeof msg.reason === "string") {
             setLlmError(msg.reason);
             setLlmText("");
+            setServerStatus(null);
+            console.error("[Vani2Session] LLM error:", msg.reason);
           }
-        } catch {}
+        } catch (parseErr) {
+          console.error("[Vani2Session] Failed to parse server message", parseErr instanceof Error ? parseErr.stack : parseErr);
+          setError("Invalid server message");
+        }
         return;
       }
       const data = event.data as ArrayBuffer | Blob;
@@ -114,18 +135,31 @@ export function useVani2Session(serverBaseUrl?: string, sessionId?: string) {
             playbackQueueRef.current.push(buffer);
             drainPlayback();
           },
-          () => {}
+          (decodeErr) => {
+            console.error("[Vani2Session] Audio decode failed", decodeErr instanceof Error ? decodeErr.stack : decodeErr);
+            setError("Audio playback failed (decode error)");
+          }
         );
+      }).catch((e) => {
+        console.error("[Vani2Session] Failed to read audio data", e instanceof Error ? e.stack : e);
+        setError("Audio playback failed");
       });
     };
-    ws.onclose = () => {
+    ws.onclose = (ev: CloseEvent) => {
       setStatus("disconnected");
       wsRef.current = null;
       stopPlayback();
+      if (ev.code !== 1000 && ev.code !== 1001 && ev.reason) {
+        const reason = `Session closed: ${ev.code}${ev.reason ? " — " + ev.reason : ""}`;
+        setError(reason);
+        console.warn("[Vani2Session]", reason);
+      }
     };
-    ws.onerror = () => {
+    ws.onerror = (ev) => {
       setStatus("error");
-      setError("Session WebSocket error");
+      const errMsg = "Session WebSocket error";
+      setError(errMsg);
+      console.error("[Vani2Session] WebSocket error", ev);
     };
   }, [baseUrl, sessionIdVal, drainPlayback, stopPlayback]);
 
@@ -142,20 +176,38 @@ export function useVani2Session(serverBaseUrl?: string, sessionId?: string) {
       audioContextRef.current = null;
     }
     setStatus("disconnected");
+    setError(null);
+    setServerStatus(null);
     setLlmText("");
     setLlmCompleteText(null);
     setLlmError(null);
   }, [stopPlayback]);
 
-  const sendTranscriptFinal = useCallback((text: string) => {
+  const sendTranscriptFinal = useCallback((text: string, turnId?: string) => {
     const ws = wsRef.current;
-    if (!ws || ws.readyState !== WebSocket.OPEN) return;
+    if (!ws || ws.readyState !== WebSocket.OPEN) {
+      console.warn("[Vani2Session] sendTranscriptFinal ignored: not connected");
+      return;
+    }
     setLlmText("");
     setLlmCompleteText(null);
     setLlmError(null);
     try {
-      ws.send(JSON.stringify({ type: "transcript_final", text }));
-    } catch {}
+      ws.send(JSON.stringify({ type: "transcript_final", text, ...(turnId != null ? { turnId } : {}) }));
+    } catch (e) {
+      console.error("[Vani2Session] sendTranscriptFinal failed", e instanceof Error ? e.stack : e);
+      setError("Failed to send transcript");
+    }
+  }, []);
+
+  const sendTranscriptSpeculative = useCallback((text: string, turnId?: string) => {
+    const ws = wsRef.current;
+    if (!ws || ws.readyState !== WebSocket.OPEN || !text.trim()) return;
+    try {
+      ws.send(JSON.stringify({ type: "transcript_speculative", text: text.trim(), ...(turnId != null ? { turnId } : {}) }));
+    } catch (e) {
+      console.error("[Vani2Session] sendTranscriptSpeculative failed", e instanceof Error ? e.stack : e);
+    }
   }, []);
 
   const sendInterrupt = useCallback(() => {
@@ -164,7 +216,9 @@ export function useVani2Session(serverBaseUrl?: string, sessionId?: string) {
     stopPlayback();
     try {
       ws.send(JSON.stringify({ type: "control.interrupt" }));
-    } catch {}
+    } catch (e) {
+      console.error("[Vani2Session] sendInterrupt failed", e instanceof Error ? e.stack : e);
+    }
   }, [stopPlayback]);
 
   useEffect(() => {
@@ -174,9 +228,11 @@ export function useVani2Session(serverBaseUrl?: string, sessionId?: string) {
   return {
     status,
     error,
+    serverStatus,
     connect,
     disconnect,
     sendTranscriptFinal,
+    sendTranscriptSpeculative,
     sendInterrupt,
     llmText,
     llmCompleteText,

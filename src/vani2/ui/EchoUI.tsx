@@ -40,9 +40,11 @@ export function EchoUI() {
   const {
     status: sessionStatus,
     error: sessionError,
+    serverStatus,
     connect: connectSession,
     disconnect: disconnectSession,
     sendTranscriptFinal,
+    sendTranscriptSpeculative,
     sendInterrupt,
     llmText,
     llmError,
@@ -51,13 +53,27 @@ export function EchoUI() {
   } = useVani2Session(serverUrl, sessionId);
 
   const lastSentTranscriptRef = useRef<string | null>(null);
+  const turnIdRef = useRef(0);
+
+  useEffect(() => {
+    if (lastEvent?.type === "StartOfTurn" || lastEvent?.type === "TurnResumed") {
+      turnIdRef.current += 1;
+    }
+  }, [lastEvent?.type]);
+
+  useEffect(() => {
+    if (lastEvent?.type === "EagerEndOfTurn") {
+      const t = (lastEvent.payload.transcript ?? liveTranscript ?? "").trim();
+      if (t) sendTranscriptSpeculative(t, String(turnIdRef.current));
+    }
+  }, [lastEvent?.type, lastEvent?.payload?.transcript, liveTranscript, sendTranscriptSpeculative]);
 
   useEffect(() => {
     if (lastEvent?.type !== "EndOfTurn" || !lastEvent.payload.transcript) return;
     const t = lastEvent.payload.transcript.trim();
     if (!t || t === lastSentTranscriptRef.current) return;
     lastSentTranscriptRef.current = t;
-    sendTranscriptFinal(t);
+    sendTranscriptFinal(t, String(turnIdRef.current));
   }, [lastEvent, sendTranscriptFinal]);
 
   useEffect(() => {
@@ -77,7 +93,9 @@ export function EchoUI() {
   };
 
   const isTranscribing = status === "connected";
-  const isConnecting = status === "connecting";
+  const isFluxConnecting = status === "connecting";
+  const isSessionConnecting = sessionStatus === "connecting";
+  const isConnecting = isFluxConnecting || isSessionConnecting;
   const isSessionConnected = sessionStatus === "connected";
 
   return (
@@ -148,9 +166,15 @@ export function EchoUI() {
         )}
 
         {isConnecting && (
-          <div className="mb-4 py-3 rounded-xl bg-zinc-800/50 border border-zinc-700 flex items-center justify-center gap-2">
-            <div className="w-3 h-3 rounded-full bg-amber-500 animate-pulse" />
-            <span className="text-sm font-mono text-zinc-400">Connecting…</span>
+          <div className="mb-4 py-3 rounded-xl bg-zinc-800/50 border border-zinc-700 flex flex-col items-center justify-center gap-2">
+            <div className="flex items-center gap-2">
+              <div className="w-3 h-3 rounded-full bg-amber-500 animate-pulse" />
+              <span className="text-sm font-mono text-zinc-400">Connecting…</span>
+            </div>
+            <div className="flex gap-4 text-[11px] font-mono text-zinc-500">
+              {isFluxConnecting && <span>Flux (STT)</span>}
+              {isSessionConnecting && <span>Session (LLM/TTS)</span>}
+            </div>
           </div>
         )}
 
@@ -166,6 +190,18 @@ export function EchoUI() {
                   <div className="flex items-center gap-1.5 text-zinc-500">
                     <span className="w-1.5 h-1.5 rounded-full bg-sky-500" />
                     <span className="text-xs font-mono">Session</span>
+                  </div>
+                )}
+                {serverStatus === "thinking" && (
+                  <div className="flex items-center gap-1.5 text-sky-400/90">
+                    <span className="w-1.5 h-1.5 rounded-full bg-sky-500 animate-pulse" />
+                    <span className="text-xs font-mono">Thinking…</span>
+                  </div>
+                )}
+                {serverStatus === "synthesizing" && (
+                  <div className="flex items-center gap-1.5 text-violet-400/90">
+                    <span className="w-1.5 h-1.5 rounded-full bg-violet-500 animate-pulse" />
+                    <span className="text-xs font-mono">Synthesizing…</span>
                   </div>
                 )}
                 {isPlaying && (
@@ -212,15 +248,19 @@ export function EchoUI() {
         )}
 
         {(error || sessionError) && (
-          <p className="text-xs font-mono text-amber-400 mb-4 px-3 py-2 rounded-lg bg-amber-950/30 border border-amber-900/50">
-            {error || sessionError}
-          </p>
+          <div className="mb-4 px-3 py-2 rounded-lg bg-amber-950/30 border border-amber-900/50" role="alert">
+            <p className="text-xs font-mono text-amber-400 font-medium">Connection error</p>
+            <p className="text-xs font-mono text-amber-300/90 mt-1">{error || sessionError}</p>
+            <p className="text-[10px] font-mono text-zinc-500 mt-1.5">Check the browser console for details.</p>
+          </div>
         )}
 
         {llmError && (
-          <p className="text-xs font-mono text-red-400 mb-4 px-3 py-2 rounded-lg bg-red-950/30 border border-red-900/50">
-            LLM: {llmError}
-          </p>
+          <div className="mb-4 px-3 py-2 rounded-lg bg-red-950/30 border border-red-900/50" role="alert">
+            <p className="text-xs font-mono text-red-400 font-medium">LLM error</p>
+            <p className="text-xs font-mono text-red-300/90 mt-1">{llmError}</p>
+            <p className="text-[10px] font-mono text-zinc-500 mt-1.5">Check the browser console for details.</p>
+          </div>
         )}
 
         {(llmText || assistantHistory.length > 0) && (

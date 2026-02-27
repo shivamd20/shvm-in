@@ -28,10 +28,6 @@
 				"class_name": "MessageStore"
 			},
 			{
-				"name": "VOICE_SESSIONS",
-				"class_name": "VoiceSessionDO"
-			},
-			{
 				"name": "VANI2_SESSIONS",
 				"class_name": "Vani2SessionDO"
 			}
@@ -45,12 +41,6 @@
 			"tag": "v1",
 			"new_sqlite_classes": [
 				"MessageStore"
-			]
-		},
-		{
-			"tag": "v2",
-			"new_sqlite_classes": [
-				"VoiceSessionDO"
 			]
 		},
 		{

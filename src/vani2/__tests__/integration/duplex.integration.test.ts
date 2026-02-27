@@ -85,4 +85,50 @@ describe("Vani 2 duplex (integration)", () => {
       expect(arr[0]).toBe(i);
     }
   });
+
+  it("sends error for invalid JSON message", async () => {
+    const sessionId = "err-" + Date.now();
+    const ws = await openWs(sessionId);
+    const first = await new Promise<string>((resolve) => {
+      ws.onmessage = (e: WsMessageEvent) => {
+        if (typeof e.data === "string") resolve(e.data);
+      };
+    });
+    // consume initial state
+    const stateMsg = JSON.parse(first);
+    expect(stateMsg.type).toBe("state");
+
+    const next = await new Promise<string>((resolve, reject) => {
+      ws.onmessage = (e: WsMessageEvent) => {
+        if (typeof e.data === "string") resolve(e.data);
+      };
+      ws.send("not json");
+      setTimeout(() => reject(new Error("timeout")), 3000);
+    });
+    ws.close();
+    const errMsg = JSON.parse(next);
+    expect(errMsg.type).toBe("error");
+    expect(typeof errMsg.reason).toBe("string");
+  });
+
+  it("sends error for empty transcript_final", async () => {
+    const sessionId = "empty-tf-" + Date.now();
+    const ws = await openWs(sessionId);
+    await new Promise<string>((resolve) => {
+      ws.onmessage = (e: WsMessageEvent) => {
+        if (typeof e.data === "string") resolve(e.data);
+      };
+    });
+    const next = await new Promise<string>((resolve, reject) => {
+      ws.onmessage = (e: WsMessageEvent) => {
+        if (typeof e.data === "string") resolve(e.data);
+      };
+      ws.send(JSON.stringify({ type: "transcript_final", text: "" }));
+      setTimeout(() => reject(new Error("timeout")), 3000);
+    });
+    ws.close();
+    const errMsg = JSON.parse(next);
+    expect(errMsg.type).toBe("error");
+    expect(errMsg.reason).toContain("non-empty");
+  });
 });

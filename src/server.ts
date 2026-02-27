@@ -1,14 +1,9 @@
 import handler from "@tanstack/react-start/server-entry";
 import { handleMcpRequest } from "./mcp";
-import { toHttpStream } from "@tanstack/ai";
-import { runAgentWithMCP } from "./lib/chat";
-import { createMCPConsumer } from "./lib/mcp-client";
-import { getSystemPrompt } from "./lib/system-prompt";
 import { getFluxWebSocketResponse } from "./vani2/server/stt-adapter";
 
 // Re-export the MessageStore Durable Object for wrangler binding
 export { MessageStore } from "./mcp/message-store";
-export { VoiceSessionDO } from "./vani/server/handlers/VoiceSessionDO";
 export { Vani2SessionDO } from "./vani2/server/Vani2SessionDO";
 
 export default {
@@ -20,13 +15,31 @@ export default {
             return handleMcpRequest(request, env, ctx);
         }
 
-        // Voice session websocket route (Vani 1)
-        const wsMatch = url.pathname.match(/^\/ws\/([^/]+)$/);
-        if (wsMatch) {
-            const sessionId = wsMatch[1];
-            const id = env.VOICE_SESSIONS.idFromName(sessionId);
-            const stub = env.VOICE_SESSIONS.get(id);
-            return stub.fetch(request);
+        // Vani 2 health check (idea 10): lightweight check for Workers AI availability
+        if (url.pathname === "/v2/health") {
+            try {
+                if (!env.AI) {
+                    return new Response(JSON.stringify({ ok: false, reason: "AI binding missing" }), {
+                        status: 503,
+                        headers: { "Content-Type": "application/json" },
+                    });
+                }
+                // Optional: ping Workers AI with a trivial call to confirm it's reachable
+                await env.AI.run("@cf/meta/llama-3.2-1b-instruct", {
+                    prompt: "Hi",
+                    max_tokens: 1,
+                });
+                return new Response(JSON.stringify({ ok: true }), {
+                    status: 200,
+                    headers: { "Content-Type": "application/json" },
+                });
+            } catch (e) {
+                console.error("[Vani2] health check failed", e);
+                return new Response(
+                    JSON.stringify({ ok: false, reason: e instanceof Error ? e.message : String(e) }),
+                    { status: 503, headers: { "Content-Type": "application/json" } }
+                );
+            }
         }
 
         // Vani 2 websocket route
@@ -47,34 +60,6 @@ export default {
             } catch (e) {
                 console.error("[Flux] getFluxWebSocketResponse error:", e);
                 return new Response(JSON.stringify({ error: "Flux unavailable" }), { status: 502 });
-            }
-        }
-
-        if (url.pathname === "/api/chat") {
-            try {
-                console.log("[Chat] Request received");
-
-                const body: any = await request.json();
-                let messages = body.messages;
-                // Currently defaults to 'engineer'
-                const mode = body.mode || 'engineer';
-
-                const systemPrompt = getSystemPrompt(mode);
-                messages = [{ role: 'system', content: systemPrompt }, ...messages];
-
-                // Initialize MCP consumer in the backend pointing to its own /mcp origin
-                const protocol = request.url.startsWith("https") ? "https" : "http";
-                const mcpUrl = `${protocol}://${new URL(request.url).host}/mcp`;
-                const mcp = await createMCPConsumer({ servers: [mcpUrl] });
-
-                const stream = await runAgentWithMCP(env as any, messages, mcp);
-
-                return new Response(toHttpStream(stream), {
-                    headers: { "Content-Type": "application/x-ndjson" },
-                });
-            } catch (err) {
-                console.error("[Chat] Top-level handler error:", err);
-                return new Response(JSON.stringify({ error: String(err) }), { status: 500 });
             }
         }
 

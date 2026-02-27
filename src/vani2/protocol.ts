@@ -8,7 +8,8 @@
 export type ClientToServerJson =
   | { type: "control.mute"; value: boolean }
   | { type: "control.interrupt" }
-  | { type: "transcript_final"; text: string };
+  | { type: "transcript_final"; text: string; turnId?: string }
+  | { type: "transcript_speculative"; text: string; turnId?: string };
 
 /** Benchmark events (server → client); ts in ms, turnIndex per turn. */
 export type BenchmarkEvent =
@@ -18,13 +19,17 @@ export type BenchmarkEvent =
   | { type: "benchmark.turn_end"; ts: number; turnIndex: number }
   | { type: "benchmark.turn_interrupted"; ts: number; turnIndex: number };
 
+/** Server status for "still working" feedback (idea 7). */
+export type ServerStatusValue = "thinking" | "synthesizing";
+
 /** Server → Client JSON */
 export type ServerToClientJson =
   | { type: "state"; value: SessionState }
   | { type: "error"; reason: string }
-  | { type: "llm_partial"; text: string }
-  | { type: "llm_complete"; text: string }
-  | { type: "llm_error"; reason: string }
+  | { type: "status"; value: ServerStatusValue }
+  | { type: "llm_partial"; text: string; turnId?: string }
+  | { type: "llm_complete"; text: string; turnId?: string }
+  | { type: "llm_error"; reason: string; turnId?: string }
   | BenchmarkEvent;
 
 export type SessionState = "connected" | "streaming" | "closed";
@@ -107,12 +112,23 @@ export function payloadAfterTimestamp(buffer: ArrayBuffer): Uint8Array {
 
 export function parseClientJson(data: string): ClientToServerJson | null {
   try {
-    const obj = JSON.parse(data) as { type?: string; value?: boolean; text?: string };
+    const obj = JSON.parse(data) as { type?: string; value?: boolean; text?: string; turnId?: string };
     if (obj.type === "control.mute" && typeof obj.value === "boolean") {
       return { type: "control.mute", value: obj.value };
     }
     if (obj.type === "transcript_final" && typeof obj.text === "string") {
-      return { type: "transcript_final", text: obj.text };
+      return {
+        type: "transcript_final",
+        text: obj.text,
+        ...(typeof obj.turnId === "string" ? { turnId: obj.turnId } : {}),
+      };
+    }
+    if (obj.type === "transcript_speculative" && typeof obj.text === "string") {
+      return {
+        type: "transcript_speculative",
+        text: obj.text,
+        ...(typeof obj.turnId === "string" ? { turnId: obj.turnId } : {}),
+      };
     }
     if (obj.type === "control.interrupt") {
       return { type: "control.interrupt" };

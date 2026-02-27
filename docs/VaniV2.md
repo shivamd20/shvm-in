@@ -94,9 +94,8 @@ control.mute
 
 * WebSocket Gateway
 * Durable Object Session Authority
-* Server State Machine (XState)
-* Actor Supervisor
-* Interrupt Controller
+* Server lifecycle state machine (XState): `connected` | `streaming` | `closed`; turn pipeline (LLM → TTS) runs in the DO with interrupt support.
+* Interrupt handling via `control.interrupt` and in-pipeline abort flag.
 
 All logic centralized here.
 
@@ -119,22 +118,13 @@ All logic centralized here.
 
 ## 4. Server Authoritative State Machine
 
-Single authoritative machine exists:
+**Current implementation:** A single XState machine in the DO models session lifecycle only:
 
-```
-ConversationMachine (Server)
-```
+* **connected** — initial; accepts binary (audio) and JSON (control, transcript_final).
+* **streaming** — receiving binary; ring buffer + echo engine feed.
+* **closed** — WebSocket close/error; entry runs cleanup (flush echo, null refs).
 
-Primary states:
-
-```
-IDLE
-LISTENING
-THINKING
-SPEAKING
-INTERRUPTING
-RECOVERING
-```
+The turn pipeline (transcript_final → LLM stream → sentence buffer → TTS) runs in the DO outside the machine; one active turn at a time with an abort flag for `control.interrupt`. Future evolution may model “processing” as a machine state or sub-actor.
 
 Client mirrors nothing.
 
@@ -146,43 +136,29 @@ Why:
 
 ---
 
-## 5. Actor Model (Server Only)
+## 5. Logical Roles (Server)
 
-Each subsystem implemented as an XState actor.
-
-| Actor               | Responsibility       |
-| ------------------- | -------------------- |
-| SessionActor        | session lifecycle     |
-| UploadActor         | audio ingest          |
-| **FluxActor**       | **STT + turn detection** (Flux; no separate VAD) |
-| LLMActor            | reasoning (Workers AI) |
-| SchedulerActor      | sentence emission     |
-| TTSActor            | speech synthesis (Aura-2) |
-| PlaybackStreamActor | downstream streaming  |
-| InterruptActor      | barge-in arbitration  |
-
-Actors supervised by SessionActor. Flux provides both transcription and turn boundaries (StartOfTurn, EagerEndOfTurn, TurnResumed, EndOfTurn), so a separate VADActor is not used.
+* **Session lifecycle** — XState machine (connected / streaming / closed); cleanup on close.
+* **Audio ingest** — Ring buffer + echo engine (binary path).
+* **Flux (STT + turn detection)** — Client connects to `/v2/flux/:id`; Flux provides transcript and turn boundaries (no separate VAD).
+* **Turn pipeline** — transcript_final → LLM adapter (Workers AI) → sentence buffer → TTS adapter (Aura-2); one turn at a time; abort on `control.interrupt`.
+* **Barge-in** — Client sends `control.interrupt`; server sets abort flag; pipeline exits and clears streaming state.
 
 ---
 
 ## 6. Wire Protocol (Minimal + Typed)
 
-Transport remains WebSocket.
-
-Protocol intentionally minimal.
+Transport remains WebSocket. See `src/vani2/protocol.ts` for types.
 
 ### Client → Server
 
-```
-audio.chunk
-control.mute
-```
+* **Binary** — audio chunk (opaque).
+* **JSON** — `control.mute` (boolean), `control.interrupt`, `transcript_final` (text).
 
 ### Server → Client
 
-```
-audio.frame
-```
+* **Binary** — audio frame (e.g. MPEG from TTS).
+* **JSON** — `state` (connected | streaming | closed), `error` (reason), `llm_partial` / `llm_complete` / `llm_error`, and optional `benchmark.*` events for metrics.
 
 ---
 

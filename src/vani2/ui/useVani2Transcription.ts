@@ -184,13 +184,18 @@ export function useVani2Transcription(serverBaseUrl?: string, sessionId?: string
             scheduleReconnect();
           } else {
             setStatus("disconnected");
-            if (abnormal) setError(`Flux closed (${ev.code}${ev.reason ? ": " + ev.reason : ""}).`);
+            if (abnormal) {
+              const msg = `Flux closed (${ev.code}${ev.reason ? ": " + ev.reason : ""})`;
+              setError(msg);
+              console.warn("[Vani2Transcription]", msg);
+            }
           }
         };
 
-        ws.onerror = () => {
+        ws.onerror = (ev) => {
           setStatus("error");
-          setError("WebSocket error");
+          setError("Flux WebSocket error");
+          console.error("[Vani2Transcription] WebSocket error", ev);
         };
       };
 
@@ -218,6 +223,7 @@ export function useVani2Transcription(serverBaseUrl?: string, sessionId?: string
       setError(message);
       setStatus("error");
       shouldBeConnectedRef.current = false;
+      console.error("[Vani2Transcription] Connect failed", err instanceof Error ? err.stack : err);
     }
   }, [baseUrl, sessionIdVal]);
 

@@ -9,39 +9,19 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
-import { Route as VoiceRouteImport } from './routes/voice'
 import { Route as Vani2RouteImport } from './routes/vani2'
-import { Route as VaniHeadlessRouteImport } from './routes/vani-headless'
-import { Route as VaniRouteImport } from './routes/vani'
 import { Route as McpPlaygroundRouteImport } from './routes/mcp-playground'
 import { Route as ChatRouteImport } from './routes/chat'
 import { Route as BlogsRouteImport } from './routes/blogs'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as BlogsIndexRouteImport } from './routes/blogs.index'
 import { Route as Vani2BenchmarksRouteImport } from './routes/vani2.benchmarks'
-import { Route as VaniPlaygroundRouteImport } from './routes/vani.playground'
-import { Route as VaniDocsRouteImport } from './routes/vani.docs'
 import { Route as BlogsSlugRouteImport } from './routes/blogs.$slug'
 import { Route as BlogsTagsTagRouteImport } from './routes/blogs.tags.$tag'
 
-const VoiceRoute = VoiceRouteImport.update({
-  id: '/voice',
-  path: '/voice',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const Vani2Route = Vani2RouteImport.update({
   id: '/vani2',
   path: '/vani2',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const VaniHeadlessRoute = VaniHeadlessRouteImport.update({
-  id: '/vani-headless',
-  path: '/vani-headless',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const VaniRoute = VaniRouteImport.update({
-  id: '/vani',
-  path: '/vani',
   getParentRoute: () => rootRouteImport,
 } as any)
 const McpPlaygroundRoute = McpPlaygroundRouteImport.update({
@@ -74,16 +54,6 @@ const Vani2BenchmarksRoute = Vani2BenchmarksRouteImport.update({
   path: '/benchmarks',
   getParentRoute: () => Vani2Route,
 } as any)
-const VaniPlaygroundRoute = VaniPlaygroundRouteImport.update({
-  id: '/playground',
-  path: '/playground',
-  getParentRoute: () => VaniRoute,
-} as any)
-const VaniDocsRoute = VaniDocsRouteImport.update({
-  id: '/docs',
-  path: '/docs',
-  getParentRoute: () => VaniRoute,
-} as any)
 const BlogsSlugRoute = BlogsSlugRouteImport.update({
   id: '/$slug',
   path: '/$slug',
@@ -100,13 +70,8 @@ export interface FileRoutesByFullPath {
   '/blogs': typeof BlogsRouteWithChildren
   '/chat': typeof ChatRoute
   '/mcp-playground': typeof McpPlaygroundRoute
-  '/vani': typeof VaniRouteWithChildren
-  '/vani-headless': typeof VaniHeadlessRoute
   '/vani2': typeof Vani2RouteWithChildren
-  '/voice': typeof VoiceRoute
   '/blogs/$slug': typeof BlogsSlugRoute
-  '/vani/docs': typeof VaniDocsRoute
-  '/vani/playground': typeof VaniPlaygroundRoute
   '/vani2/benchmarks': typeof Vani2BenchmarksRoute
   '/blogs/': typeof BlogsIndexRoute
   '/blogs/tags/$tag': typeof BlogsTagsTagRoute
@@ -115,13 +80,8 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/chat': typeof ChatRoute
   '/mcp-playground': typeof McpPlaygroundRoute
-  '/vani': typeof VaniRouteWithChildren
-  '/vani-headless': typeof VaniHeadlessRoute
   '/vani2': typeof Vani2RouteWithChildren
-  '/voice': typeof VoiceRoute
   '/blogs/$slug': typeof BlogsSlugRoute
-  '/vani/docs': typeof VaniDocsRoute
-  '/vani/playground': typeof VaniPlaygroundRoute
   '/vani2/benchmarks': typeof Vani2BenchmarksRoute
   '/blogs': typeof BlogsIndexRoute
   '/blogs/tags/$tag': typeof BlogsTagsTagRoute
@@ -132,13 +92,8 @@ export interface FileRoutesById {
   '/blogs': typeof BlogsRouteWithChildren
   '/chat': typeof ChatRoute
   '/mcp-playground': typeof McpPlaygroundRoute
-  '/vani': typeof VaniRouteWithChildren
-  '/vani-headless': typeof VaniHeadlessRoute
   '/vani2': typeof Vani2RouteWithChildren
-  '/voice': typeof VoiceRoute
   '/blogs/$slug': typeof BlogsSlugRoute
-  '/vani/docs': typeof VaniDocsRoute
-  '/vani/playground': typeof VaniPlaygroundRoute
   '/vani2/benchmarks': typeof Vani2BenchmarksRoute
   '/blogs/': typeof BlogsIndexRoute
   '/blogs/tags/$tag': typeof BlogsTagsTagRoute
@@ -150,13 +105,8 @@ export interface FileRouteTypes {
     | '/blogs'
     | '/chat'
     | '/mcp-playground'
-    | '/vani'
-    | '/vani-headless'
     | '/vani2'
-    | '/voice'
     | '/blogs/$slug'
-    | '/vani/docs'
-    | '/vani/playground'
     | '/vani2/benchmarks'
     | '/blogs/'
     | '/blogs/tags/$tag'
@@ -165,13 +115,8 @@ export interface FileRouteTypes {
     | '/'
     | '/chat'
     | '/mcp-playground'
-    | '/vani'
-    | '/vani-headless'
     | '/vani2'
-    | '/voice'
     | '/blogs/$slug'
-    | '/vani/docs'
-    | '/vani/playground'
     | '/vani2/benchmarks'
     | '/blogs'
     | '/blogs/tags/$tag'
@@ -181,13 +126,8 @@ export interface FileRouteTypes {
     | '/blogs'
     | '/chat'
     | '/mcp-playground'
-    | '/vani'
-    | '/vani-headless'
     | '/vani2'
-    | '/voice'
     | '/blogs/$slug'
-    | '/vani/docs'
-    | '/vani/playground'
     | '/vani2/benchmarks'
     | '/blogs/'
     | '/blogs/tags/$tag'
@@ -198,40 +138,16 @@ export interface RootRouteChildren {
   BlogsRoute: typeof BlogsRouteWithChildren
   ChatRoute: typeof ChatRoute
   McpPlaygroundRoute: typeof McpPlaygroundRoute
-  VaniRoute: typeof VaniRouteWithChildren
-  VaniHeadlessRoute: typeof VaniHeadlessRoute
   Vani2Route: typeof Vani2RouteWithChildren
-  VoiceRoute: typeof VoiceRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
-    '/voice': {
-      id: '/voice'
-      path: '/voice'
-      fullPath: '/voice'
-      preLoaderRoute: typeof VoiceRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/vani2': {
       id: '/vani2'
       path: '/vani2'
       fullPath: '/vani2'
       preLoaderRoute: typeof Vani2RouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/vani-headless': {
-      id: '/vani-headless'
-      path: '/vani-headless'
-      fullPath: '/vani-headless'
-      preLoaderRoute: typeof VaniHeadlessRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/vani': {
-      id: '/vani'
-      path: '/vani'
-      fullPath: '/vani'
-      preLoaderRoute: typeof VaniRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/mcp-playground': {
@@ -276,20 +192,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof Vani2BenchmarksRouteImport
       parentRoute: typeof Vani2Route
     }
-    '/vani/playground': {
-      id: '/vani/playground'
-      path: '/playground'
-      fullPath: '/vani/playground'
-      preLoaderRoute: typeof VaniPlaygroundRouteImport
-      parentRoute: typeof VaniRoute
-    }
-    '/vani/docs': {
-      id: '/vani/docs'
-      path: '/docs'
-      fullPath: '/vani/docs'
-      preLoaderRoute: typeof VaniDocsRouteImport
-      parentRoute: typeof VaniRoute
-    }
     '/blogs/$slug': {
       id: '/blogs/$slug'
       path: '/$slug'
@@ -321,18 +223,6 @@ const BlogsRouteChildren: BlogsRouteChildren = {
 
 const BlogsRouteWithChildren = BlogsRoute._addFileChildren(BlogsRouteChildren)
 
-interface VaniRouteChildren {
-  VaniDocsRoute: typeof VaniDocsRoute
-  VaniPlaygroundRoute: typeof VaniPlaygroundRoute
-}
-
-const VaniRouteChildren: VaniRouteChildren = {
-  VaniDocsRoute: VaniDocsRoute,
-  VaniPlaygroundRoute: VaniPlaygroundRoute,
-}
-
-const VaniRouteWithChildren = VaniRoute._addFileChildren(VaniRouteChildren)
-
 interface Vani2RouteChildren {
   Vani2BenchmarksRoute: typeof Vani2BenchmarksRoute
 }
@@ -348,10 +238,7 @@ const rootRouteChildren: RootRouteChildren = {
   BlogsRoute: BlogsRouteWithChildren,
   ChatRoute: ChatRoute,
   McpPlaygroundRoute: McpPlaygroundRoute,
-  VaniRoute: VaniRouteWithChildren,
-  VaniHeadlessRoute: VaniHeadlessRoute,
   Vani2Route: Vani2RouteWithChildren,
-  VoiceRoute: VoiceRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

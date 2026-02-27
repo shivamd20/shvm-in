@@ -57,4 +57,37 @@ describe("EchoEngine", () => {
     expect(emitted.length).toBe(1);
     expect(new Uint8Array(emitted[0])[0]).toBe(1);
   });
+
+  it("clamps negative delayMs to 0", () => {
+    const engine = new EchoEngine({
+      delayMs: -10,
+      emit: (c) => emitted.push(c),
+      schedule,
+    });
+    engine.push(new Uint8Array([1]).buffer);
+    expect(emitted.length).toBe(1);
+  });
+
+  it("double flush is idempotent", () => {
+    const engine = new EchoEngine({
+      delayMs: 100,
+      emit: (c) => emitted.push(c),
+      schedule,
+    });
+    engine.push(new Uint8Array([1]).buffer);
+    engine.flush();
+    engine.flush();
+    expect(emitted.length).toBe(1);
+  });
+
+  it("emit throw propagates to caller", () => {
+    const engine = new EchoEngine({
+      delayMs: 0,
+      emit: () => {
+        throw new Error("emit failed");
+      },
+      schedule,
+    });
+    expect(() => engine.push(new Uint8Array([1]).buffer)).toThrow("emit failed");
+  });
 });
