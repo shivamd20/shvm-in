@@ -91,6 +91,9 @@ const config = defineConfig({
       'onnxruntime-web'
     ],
   },
+  server: {
+    port: 3200,
+  },
 })
 
 export default config

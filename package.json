@@ -28,6 +28,7 @@
 	"dependencies": {
 		"@cloudflare/tanstack-ai": "^0.1.2",
 		"@cloudflare/vite-plugin": "^1.13.8",
+		"@minceraftmc/opus-encoder": "^0.0.7-rc.1",
 		"@modelcontextprotocol/sdk": "^1.26.0",
 		"@ricky0123/vad-react": "^0.0.33",
 		"@shvm/vani-client": "workspace:*",
@@ -45,6 +46,7 @@
 		"gray-matter": "^4.0.3",
 		"hast-util-to-html": "^9.0.5",
 		"lucide-react": "^0.561.0",
+		"opus-decoder": "^0.7.11",
 		"react": "^19.2.0",
 		"react-dom": "^19.2.0",
 		"react-markdown": "^10.1.0",

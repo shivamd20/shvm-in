@@ -81,6 +81,8 @@ Responsibilities:
 * Audio playback
 * Mute toggle
 
+Phase 1 echo uses Opus encode (capture) and Opus decode (playback) as above; fixed 20ms frames, binary frame header (timestamp + length + payload type), send guard, and 200ms playback cap.
+
 No state machine exists on client.
 
 Client reacts only to:

@@ -85,6 +85,14 @@ Introduce external streaming dependency and async orchestration pressure.
 * Transcript event emitter
 * Partial + final transcript events
 
+### Live (streaming) transcription (Flux-native)
+
+* Workers AI **@cf/deepgram/flux**; client connects via `/v2/flux/:sessionId`.
+* Input: linear16 PCM, 16 kHz, **256 ms chunks** (4096 samples, ~8.2 KB) to match Deepgram official client; keep-alive when idle; backpressure 128 KB.
+* **Local dev:** With `vite dev`, the Worker runs in the same process (Cloudflare Vite plugin); echo and Flux use the same origin (e.g. localhost:3200).
+* Output: **Flux events** (Update, StartOfTurn, EagerEndOfTurn, TurnResumed, EndOfTurn) exposed to app; **no custom VAD**; transcript client-only; DO echo only.
+* Validation: partial latency, turn boundaries, no cross-session bleed.
+
 ### State Machine Expansion
 
 States:

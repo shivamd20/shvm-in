@@ -1,10 +1,14 @@
 import { useState } from "react";
-import { Mic, MicOff } from "lucide-react";
-import { useVani2Echo } from "./useVani2Echo";
-import { Waveform } from "./Waveform";
+import { Captions, Mic, MicOff, Circle } from "lucide-react";
+import { useVani2Transcription } from "./useVani2Transcription";
 
-const COLOR_IN = "34 197 94";
-const COLOR_OUT = "59 130 246";
+const FLUX_EVENT_LABELS: Record<string, { label: string; color: string }> = {
+  StartOfTurn: { label: "Turn started", color: "bg-emerald-500/20 text-emerald-400 border-emerald-600/50" },
+  Update: { label: "Listening", color: "bg-sky-500/20 text-sky-400 border-sky-600/50" },
+  EagerEndOfTurn: { label: "Eager EOT", color: "bg-amber-500/20 text-amber-400 border-amber-600/50" },
+  TurnResumed: { label: "Turn resumed", color: "bg-violet-500/20 text-violet-400 border-violet-600/50" },
+  EndOfTurn: { label: "Turn ended", color: "bg-rose-500/20 text-rose-400 border-rose-600/50" },
+};
 
 export function EchoUI() {
   const [serverUrl, setServerUrl] = useState(
@@ -15,22 +19,24 @@ export function EchoUI() {
   const {
     status,
     error,
-    isMuted,
-    toggleMute,
     connect,
-    incomingSamplesRef,
-    outgoingSamplesRef,
-  } = useVani2Echo(serverUrl);
+    disconnect,
+    liveTranscript,
+    transcriptHistory,
+    lastEvent,
+    fluxState,
+  } = useVani2Transcription(serverUrl);
 
-  const isConnected = status === "connected";
+  const isTranscribing = status === "connected";
   const isConnecting = status === "connecting";
 
   return (
     <div className="min-h-screen bg-zinc-950 text-zinc-100 flex flex-col items-center justify-center p-4">
-      <div className="w-full max-w-md rounded-2xl border border-zinc-800 bg-zinc-900/50 backdrop-blur-sm p-6 shadow-xl">
+      <div className="w-full max-w-lg rounded-2xl border border-zinc-800 bg-zinc-900/50 backdrop-blur-sm p-6 shadow-xl">
         <div className="flex items-center justify-between mb-6">
-          <h1 className="text-lg font-semibold tracking-tight font-mono text-zinc-200">
-            Vani 2 Echo
+          <h1 className="text-lg font-semibold tracking-tight font-mono text-zinc-200 flex items-center gap-2">
+            <Captions className="w-5 h-5 text-amber-500" />
+            Flux transcription
           </h1>
           {showOptions ? (
             <button
@@ -65,81 +71,103 @@ export function EchoUI() {
               spellCheck={false}
               autoComplete="off"
             />
+            <p className="mt-1.5 text-[11px] font-mono text-zinc-500">
+              With <code className="text-zinc-400">vite dev</code> the Worker runs in the same process.
+            </p>
           </div>
         )}
 
-        {!isConnected && !isConnecting && (
+        {!isTranscribing && !isConnecting && (
           <button
             type="button"
             onClick={connect}
             disabled={isConnecting}
-            className="w-full py-3 rounded-xl bg-zinc-800 hover:bg-zinc-700 border border-zinc-700 text-sm font-mono text-zinc-200 disabled:opacity-50 transition-colors mb-6"
+            className="w-full py-3 rounded-xl bg-amber-600 hover:bg-amber-500 text-zinc-950 font-mono text-sm font-medium disabled:opacity-50 transition-colors mb-6 flex items-center justify-center gap-2"
           >
-            {isConnecting ? "Connecting…" : "Connect"}
+            <Mic className="w-5 h-5" />
+            Start transcription
           </button>
         )}
 
-        {isConnected && (
-          <div className="flex items-center gap-2 mb-4 py-1.5 px-2 rounded-lg bg-zinc-800/50 border border-zinc-700/50">
-            <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
-            <span className="text-xs font-mono text-zinc-400">Connected</span>
+        {isConnecting && (
+          <div className="mb-4 py-3 rounded-xl bg-zinc-800/50 border border-zinc-700 flex items-center justify-center gap-2">
+            <div className="w-3 h-3 rounded-full bg-amber-500 animate-pulse" />
+            <span className="text-sm font-mono text-zinc-400">Connecting…</span>
           </div>
         )}
 
+        {isTranscribing && (
+          <>
+            <div className="mb-4 flex items-center justify-between gap-2 py-2 px-3 rounded-xl bg-zinc-800/50 border border-zinc-700">
+              <div className="flex items-center gap-2">
+                <div className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse" />
+                <span className="text-xs font-mono text-zinc-400">Live</span>
+              </div>
+              <button
+                type="button"
+                onClick={disconnect}
+                className="flex items-center gap-1.5 py-1.5 px-2.5 rounded-lg bg-red-950/40 border border-red-800/50 text-red-400 hover:bg-red-950/60 text-xs font-mono"
+              >
+                <MicOff className="w-3.5 h-3.5" />
+                Stop
+              </button>
+            </div>
+
+            {/* Flux state: event + turn + EOT confidence */}
+            <div className="mb-4 flex flex-wrap items-center gap-2">
+              {fluxState.event && (
+                <span
+                  className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md border text-xs font-mono ${
+                    FLUX_EVENT_LABELS[fluxState.event]?.color ?? "bg-zinc-700/30 text-zinc-400 border-zinc-600"
+                  }`}
+                >
+                  <Circle className="w-1.5 h-1.5 fill-current" />
+                  {FLUX_EVENT_LABELS[fluxState.event]?.label ?? fluxState.event}
+                </span>
+              )}
+              {fluxState.turnIndex !== undefined && (
+                <span className="px-2.5 py-1 rounded-md border border-zinc-600 bg-zinc-800/50 text-xs font-mono text-zinc-500">
+                  Turn #{fluxState.turnIndex}
+                </span>
+              )}
+              {fluxState.endOfTurnConf !== undefined && (
+                <span className="px-2.5 py-1 rounded-md border border-zinc-600 bg-zinc-800/50 text-xs font-mono text-zinc-500">
+                  EOT conf: {(fluxState.endOfTurnConf * 100).toFixed(0)}%
+                </span>
+              )}
+            </div>
+          </>
+        )}
+
         {error && (
-          <p className="text-xs font-mono text-red-400 mb-4 px-2 py-1.5 rounded-lg bg-red-950/30 border border-red-900/50">
+          <p className="text-xs font-mono text-amber-400 mb-4 px-3 py-2 rounded-lg bg-amber-950/30 border border-amber-900/50">
             {error}
           </p>
         )}
 
-        <div className="space-y-4">
-          <div>
+        {/* Live + history */}
+        {(isTranscribing || transcriptHistory.length > 0) && (
+          <div className="mb-4">
             <label className="block text-xs font-mono text-zinc-500 uppercase tracking-wider mb-1.5">
-              In
+              Transcripts
             </label>
-            <div className="h-12 w-full rounded-lg overflow-hidden bg-zinc-950/80 border border-zinc-800">
-              <Waveform
-                active={isConnected}
-                samplesRef={incomingSamplesRef}
-                color={COLOR_IN}
-                className="w-full h-full block"
-              />
-            </div>
-          </div>
-          <div>
-            <label className="block text-xs font-mono text-zinc-500 uppercase tracking-wider mb-1.5">
-              Out
-            </label>
-            <div className="h-12 w-full rounded-lg overflow-hidden bg-zinc-950/80 border border-zinc-800">
-              <Waveform
-                active={isConnected}
-                samplesRef={outgoingSamplesRef}
-                color={COLOR_OUT}
-                className="w-full h-full block"
-              />
-            </div>
-          </div>
-        </div>
-
-        {isConnected && (
-          <div className="mt-6 flex justify-center">
-            <button
-              type="button"
-              onClick={toggleMute}
-              className={`p-3 rounded-full border transition-colors ${
-                isMuted
-                  ? "bg-red-950/30 border-red-900/50 text-red-400 hover:bg-red-950/50"
-                  : "bg-zinc-800/50 border-zinc-700 text-zinc-300 hover:bg-zinc-800"
-              }`}
-              title={isMuted ? "Unmute" : "Mute"}
-              aria-label={isMuted ? "Unmute" : "Mute"}
-            >
-              {isMuted ? (
-                <MicOff className="w-5 h-5" />
-              ) : (
-                <Mic className="w-5 h-5" />
+            <div className="max-h-64 w-full rounded-xl bg-zinc-950/80 border border-zinc-800 overflow-y-auto flex flex-col">
+              {(liveTranscript || (lastEvent && isTranscribing ? `[${lastEvent.type}]` : "")) && (
+                <div className="px-3 py-2.5 text-sm font-mono text-amber-400/95 whitespace-pre-wrap break-words border-b border-zinc-800 shrink-0">
+                  {liveTranscript || (lastEvent ? `[${lastEvent.type}]` : "—")}
+                </div>
               )}
-            </button>
+              <div className="flex flex-col min-h-0">
+                {transcriptHistory.map((text, i) => (
+                  <div
+                    key={i}
+                    className="px-3 py-2.5 text-sm font-mono text-zinc-300 whitespace-pre-wrap break-words border-b border-zinc-800/50 last:border-b-0"
+                  >
+                    {text}
+                  </div>
+                ))}
+              </div>
+            </div>
           </div>
         )}
       </div>

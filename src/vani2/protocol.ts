@@ -14,11 +14,51 @@ export type ServerToClientJson =
 
 export type SessionState = "connected" | "streaming" | "closed";
 
-/** Binary from client: opaque audio chunk. First 8 bytes may be client timestamp (big-endian) for RTT. */
+/** Binary from client: opaque audio chunk. Option 3 frame = [uint32 ts][uint16 len][payload]. */
 export type AudioChunk = ArrayBuffer;
 
-/** Binary from server: echo frame. Same layout as chunk for RTT measurement. */
+/** Binary from server: echo frame. Same layout as chunk. */
 export type AudioFrame = ArrayBuffer;
+
+/** Payload type: 0 = PCM Int16, 1 = Opus */
+export const PAYLOAD_TYPE_PCM = 0;
+export const PAYLOAD_TYPE_OPUS = 1;
+
+/** Option 3 frame header: uint32 timestamp (ms) + uint16 payload length (bytes) + uint8 payload type. */
+export const FRAME_HEADER_BYTES = 4 + 2 + 1; // 7
+
+/**
+ * Encode a binary audio frame: [uint32 timestamp ms][uint16 payload length][uint8 type][payload].
+ */
+export function encodeAudioFrame(
+  timestampMs: number,
+  payload: Uint8Array,
+  payloadType: number = PAYLOAD_TYPE_PCM
+): ArrayBuffer {
+  const buf = new ArrayBuffer(FRAME_HEADER_BYTES + payload.byteLength);
+  const view = new DataView(buf);
+  view.setUint32(0, timestampMs >>> 0, false);
+  view.setUint16(4, payload.byteLength, false);
+  view.setUint8(6, payloadType >>> 0);
+  new Uint8Array(buf).set(payload, FRAME_HEADER_BYTES);
+  return buf;
+}
+
+/**
+ * Decode a binary audio frame. Returns null if buffer too small.
+ */
+export function decodeAudioFrame(
+  buffer: ArrayBuffer
+): { timestamp: number; payload: Uint8Array; payloadType: number } | null {
+  if (buffer.byteLength < FRAME_HEADER_BYTES) return null;
+  const view = new DataView(buffer);
+  const timestamp = view.getUint32(0, false);
+  const len = view.getUint16(4, false);
+  const payloadType = view.getUint8(6);
+  if (buffer.byteLength < FRAME_HEADER_BYTES + len) return null;
+  const payload = new Uint8Array(buffer.slice(FRAME_HEADER_BYTES, FRAME_HEADER_BYTES + len));
+  return { timestamp, payload, payloadType };
+}
 
 const TIMESTAMP_BYTES = 8;
 
