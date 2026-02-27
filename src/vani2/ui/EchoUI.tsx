@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect } from "react";
+import { Link } from "@tanstack/react-router";
 import { Captions, Mic, MicOff, Circle, MessageSquare } from "lucide-react";
 import { useVani2Transcription } from "./useVani2Transcription";
 import { useVani2Session } from "./useVani2Session";
@@ -87,23 +88,31 @@ export function EchoUI() {
             <Captions className="w-5 h-5 text-amber-500" />
             Flux transcription
           </h1>
-          {showOptions ? (
-            <button
-              type="button"
-              onClick={() => setShowOptions(false)}
-              className="text-xs font-mono text-zinc-500 hover:text-zinc-300"
+          <div className="flex items-center gap-3">
+            <Link
+              to="/vani2/benchmarks"
+              className="text-xs font-mono text-amber-500/80 hover:text-amber-400"
             >
-              Hide options
-            </button>
-          ) : (
-            <button
-              type="button"
-              onClick={() => setShowOptions(true)}
-              className="text-xs font-mono text-zinc-500 hover:text-zinc-300"
-            >
-              Options
-            </button>
-          )}
+              Benchmarks
+            </Link>
+            {showOptions ? (
+              <button
+                type="button"
+                onClick={() => setShowOptions(false)}
+                className="text-xs font-mono text-zinc-500 hover:text-zinc-300"
+              >
+                Hide options
+              </button>
+            ) : (
+              <button
+                type="button"
+                onClick={() => setShowOptions(true)}
+                className="text-xs font-mono text-zinc-500 hover:text-zinc-300"
+              >
+                Options
+              </button>
+            )}
+          </div>
         </div>
 
         {showOptions && (

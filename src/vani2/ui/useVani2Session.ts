@@ -2,6 +2,8 @@
  * Vani 2 session WebSocket: transcript_final, LLM stream, TTS audio playback, interrupt.
  */
 import { useRef, useState, useCallback, useEffect } from "react";
+import { isBenchmarkEvent } from "../protocol";
+import { benchmarkStore } from "./benchmark-store";
 
 function buildSessionWsUrl(baseUrl: string, sessionId: string): string {
   const base = baseUrl.replace(/^http/, "ws");
@@ -76,6 +78,10 @@ export function useVani2Session(serverBaseUrl?: string, sessionId?: string) {
       if (typeof event.data === "string") {
         try {
           const msg = JSON.parse(event.data) as { type: string; text?: string; reason?: string };
+          if (isBenchmarkEvent(msg)) {
+            benchmarkStore.push(sessionIdVal, msg);
+            return;
+          }
           if (msg.type === "llm_partial" && typeof msg.text === "string") {
             setLlmText((prev) => prev + msg.text);
           }

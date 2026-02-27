@@ -10,13 +10,22 @@ export type ClientToServerJson =
   | { type: "control.interrupt" }
   | { type: "transcript_final"; text: string };
 
+/** Benchmark events (server → client); ts in ms, turnIndex per turn. */
+export type BenchmarkEvent =
+  | { type: "benchmark.turn_start"; ts: number; turnIndex: number; transcriptLength?: number }
+  | { type: "benchmark.llm_first_token"; ts: number; turnIndex: number }
+  | { type: "benchmark.tts_first_chunk"; ts: number; turnIndex: number }
+  | { type: "benchmark.turn_end"; ts: number; turnIndex: number }
+  | { type: "benchmark.turn_interrupted"; ts: number; turnIndex: number };
+
 /** Server → Client JSON */
 export type ServerToClientJson =
   | { type: "state"; value: SessionState }
   | { type: "error"; reason: string }
   | { type: "llm_partial"; text: string }
   | { type: "llm_complete"; text: string }
-  | { type: "llm_error"; reason: string };
+  | { type: "llm_error"; reason: string }
+  | BenchmarkEvent;
 
 export type SessionState = "connected" | "streaming" | "closed";
 
@@ -116,4 +125,28 @@ export function parseClientJson(data: string): ClientToServerJson | null {
 
 export function serializeServerJson(msg: ServerToClientJson): string {
   return JSON.stringify(msg);
+}
+
+/** Client-side: per-turn metrics derived from benchmark events. */
+export interface TurnMetrics {
+  turnIndex: number;
+  turnStartTs: number;
+  llmFirstTs?: number;
+  ttsFirstTs?: number;
+  turnEndTs?: number;
+  turnInterruptedTs?: number;
+  interrupted: boolean;
+  /** Derived: llm_first_token.ts - turn_start.ts */
+  ttftMs?: number;
+  /** Derived: tts_first_chunk.ts - turn_start.ts */
+  ttfaMs?: number;
+  /** Derived: tts_first_chunk.ts - llm_first_token.ts */
+  llmToTtsMs?: number;
+  /** Derived: turn_end or turn_interrupted - turn_start */
+  durationMs?: number;
+}
+
+/** Type guard: message is a benchmark event from server. */
+export function isBenchmarkEvent(msg: { type?: string }): msg is BenchmarkEvent {
+  return typeof msg.type === "string" && msg.type.startsWith("benchmark.");
 }

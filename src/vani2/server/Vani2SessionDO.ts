@@ -2,7 +2,12 @@ import { DurableObject } from "cloudflare:workers";
 import { RingBuffer } from "./ring-buffer";
 import { EchoEngine } from "./echo-engine";
 import { SessionState } from "./session-state";
-import { parseClientJson, serializeServerJson, type SessionState as SessionStateType } from "../protocol";
+import {
+  parseClientJson,
+  serializeServerJson,
+  type SessionState as SessionStateType,
+  type BenchmarkEvent,
+} from "../protocol";
 import { streamLlmResponse, type LlmMessage } from "./llm-adapter";
 import { runAura2 } from "./tts-adapter";
 
@@ -18,6 +23,7 @@ export class Vani2SessionDO extends DurableObject {
   private messages: LlmMessage[] = [];
   private llmStreaming = false;
   private aborted = false;
+  private turnIndex = 0;
 
   constructor(ctx: DurableObjectState, env: Env) {
     super(ctx, env);
@@ -29,6 +35,17 @@ export class Vani2SessionDO extends DurableObject {
         this.ws.send(serializeServerJson(msg as any));
       } catch (e) {
         this.cleanup();
+      }
+    }
+  }
+
+  /** Fire-and-forget; does not block the pipeline. */
+  private sendBenchmarkEvent(event: BenchmarkEvent): void {
+    if (this.ws && this.ws.readyState === WebSocket.OPEN) {
+      try {
+        this.ws.send(serializeServerJson(event));
+      } catch {
+        // ignore; do not cleanup on benchmark send failure
       }
     }
   }
@@ -84,6 +101,13 @@ export class Vani2SessionDO extends DurableObject {
         return;
       }
       if (parsed.type === "control.interrupt") {
+        if (this.llmStreaming) {
+          this.sendBenchmarkEvent({
+            type: "benchmark.turn_interrupted",
+            ts: Date.now(),
+            turnIndex: this.turnIndex,
+          });
+        }
         this.aborted = true;
         return;
       }
@@ -91,15 +115,33 @@ export class Vani2SessionDO extends DurableObject {
         if (this.llmStreaming) return;
         this.llmStreaming = true;
         this.aborted = false;
+        this.turnIndex += 1;
+        const tTurnStart = Date.now();
+        this.sendBenchmarkEvent({
+          type: "benchmark.turn_start",
+          ts: tTurnStart,
+          turnIndex: this.turnIndex,
+          transcriptLength: parsed.text.length,
+        });
         this.messages.push({ role: "user", content: parsed.text });
         let sentenceBuffer = "";
         let fullText = "";
+        let llmFirstSent = false;
+        let ttsFirstSent = false;
         try {
           for await (const delta of streamLlmResponse({
             binding: this.env.AI,
             messages: this.messages,
           })) {
             if (this.aborted) break;
+            if (!llmFirstSent) {
+              llmFirstSent = true;
+              this.sendBenchmarkEvent({
+                type: "benchmark.llm_first_token",
+                ts: Date.now(),
+                turnIndex: this.turnIndex,
+              });
+            }
             fullText += delta;
             this.sendJson({ type: "llm_partial", text: delta });
             sentenceBuffer += delta;
@@ -109,6 +151,14 @@ export class Vani2SessionDO extends DurableObject {
               const sentence = sentenceBuffer.slice(0, end).trim();
               sentenceBuffer = sentenceBuffer.slice(end);
               if (sentence && !this.aborted) {
+                if (!ttsFirstSent) {
+                  ttsFirstSent = true;
+                  this.sendBenchmarkEvent({
+                    type: "benchmark.tts_first_chunk",
+                    ts: Date.now(),
+                    turnIndex: this.turnIndex,
+                  });
+                }
                 const audio = await runAura2(this.env as any, { text: sentence });
                 if (audio && !this.aborted) this.sendBinary(audio);
               }
@@ -116,10 +166,23 @@ export class Vani2SessionDO extends DurableObject {
             SENTENCE_END.lastIndex = 0;
           }
           if (sentenceBuffer.trim() && !this.aborted) {
+            if (!ttsFirstSent) {
+              ttsFirstSent = true;
+              this.sendBenchmarkEvent({
+                type: "benchmark.tts_first_chunk",
+                ts: Date.now(),
+                turnIndex: this.turnIndex,
+              });
+            }
             const audio = await runAura2(this.env as any, { text: sentenceBuffer.trim() });
             if (audio) this.sendBinary(audio);
           }
           if (!this.aborted) {
+            this.sendBenchmarkEvent({
+              type: "benchmark.turn_end",
+              ts: Date.now(),
+              turnIndex: this.turnIndex,
+            });
             this.messages.push({ role: "assistant", content: fullText });
             this.sendJson({ type: "llm_complete", text: fullText });
           }
