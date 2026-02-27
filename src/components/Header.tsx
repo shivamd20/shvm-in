@@ -11,15 +11,15 @@ export default function Header() {
         </div>
 
         <div className="px-2 font-bold">
-          <Link to="/demo/start/server-funcs">Start - Server Functions</Link>
+          <Link to={"/demo/start/server-funcs" as "/"}>Start - Server Functions</Link>
         </div>
 
         <div className="px-2 font-bold">
-          <Link to="/demo/start/api-request">Start - API Request</Link>
+          <Link to={"/demo/start/api-request" as "/"}>Start - API Request</Link>
         </div>
 
         <div className="px-2 font-bold">
-          <Link to="/demo/start/ssr">Start - SSR Demos</Link>
+          <Link to={"/demo/start/ssr" as "/"}>Start - SSR Demos</Link>
         </div>
       </nav>
     </header>

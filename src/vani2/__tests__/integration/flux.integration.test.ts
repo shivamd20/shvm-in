@@ -61,6 +61,7 @@ describe("Vani 2 Flux (integration)", () => {
       ws.send(syntheticPcmChunk());
     }
     await done;
+    expect(receivedEvent).toBe(true);
     ws.close();
     expect(ws.readyState).toBe(WebSocket.CLOSING);
   });

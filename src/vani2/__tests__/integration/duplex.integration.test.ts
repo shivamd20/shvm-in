@@ -1,6 +1,8 @@
 import { describe, it, expect, beforeAll } from "vitest";
 import WebSocket from "ws";
 
+type WsMessageEvent = Parameters<NonNullable<WebSocket["onmessage"]>>[0];
+
 const BASE = process.env.VANI2_INTEGRATION_BASE_URL || "http://localhost:8787";
 const WS_URL = BASE.replace(/^http/, "ws") + "/v2/ws/";
 
@@ -8,7 +10,7 @@ function openWs(sessionId: string): Promise<WebSocket> {
   return new Promise((resolve, reject) => {
     const ws = new WebSocket(WS_URL + sessionId);
     ws.onopen = () => resolve(ws);
-    ws.onerror = (e) => reject(new Error("WebSocket error"));
+    ws.onerror = (_e) => reject(new Error("WebSocket error"));
   });
 }
 
@@ -23,9 +25,9 @@ describe("Vani 2 duplex (integration)", () => {
     const sessionId = "duplex-" + Date.now();
     const ws = await openWs(sessionId);
     const first = await new Promise<string>((resolve, reject) => {
-      ws.onmessage = (e) => {
-        if (typeof e.data === "string") resolve(e.data);
-      };
+      ws.onmessage = (e: WsMessageEvent) => {
+      if (typeof e.data === "string") resolve(e.data);
+    };
       ws.onerror = () => reject(new Error("WS error"));
       setTimeout(() => reject(new Error("timeout")), 5000);
     });
@@ -39,13 +41,13 @@ describe("Vani 2 duplex (integration)", () => {
     const sessionId = "echo-" + Date.now();
     const ws = await openWs(sessionId);
     const received: (ArrayBuffer | Buffer)[] = [];
-    ws.onmessage = (e: { data: ArrayBuffer | Buffer | string }) => {
-      if (typeof e.data !== "string") received.push(e.data);
+    ws.onmessage = (e: WsMessageEvent) => {
+      if (typeof e.data !== "string") received.push(e.data as ArrayBuffer | Buffer);
     };
 
     // Consume initial state JSON
     await new Promise<void>((resolve) => {
-      const onMsg = (e: MessageEvent) => {
+      const onMsg = (e: WsMessageEvent) => {
         if (typeof e.data === "string") {
           ws.removeEventListener("message", onMsg);
           resolve();

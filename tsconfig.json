@@ -3,6 +3,7 @@
     "**/*.ts",
     "**/*.tsx"
   ],
+  "exclude": ["node_modules", "packages/vani-client"],
   "compilerOptions": {
     "target": "ES2022",
     "jsx": "react-jsx",

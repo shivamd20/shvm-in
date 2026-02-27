@@ -4,6 +4,8 @@ import { join } from "node:path";
 import WebSocket from "ws";
 import { decodeTimestamp, encodeChunkWithTimestamp } from "../../protocol";
 
+type WsMessageEvent = Parameters<NonNullable<WebSocket["onmessage"]>>[0];
+
 const BASE = process.env.VANI2_INTEGRATION_BASE_URL || "http://localhost:8787";
 const WS_URL = BASE.replace(/^http/, "ws") + "/v2/ws/";
 const BENCHMARKS_PATH = join(process.cwd(), "docs", "vani2-benchmarks.md");
@@ -38,19 +40,19 @@ describe("Vani 2 latency (integration)", () => {
     let resolveFirst: () => void;
     const firstReady = new Promise<void>((r) => { resolveFirst = r; });
 
-    ws.onmessage = (e: { data: ArrayBuffer | Buffer | string }) => {
+    ws.onmessage = (e: WsMessageEvent) => {
       const data = e.data;
       if (typeof data === "string") {
         resolveFirst!();
         return;
       }
-      const ab =
+      const ab: ArrayBuffer =
         data instanceof ArrayBuffer
           ? data
           : (data as Buffer).buffer.slice(
               (data as Buffer).byteOffset,
               (data as Buffer).byteOffset + (data as Buffer).byteLength
-            );
+            ) as ArrayBuffer;
       const clientTs = decodeTimestamp(ab);
       if (clientTs != null) rtts.push(Date.now() - clientTs);
     };
@@ -96,7 +98,6 @@ describe("Vani 2 latency (integration)", () => {
   - P99: ${p99.toFixed(2)} ms
 `;
 
-    const dir = join(process.cwd(), "docs");
     const exists = existsSync(BENCHMARKS_PATH);
     const content = exists
       ? readFileSync(BENCHMARKS_PATH, "utf-8") + "\n" + section

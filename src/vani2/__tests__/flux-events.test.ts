@@ -68,7 +68,7 @@ describe("flux-events", () => {
     it("returns false for null or payload without event", () => {
       expect(isFluxEventPayload(null)).toBe(false);
       expect(isFluxEventPayload({} as FluxEventPayload)).toBe(false);
-      expect(isFluxEventPayload({ event: "Unknown" } as FluxEventPayload)).toBe(false);
+      expect(isFluxEventPayload({ event: "Unknown" } as unknown as FluxEventPayload)).toBe(false);
     });
   });
 });

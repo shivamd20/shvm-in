@@ -8,13 +8,13 @@ export interface EchoEngineOptions {
   delayMs: number;
   emit: EchoEmit;
   /** For testing: inject scheduler (setTimeout). */
-  schedule?: (fn: () => void, ms: number) => void;
+  schedule?: (fn: () => void, ms: number) => void | ReturnType<typeof setTimeout>;
 }
 
 export class EchoEngine {
   private readonly delayMs: number;
   private readonly emit: EchoEmit;
-  private readonly schedule: (fn: () => void, ms: number) => void;
+  private readonly schedule: (fn: () => void, ms: number) => void | ReturnType<typeof setTimeout>;
   private pending: Array<{ chunk: ArrayBuffer; at: number }> = [];
   private timer: ReturnType<typeof setTimeout> | null = null;
 
@@ -44,10 +44,11 @@ export class EchoEngine {
     for (const c of ready) this.emit(c);
     if (this.pending.length > 0 && !this.timer) {
       const next = this.pending[0].at - Date.now();
-      this.timer = this.schedule(() => {
+      const id = this.schedule(() => {
         this.timer = null;
         this.flushWhenReady();
       }, Math.max(0, next));
+      if (id !== undefined) this.timer = id as ReturnType<typeof setTimeout>;
     }
   }
 

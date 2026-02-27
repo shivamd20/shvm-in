@@ -3,7 +3,7 @@ import { EchoEngine } from "../server/echo-engine";
 
 describe("EchoEngine", () => {
   let emitted: ArrayBuffer[];
-  let schedule: (fn: () => void, ms: number) => void;
+  let schedule: (fn: () => void, ms: number) => ReturnType<typeof setTimeout>;
   let now: number;
 
   beforeEach(() => {

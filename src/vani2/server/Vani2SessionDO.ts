@@ -74,7 +74,7 @@ export class Vani2SessionDO extends DurableObject {
     return new Response(null, { status: 101, webSocket: client });
   }
 
-  async webSocketMessage(ws: WebSocket, message: string | ArrayBuffer): Promise<void> {
+  async webSocketMessage(_ws: WebSocket, message: string | ArrayBuffer): Promise<void> {
     if (this.sessionState?.isClosed()) return;
 
     if (typeof message === "string") {
@@ -134,17 +134,17 @@ export class Vani2SessionDO extends DurableObject {
     }
 
     if (!this.ringBuffer || !this.echoEngine) return;
-    this.sessionState.setStreaming();
+    this.sessionState?.setStreaming();
     this.ringBuffer.push(message);
     const chunks = this.ringBuffer.takeAll();
     for (const chunk of chunks) this.echoEngine.push(chunk);
   }
 
-  async webSocketClose(ws: WebSocket, _code: number, _reason: string, _wasClean: boolean): Promise<void> {
+  async webSocketClose(_ws: WebSocket, _code: number, _reason: string, _wasClean: boolean): Promise<void> {
     this.cleanup();
   }
 
-  async webSocketError(ws: WebSocket, error: unknown): Promise<void> {
+  async webSocketError(_ws: WebSocket, _error: unknown): Promise<void> {
     this.cleanup();
   }
 
