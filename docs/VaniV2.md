@@ -47,7 +47,7 @@ Client performs **no reasoning**.
 
 Client does NOT:
 
-* run VAD
+* run VAD (server uses Flux turn detection)
 * maintain conversation state
 * interpret transcripts
 * manage interruption logic
@@ -75,17 +75,13 @@ Why:
 
 Responsibilities:
 
-* Microphone capture
-* Opus encoding (AudioWorklet)
-* WebSocket connection
-* Audio playback
-* Mute toggle
+* Microphone capture (AudioWorklet, 16 kHz, linear16 PCM)
+* Send audio to server: Flux path uses ~8.2 KB chunks (256 ms) for STT; keep-alive when idle
+* WebSocket connection(s) as needed (e.g. session WS + optional direct Flux WS)
+* Audio playback (TTS stream from server)
+* Mute / connect only
 
-Phase 1 echo uses Opus encode (capture) and Opus decode (playback) as above; fixed 20ms frames, binary frame header (timestamp + length + payload type), send guard, and 200ms playback cap.
-
-No state machine exists on client.
-
-Client reacts only to:
+No state machine on client. Client reacts only to:
 
 ```
 audio.frame
@@ -106,13 +102,18 @@ All logic centralized here.
 
 ---
 
-### AI Processing Layer
+### AI Processing Layer (Workers AI Stack)
 
-* Streaming STT Adapter
-* Turn Detection Adapter
-* Streaming LLM Adapter
-* Sentence Scheduler
-* Streaming TTS Adapter
+| Concern   | Provider | Model / API |
+| --------- | -------- | ----------- |
+| **STT + VAD** | Workers AI | **@cf/deepgram/flux** — streaming speech recognition with built-in turn detection (StartOfTurn, EagerEndOfTurn, TurnResumed, EndOfTurn). No separate VAD. |
+| **LLM**       | Workers AI | Fastest available chat model for streaming reasoning. |
+| **TTS**       | Workers AI | **@cf/deepgram/aura-2-en** — context-aware TTS (natural pacing, expressiveness); streaming or batch; output e.g. MPEG. |
+
+* Flux adapter: receives client PCM or server-side audio feed; emits transcript + turn events.
+* LLM adapter: streams tokens; supports cancellation for barge-in.
+* Sentence scheduler: emits speakable units from LLM stream.
+* TTS adapter (Aura-2): text → audio stream; cancellation on interrupt.
 
 ---
 
@@ -151,17 +152,16 @@ Each subsystem implemented as an XState actor.
 
 | Actor               | Responsibility       |
 | ------------------- | -------------------- |
-| SessionActor        | session lifecycle    |
-| UploadActor         | audio ingest         |
-| VADActor            | turn detection       |
-| STTActor            | transcription        |
-| LLMActor            | reasoning            |
-| SchedulerActor      | sentence emission    |
-| TTSActor            | speech synthesis     |
-| PlaybackStreamActor | downstream streaming |
-| InterruptActor      | barge-in arbitration |
+| SessionActor        | session lifecycle     |
+| UploadActor         | audio ingest          |
+| **FluxActor**       | **STT + turn detection** (Flux; no separate VAD) |
+| LLMActor            | reasoning (Workers AI) |
+| SchedulerActor      | sentence emission     |
+| TTSActor            | speech synthesis (Aura-2) |
+| PlaybackStreamActor | downstream streaming  |
+| InterruptActor      | barge-in arbitration  |
 
-Actors supervised by SessionActor.
+Actors supervised by SessionActor. Flux provides both transcription and turn boundaries (StartOfTurn, EagerEndOfTurn, TurnResumed, EndOfTurn), so a separate VADActor is not used.
 
 ---
 
@@ -237,29 +237,26 @@ Ensures portability outside Cloudflare.
 
 ## 8. Data Flow
 
-1. Client streams audio continuously
-2. SessionActor receives chunks
-3. Audio duplicated into:
+1. Client streams audio (linear16, 16 kHz, ~8.2 KB chunks) to session / Flux
+2. **Flux** (STT + VAD): produces transcript + turn events (StartOfTurn, Update, EagerEndOfTurn, TurnResumed, EndOfTurn)
+3. Turn-final or chosen transcript events → **LLMActor** (Workers AI)
+4. LLM token stream → SchedulerActor → speakable units
+5. **TTSActor** (Aura-2) turns text → audio (e.g. MPEG stream)
+6. PlaybackStreamActor sends audio frames to client
+7. Client plays continuously
 
-   * VADActor
-   * STTActor
-4. STT partials streamed into LLMActor
-5. LLM tokens → SchedulerActor
-6. Scheduler emits speakable units
-7. TTSActor streams frames
-8. PlaybackStreamActor sends frames immediately
-9. Client plays continuously
+No separate VAD pipeline; Flux supplies turn boundaries.
 
 ---
 
 ## 9. Interruption Model
 
-Server detects user speech during assistant playback.
+Server detects user speech during assistant playback via **Flux** (e.g. StartOfTurn or TurnResumed during playback).
 
 Flow:
 
 ```
-VAD detects speech
+Flux turn event (e.g. StartOfTurn) during playback
 → InterruptActor fires
 → cancel(LLMActor)
 → cancel(TTSActor)
@@ -292,18 +289,16 @@ INT[InterruptActor]
 end
 
 subgraph AI
-VAD[VADActor]
-STT[STTActor]
+FLUX[Flux STT+VAD]
 LLM[LLMActor]
 SCH[SchedulerActor]
-TTS[TTSActor]
+TTS[Aura-2 TTS]
 end
 
 MIC --> ENC --> WSU --> GW --> SA
-SA --> VAD
-SA --> STT
-STT --> LLM --> SCH --> TTS --> GW --> PLAYBUF --> PLAY
-VAD --> INT --> SM
+SA --> FLUX
+FLUX --> LLM --> SCH --> TTS --> GW --> PLAYBUF --> PLAY
+FLUX --> INT --> SM
 ```
 
 ---
@@ -312,11 +307,11 @@ VAD --> INT --> SM
 
 Server emits metrics internally:
 
-* VAD trigger latency
-* STT first token
+* Flux: first event latency, turn boundary latency
+* STT (Flux) first token / partial
 * LLM first token
-* TTS first frame
-* Speech start latency
+* TTS (Aura-2) first frame
+* Speech start latency (end-to-end)
 
 Allows provider swapping without client change.
 
@@ -369,6 +364,16 @@ Client unchanged.
 
 ---
 
-## 16. Evolution Path
+## 16. Provider Stack (Workers AI)
 
-Phase 1: Workers AI MVP Phase 2: Provider benchmarking Phase 3: Self-hosted inference Phase 4: Multi-agent routing
+| Layer   | Model / API | Notes |
+| ------- | ----------- | ----- |
+| STT+VAD | **@cf/deepgram/flux** | Streaming; turn events native; linear16 16 kHz. |
+| LLM     | Workers AI (fastest chat) | Streaming tokens; cancellation for barge-in. |
+| TTS     | **@cf/deepgram/aura-2-en** | Context-aware; natural pacing/expressiveness; text → audio (e.g. MPEG). |
+
+---
+
+## 17. Evolution Path
+
+Phase 1: Transport + echo. Phase 2: Flux STT+VAD (transcription-first). Phase 3: Workers AI LLM. Phase 4: Aura-2 TTS + barge-in. Phase 5: Scale and observability. Later: provider benchmarking, self-hosted inference, multi-agent routing.

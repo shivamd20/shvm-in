@@ -1,0 +1,207 @@
+{"sessionId":"0774b7","location":"Vani2SessionDO.ts:sentence","message":"Sentence flush","data":{"sentenceLen":6},"hypothesisId":"H2","timestamp":1772177987224}
+{"sessionId":"0774b7","location":"tts-adapter.ts:result","message":"TTS result type","data":{"resType":"object","hasArrayBuffer":false,"hasAudio":false,"hasBody":false,"hasGetReader":true,"textLen":6},"hypothesisId":"H1","timestamp":1772177987794}
+{"sessionId":"0774b7","location":"tts-adapter.ts:stream","message":"TTS returned stream read","data":{"byteLength":4608},"hypothesisId":"H1","timestamp":1772177988027}
+{"sessionId":"0774b7","location":"Vani2SessionDO.ts:sendBinary","message":"Sending TTS binary","data":{"byteLength":4608},"hypothesisId":"H1","timestamp":1772177988027}
+{"sessionId":"0774b7","location":"Vani2SessionDO.ts:finalFlush","message":"Final sentence flush","data":{"len":27},"hypothesisId":"H2","timestamp":1772177988033}
+{"sessionId":"0774b7","location":"useVani2Session.ts:binary","message":"Received binary","data":{"byteLength":4608},"hypothesisId":"H3","timestamp":1772177988033}
+{"sessionId":"0774b7","location":"useVani2Session.ts:decodeOk","message":"decodeAudioData ok","data":{"queueLen":1},"hypothesisId":"H3","timestamp":1772177988052}
+{"sessionId":"0774b7","location":"useVani2Session.ts:drainPlayback","message":"drainPlayback","data":{"hasCtx":true,"isPlaying":false,"queueLen":1},"hypothesisId":"H4","timestamp":1772177988053}
+{"sessionId":"0774b7","location":"useVani2Session.ts:sourceStart","message":"Audio source.start(0)","data":{},"hypothesisId":"H5","timestamp":1772177988053}
+{"sessionId":"0774b7","location":"tts-adapter.ts:result","message":"TTS result type","data":{"resType":"object","hasArrayBuffer":false,"hasAudio":false,"hasBody":false,"hasGetReader":true,"textLen":27},"hypothesisId":"H1","timestamp":1772177988251}
+{"sessionId":"0774b7","location":"useVani2Session.ts:drainPlayback","message":"drainPlayback","data":{"hasCtx":true,"isPlaying":false,"queueLen":0},"hypothesisId":"H4","timestamp":1772177988815}
+{"sessionId":"0774b7","location":"tts-adapter.ts:stream","message":"TTS returned stream read","data":{"byteLength":10368},"hypothesisId":"H1","timestamp":1772177988853}
+{"sessionId":"0774b7","location":"Vani2SessionDO.ts:sendBinaryFinal","message":"Sending final TTS binary","data":{"byteLength":10368},"hypothesisId":"H1","timestamp":1772177988853}
+{"sessionId":"0774b7","location":"useVani2Session.ts:binary","message":"Received binary","data":{"byteLength":10368},"hypothesisId":"H3","timestamp":1772177988862}
+{"sessionId":"0774b7","location":"useVani2Session.ts:decodeOk","message":"decodeAudioData ok","data":{"queueLen":1},"hypothesisId":"H3","timestamp":1772177988868}
+{"sessionId":"0774b7","location":"useVani2Session.ts:drainPlayback","message":"drainPlayback","data":{"hasCtx":true,"isPlaying":false,"queueLen":1},"hypothesisId":"H4","timestamp":1772177988868}
+{"sessionId":"0774b7","location":"useVani2Session.ts:sourceStart","message":"Audio source.start(0)","data":{},"hypothesisId":"H5","timestamp":1772177988868}
+{"sessionId":"0774b7","location":"useVani2Session.ts:drainPlayback","message":"drainPlayback","data":{"hasCtx":true,"isPlaying":false,"queueLen":0},"hypothesisId":"H4","timestamp":1772177990595}
+{"sessionId":"0774b7","location":"Vani2SessionDO.ts:sentence","message":"Sentence flush","data":{"sentenceLen":32},"hypothesisId":"H2","timestamp":1772177994480}
+{"sessionId":"0774b7","location":"tts-adapter.ts:result","message":"TTS result type","data":{"resType":"object","hasArrayBuffer":false,"hasAudio":false,"hasBody":false,"hasGetReader":true,"textLen":32},"hypothesisId":"H1","timestamp":1772177994985}
+{"sessionId":"0774b7","location":"tts-adapter.ts:stream","message":"TTS returned stream read","data":{"byteLength":10944},"hypothesisId":"H1","timestamp":1772177995622}
+{"sessionId":"0774b7","location":"useVani2Session.ts:binary","message":"Received binary","data":{"byteLength":10944},"hypothesisId":"H3","timestamp":1772177995625}
+{"sessionId":"0774b7","location":"Vani2SessionDO.ts:sendBinary","message":"Sending TTS binary","data":{"byteLength":10944},"hypothesisId":"H1","timestamp":1772177995622}
+{"sessionId":"0774b7","location":"Vani2SessionDO.ts:finalFlush","message":"Final sentence flush","data":{"len":40},"hypothesisId":"H2","timestamp":1772177995630}
+{"sessionId":"0774b7","location":"useVani2Session.ts:decodeOk","message":"decodeAudioData ok","data":{"queueLen":1},"hypothesisId":"H3","timestamp":1772177995633}
+{"sessionId":"0774b7","location":"useVani2Session.ts:drainPlayback","message":"drainPlayback","data":{"hasCtx":true,"isPlaying":false,"queueLen":1},"hypothesisId":"H4","timestamp":1772177995634}
+{"sessionId":"0774b7","location":"useVani2Session.ts:sourceStart","message":"Audio source.start(0)","data":{},"hypothesisId":"H5","timestamp":1772177995634}
+{"sessionId":"0774b7","location":"tts-adapter.ts:result","message":"TTS result type","data":{"resType":"object","hasArrayBuffer":false,"hasAudio":false,"hasBody":false,"hasGetReader":true,"textLen":40},"hypothesisId":"H1","timestamp":1772177995825}
+{"sessionId":"0774b7","location":"tts-adapter.ts:stream","message":"TTS returned stream read","data":{"byteLength":12096},"hypothesisId":"H1","timestamp":1772177996527}
+{"sessionId":"0774b7","location":"Vani2SessionDO.ts:sendBinaryFinal","message":"Sending final TTS binary","data":{"byteLength":12096},"hypothesisId":"H1","timestamp":1772177996527}
+{"sessionId":"0774b7","location":"useVani2Session.ts:binary","message":"Received binary","data":{"byteLength":12096},"hypothesisId":"H3","timestamp":1772177996540}
+{"sessionId":"0774b7","location":"useVani2Session.ts:decodeOk","message":"decodeAudioData ok","data":{"queueLen":1},"hypothesisId":"H3","timestamp":1772177996552}
+{"sessionId":"0774b7","location":"useVani2Session.ts:drainPlayback","message":"drainPlayback","data":{"hasCtx":true,"isPlaying":true,"queueLen":1},"hypothesisId":"H4","timestamp":1772177996553}
+{"sessionId":"0774b7","location":"useVani2Session.ts:drainPlayback","message":"drainPlayback","data":{"hasCtx":true,"isPlaying":false,"queueLen":1},"hypothesisId":"H4","timestamp":1772177997454}
+{"sessionId":"0774b7","location":"useVani2Session.ts:sourceStart","message":"Audio source.start(0)","data":{},"hypothesisId":"H5","timestamp":1772177997455}
+{"sessionId":"0774b7","location":"useVani2Session.ts:drainPlayback","message":"drainPlayback","data":{"hasCtx":true,"isPlaying":false,"queueLen":0},"hypothesisId":"H4","timestamp":1772177999474}
+{"sessionId":"0774b7","location":"Vani2SessionDO.ts:finalFlush","message":"Final sentence flush","data":{"len":109},"hypothesisId":"H2","timestamp":1772178004087}
+{"sessionId":"0774b7","location":"tts-adapter.ts:result","message":"TTS result type","data":{"resType":"object","hasArrayBuffer":false,"hasAudio":false,"hasBody":false,"hasGetReader":true,"textLen":109},"hypothesisId":"H1","timestamp":1772178005355}
+{"sessionId":"0774b7","location":"tts-adapter.ts:stream","message":"TTS returned stream read","data":{"byteLength":40896},"hypothesisId":"H1","timestamp":1772178008067}
+{"sessionId":"0774b7","location":"Vani2SessionDO.ts:sendBinaryFinal","message":"Sending final TTS binary","data":{"byteLength":40896},"hypothesisId":"H1","timestamp":1772178008067}
+{"sessionId":"0774b7","location":"useVani2Session.ts:binary","message":"Received binary","data":{"byteLength":40896},"hypothesisId":"H3","timestamp":1772178008083}
+{"sessionId":"0774b7","location":"useVani2Session.ts:decodeOk","message":"decodeAudioData ok","data":{"queueLen":1},"hypothesisId":"H3","timestamp":1772178008098}
+{"sessionId":"0774b7","location":"useVani2Session.ts:drainPlayback","message":"drainPlayback","data":{"hasCtx":true,"isPlaying":false,"queueLen":1},"hypothesisId":"H4","timestamp":1772178008098}
+{"sessionId":"0774b7","location":"useVani2Session.ts:sourceStart","message":"Audio source.start(0)","data":{},"hypothesisId":"H5","timestamp":1772178008098}
+{"sessionId":"0774b7","location":"useVani2Session.ts:drainPlayback","message":"drainPlayback","data":{"hasCtx":true,"isPlaying":false,"queueLen":0},"hypothesisId":"H4","timestamp":1772178014914}
+{"sessionId":"0774b7","location":"Vani2SessionDO.ts:sentence","message":"Sentence flush","data":{"sentenceLen":15},"hypothesisId":"H2","timestamp":1772178019775}
+{"sessionId":"0774b7","location":"tts-adapter.ts:result","message":"TTS result type","data":{"resType":"object","hasArrayBuffer":false,"hasAudio":false,"hasBody":false,"hasGetReader":true,"textLen":15},"hypothesisId":"H1","timestamp":1772178020054}
+{"sessionId":"0774b7","location":"tts-adapter.ts:stream","message":"TTS returned stream read","data":{"byteLength":6768},"hypothesisId":"H1","timestamp":1772178020422}
+{"sessionId":"0774b7","location":"Vani2SessionDO.ts:sendBinary","message":"Sending TTS binary","data":{"byteLength":6768},"hypothesisId":"H1","timestamp":1772178020422}
+{"sessionId":"0774b7","location":"useVani2Session.ts:binary","message":"Received binary","data":{"byteLength":6768},"hypothesisId":"H3","timestamp":1772178020426}
+{"sessionId":"0774b7","location":"useVani2Session.ts:decodeOk","message":"decodeAudioData ok","data":{"queueLen":1},"hypothesisId":"H3","timestamp":1772178020439}
+{"sessionId":"0774b7","location":"useVani2Session.ts:drainPlayback","message":"drainPlayback","data":{"hasCtx":true,"isPlaying":false,"queueLen":1},"hypothesisId":"H4","timestamp":1772178020439}
+{"sessionId":"0774b7","location":"useVani2Session.ts:sourceStart","message":"Audio source.start(0)","data":{},"hypothesisId":"H5","timestamp":1772178020440}
+{"sessionId":"0774b7","location":"Vani2SessionDO.ts:finalFlush","message":"Final sentence flush","data":{"len":43},"hypothesisId":"H2","timestamp":1772178020446}
+{"sessionId":"0774b7","location":"tts-adapter.ts:result","message":"TTS result type","data":{"resType":"object","hasArrayBuffer":false,"hasAudio":false,"hasBody":false,"hasGetReader":true,"textLen":43},"hypothesisId":"H1","timestamp":1772178020662}
+{"sessionId":"0774b7","location":"tts-adapter.ts:stream","message":"TTS returned stream read","data":{"byteLength":13104},"hypothesisId":"H1","timestamp":1772178021420}
+{"sessionId":"0774b7","location":"Vani2SessionDO.ts:sendBinaryFinal","message":"Sending final TTS binary","data":{"byteLength":13104},"hypothesisId":"H1","timestamp":1772178021421}
+{"sessionId":"0774b7","location":"useVani2Session.ts:binary","message":"Received binary","data":{"byteLength":13104},"hypothesisId":"H3","timestamp":1772178021434}
+{"sessionId":"0774b7","location":"useVani2Session.ts:decodeOk","message":"decodeAudioData ok","data":{"queueLen":1},"hypothesisId":"H3","timestamp":1772178021440}
+{"sessionId":"0774b7","location":"useVani2Session.ts:drainPlayback","message":"drainPlayback","data":{"hasCtx":true,"isPlaying":true,"queueLen":1},"hypothesisId":"H4","timestamp":1772178021440}
+{"sessionId":"0774b7","location":"useVani2Session.ts:drainPlayback","message":"drainPlayback","data":{"hasCtx":true,"isPlaying":false,"queueLen":1},"hypothesisId":"H4","timestamp":1772178021574}
+{"sessionId":"0774b7","location":"useVani2Session.ts:sourceStart","message":"Audio source.start(0)","data":{},"hypothesisId":"H5","timestamp":1772178021576}
+{"sessionId":"0774b7","location":"useVani2Session.ts:drainPlayback","message":"drainPlayback","data":{"hasCtx":true,"isPlaying":false,"queueLen":0},"hypothesisId":"H4","timestamp":1772178023768}
+{"sessionId":"0774b7","location":"Vani2SessionDO.ts:finalFlush","message":"Final sentence flush","data":{"len":31},"hypothesisId":"H2","timestamp":1772178031505}
+{"sessionId":"0774b7","location":"tts-adapter.ts:result","message":"TTS result type","data":{"resType":"object","hasArrayBuffer":false,"hasAudio":false,"hasBody":false,"hasGetReader":true,"textLen":31},"hypothesisId":"H1","timestamp":1772178031767}
+{"sessionId":"0774b7","location":"tts-adapter.ts:stream","message":"TTS returned stream read","data":{"byteLength":14544},"hypothesisId":"H1","timestamp":1772178032621}
+{"sessionId":"0774b7","location":"Vani2SessionDO.ts:sendBinaryFinal","message":"Sending final TTS binary","data":{"byteLength":14544},"hypothesisId":"H1","timestamp":1772178032621}
+{"sessionId":"0774b7","location":"useVani2Session.ts:binary","message":"Received binary","data":{"byteLength":14544},"hypothesisId":"H3","timestamp":1772178032634}
+{"sessionId":"0774b7","location":"useVani2Session.ts:decodeOk","message":"decodeAudioData ok","data":{"queueLen":1},"hypothesisId":"H3","timestamp":1772178032645}
+{"sessionId":"0774b7","location":"useVani2Session.ts:drainPlayback","message":"drainPlayback","data":{"hasCtx":true,"isPlaying":false,"queueLen":1},"hypothesisId":"H4","timestamp":1772178032646}
+{"sessionId":"0774b7","location":"useVani2Session.ts:sourceStart","message":"Audio source.start(0)","data":{},"hypothesisId":"H5","timestamp":1772178032646}
+{"sessionId":"0774b7","location":"useVani2Session.ts:drainPlayback","message":"drainPlayback","data":{"hasCtx":true,"isPlaying":false,"queueLen":0},"hypothesisId":"H4","timestamp":1772178035074}
+{"sessionId":"0774b7","location":"Vani2SessionDO.ts:finalFlush","message":"Final sentence flush","data":{"len":56},"hypothesisId":"H2","timestamp":1772178038314}
+{"sessionId":"0774b7","location":"tts-adapter.ts:result","message":"TTS result type","data":{"resType":"object","hasArrayBuffer":false,"hasAudio":false,"hasBody":false,"hasGetReader":true,"textLen":56},"hypothesisId":"H1","timestamp":1772178038635}
+{"sessionId":"0774b7","location":"tts-adapter.ts:stream","message":"TTS returned stream read","data":{"byteLength":16128},"hypothesisId":"H1","timestamp":1772178039598}
+{"sessionId":"0774b7","location":"Vani2SessionDO.ts:sendBinaryFinal","message":"Sending final TTS binary","data":{"byteLength":16128},"hypothesisId":"H1","timestamp":1772178039598}
+{"sessionId":"0774b7","location":"useVani2Session.ts:binary","message":"Received binary","data":{"byteLength":16128},"hypothesisId":"H3","timestamp":1772178039602}
+{"sessionId":"0774b7","location":"useVani2Session.ts:decodeOk","message":"decodeAudioData ok","data":{"queueLen":1},"hypothesisId":"H3","timestamp":1772178039610}
+{"sessionId":"0774b7","location":"useVani2Session.ts:drainPlayback","message":"drainPlayback","data":{"hasCtx":true,"isPlaying":false,"queueLen":1},"hypothesisId":"H4","timestamp":1772178039610}
+{"sessionId":"0774b7","location":"useVani2Session.ts:sourceStart","message":"Audio source.start(0)","data":{},"hypothesisId":"H5","timestamp":1772178039611}
+{"sessionId":"0774b7","location":"useVani2Session.ts:drainPlayback","message":"drainPlayback","data":{"hasCtx":true,"isPlaying":false,"queueLen":0},"hypothesisId":"H4","timestamp":1772178042294}
+{"sessionId":"0774b7","location":"Vani2SessionDO.ts:sentence","message":"Sentence flush","data":{"sentenceLen":34},"hypothesisId":"H2","timestamp":1772178049521}
+{"sessionId":"0774b7","location":"tts-adapter.ts:result","message":"TTS result type","data":{"resType":"object","hasArrayBuffer":false,"hasAudio":false,"hasBody":false,"hasGetReader":true,"textLen":34},"hypothesisId":"H1","timestamp":1772178050114}
+{"sessionId":"0774b7","location":"tts-adapter.ts:stream","message":"TTS returned stream read","data":{"byteLength":11376},"hypothesisId":"H1","timestamp":1772178050761}
+{"sessionId":"0774b7","location":"useVani2Session.ts:binary","message":"Received binary","data":{"byteLength":11376},"hypothesisId":"H3","timestamp":1772178050765}
+{"sessionId":"0774b7","location":"Vani2SessionDO.ts:sendBinary","message":"Sending TTS binary","data":{"byteLength":11376},"hypothesisId":"H1","timestamp":1772178050762}
+{"sessionId":"0774b7","location":"Vani2SessionDO.ts:finalFlush","message":"Final sentence flush","data":{"len":17},"hypothesisId":"H2","timestamp":1772178050773}
+{"sessionId":"0774b7","location":"useVani2Session.ts:decodeOk","message":"decodeAudioData ok","data":{"queueLen":1},"hypothesisId":"H3","timestamp":1772178050779}
+{"sessionId":"0774b7","location":"useVani2Session.ts:drainPlayback","message":"drainPlayback","data":{"hasCtx":true,"isPlaying":false,"queueLen":1},"hypothesisId":"H4","timestamp":1772178050780}
+{"sessionId":"0774b7","location":"useVani2Session.ts:sourceStart","message":"Audio source.start(0)","data":{},"hypothesisId":"H5","timestamp":1772178050780}
+{"sessionId":"0774b7","location":"tts-adapter.ts:result","message":"TTS result type","data":{"resType":"object","hasArrayBuffer":false,"hasAudio":false,"hasBody":false,"hasGetReader":true,"textLen":17},"hypothesisId":"H1","timestamp":1772178050991}
+{"sessionId":"0774b7","location":"tts-adapter.ts:stream","message":"TTS returned stream read","data":{"byteLength":6624},"hypothesisId":"H1","timestamp":1772178051349}
+{"sessionId":"0774b7","location":"Vani2SessionDO.ts:sendBinaryFinal","message":"Sending final TTS binary","data":{"byteLength":6624},"hypothesisId":"H1","timestamp":1772178051349}
+{"sessionId":"0774b7","location":"useVani2Session.ts:binary","message":"Received binary","data":{"byteLength":6624},"hypothesisId":"H3","timestamp":1772178051363}
+{"sessionId":"0774b7","location":"useVani2Session.ts:decodeOk","message":"decodeAudioData ok","data":{"queueLen":1},"hypothesisId":"H3","timestamp":1772178051374}
+{"sessionId":"0774b7","location":"useVani2Session.ts:drainPlayback","message":"drainPlayback","data":{"hasCtx":true,"isPlaying":true,"queueLen":1},"hypothesisId":"H4","timestamp":1772178051375}
+{"sessionId":"0774b7","location":"useVani2Session.ts:drainPlayback","message":"drainPlayback","data":{"hasCtx":true,"isPlaying":false,"queueLen":1},"hypothesisId":"H4","timestamp":1772178052674}
+{"sessionId":"0774b7","location":"useVani2Session.ts:sourceStart","message":"Audio source.start(0)","data":{},"hypothesisId":"H5","timestamp":1772178052676}
+{"sessionId":"0774b7","location":"useVani2Session.ts:drainPlayback","message":"drainPlayback","data":{"hasCtx":true,"isPlaying":false,"queueLen":0},"hypothesisId":"H4","timestamp":1772178053784}
+{"sessionId":"0774b7","location":"Vani2SessionDO.ts:finalFlush","message":"Final sentence flush","data":{"len":8},"hypothesisId":"H2","timestamp":1772178057453}
+{"sessionId":"0774b7","location":"tts-adapter.ts:result","message":"TTS result type","data":{"resType":"object","hasArrayBuffer":false,"hasAudio":false,"hasBody":false,"hasGetReader":true,"textLen":8},"hypothesisId":"H1","timestamp":1772178057708}
+{"sessionId":"0774b7","location":"tts-adapter.ts:stream","message":"TTS returned stream read","data":{"byteLength":4896},"hypothesisId":"H1","timestamp":1772178057961}
+{"sessionId":"0774b7","location":"Vani2SessionDO.ts:sendBinaryFinal","message":"Sending final TTS binary","data":{"byteLength":4896},"hypothesisId":"H1","timestamp":1772178057961}
+{"sessionId":"0774b7","location":"useVani2Session.ts:binary","message":"Received binary","data":{"byteLength":4896},"hypothesisId":"H3","timestamp":1772178057975}
+{"sessionId":"0774b7","location":"useVani2Session.ts:decodeOk","message":"decodeAudioData ok","data":{"queueLen":1},"hypothesisId":"H3","timestamp":1772178057978}
+{"sessionId":"0774b7","location":"useVani2Session.ts:drainPlayback","message":"drainPlayback","data":{"hasCtx":true,"isPlaying":false,"queueLen":1},"hypothesisId":"H4","timestamp":1772178057979}
+{"sessionId":"0774b7","location":"useVani2Session.ts:sourceStart","message":"Audio source.start(0)","data":{},"hypothesisId":"H5","timestamp":1772178057980}
+{"sessionId":"0774b7","location":"useVani2Session.ts:drainPlayback","message":"drainPlayback","data":{"hasCtx":true,"isPlaying":false,"queueLen":0},"hypothesisId":"H4","timestamp":1772178058797}
+{"sessionId":"0774b7","location":"Vani2SessionDO.ts:finalFlush","message":"Final sentence flush","data":{"len":19},"hypothesisId":"H2","timestamp":1772178061888}
+{"sessionId":"0774b7","location":"tts-adapter.ts:result","message":"TTS result type","data":{"resType":"object","hasArrayBuffer":false,"hasAudio":false,"hasBody":false,"hasGetReader":true,"textLen":19},"hypothesisId":"H1","timestamp":1772178062187}
+{"sessionId":"0774b7","location":"tts-adapter.ts:stream","message":"TTS returned stream read","data":{"byteLength":7776},"hypothesisId":"H1","timestamp":1772178062611}
+{"sessionId":"0774b7","location":"Vani2SessionDO.ts:sendBinaryFinal","message":"Sending final TTS binary","data":{"byteLength":7776},"hypothesisId":"H1","timestamp":1772178062611}
+{"sessionId":"0774b7","location":"useVani2Session.ts:binary","message":"Received binary","data":{"byteLength":7776},"hypothesisId":"H3","timestamp":1772178062630}
+{"sessionId":"0774b7","location":"useVani2Session.ts:decodeOk","message":"decodeAudioData ok","data":{"queueLen":1},"hypothesisId":"H3","timestamp":1772178062634}
+{"sessionId":"0774b7","location":"useVani2Session.ts:drainPlayback","message":"drainPlayback","data":{"hasCtx":true,"isPlaying":false,"queueLen":1},"hypothesisId":"H4","timestamp":1772178062634}
+{"sessionId":"0774b7","location":"useVani2Session.ts:sourceStart","message":"Audio source.start(0)","data":{},"hypothesisId":"H5","timestamp":1772178062635}
+{"sessionId":"0774b7","location":"useVani2Session.ts:drainPlayback","message":"drainPlayback","data":{"hasCtx":true,"isPlaying":false,"queueLen":0},"hypothesisId":"H4","timestamp":1772178063938}
+{"sessionId":"0774b7","location":"Vani2SessionDO.ts:finalFlush","message":"Final sentence flush","data":{"len":22},"hypothesisId":"H2","timestamp":1772178068395}
+{"sessionId":"0774b7","location":"tts-adapter.ts:result","message":"TTS result type","data":{"resType":"object","hasArrayBuffer":false,"hasAudio":false,"hasBody":false,"hasGetReader":true,"textLen":22},"hypothesisId":"H1","timestamp":1772178068678}
+{"sessionId":"0774b7","location":"tts-adapter.ts:stream","message":"TTS returned stream read","data":{"byteLength":10368},"hypothesisId":"H1","timestamp":1772178069280}
+{"sessionId":"0774b7","location":"Vani2SessionDO.ts:sendBinaryFinal","message":"Sending final TTS binary","data":{"byteLength":10368},"hypothesisId":"H1","timestamp":1772178069280}
+{"sessionId":"0774b7","location":"useVani2Session.ts:binary","message":"Received binary","data":{"byteLength":10368},"hypothesisId":"H3","timestamp":1772178069295}
+{"sessionId":"0774b7","location":"useVani2Session.ts:decodeOk","message":"decodeAudioData ok","data":{"queueLen":1},"hypothesisId":"H3","timestamp":1772178069300}
+{"sessionId":"0774b7","location":"useVani2Session.ts:drainPlayback","message":"drainPlayback","data":{"hasCtx":true,"isPlaying":false,"queueLen":1},"hypothesisId":"H4","timestamp":1772178069301}
+{"sessionId":"0774b7","location":"useVani2Session.ts:sourceStart","message":"Audio source.start(0)","data":{},"hypothesisId":"H5","timestamp":1772178069302}
+{"sessionId":"0774b7","location":"useVani2Session.ts:drainPlayback","message":"drainPlayback","data":{"hasCtx":true,"isPlaying":false,"queueLen":0},"hypothesisId":"H4","timestamp":1772178071024}
+{"sessionId":"0774b7","location":"Vani2SessionDO.ts:finalFlush","message":"Final sentence flush","data":{"len":8},"hypothesisId":"H2","timestamp":1772178075119}
+{"sessionId":"0774b7","location":"tts-adapter.ts:result","message":"TTS result type","data":{"resType":"object","hasArrayBuffer":false,"hasAudio":false,"hasBody":false,"hasGetReader":true,"textLen":8},"hypothesisId":"H1","timestamp":1772178075368}
+{"sessionId":"0774b7","location":"tts-adapter.ts:stream","message":"TTS returned stream read","data":{"byteLength":5904},"hypothesisId":"H1","timestamp":1772178075684}
+{"sessionId":"0774b7","location":"Vani2SessionDO.ts:sendBinaryFinal","message":"Sending final TTS binary","data":{"byteLength":5904},"hypothesisId":"H1","timestamp":1772178075685}
+{"sessionId":"0774b7","location":"useVani2Session.ts:binary","message":"Received binary","data":{"byteLength":5904},"hypothesisId":"H3","timestamp":1772178075699}
+{"sessionId":"0774b7","location":"useVani2Session.ts:decodeOk","message":"decodeAudioData ok","data":{"queueLen":1},"hypothesisId":"H3","timestamp":1772178075703}
+{"sessionId":"0774b7","location":"useVani2Session.ts:drainPlayback","message":"drainPlayback","data":{"hasCtx":true,"isPlaying":false,"queueLen":1},"hypothesisId":"H4","timestamp":1772178075703}
+{"sessionId":"0774b7","location":"useVani2Session.ts:sourceStart","message":"Audio source.start(0)","data":{},"hypothesisId":"H5","timestamp":1772178075703}
+{"sessionId":"0774b7","location":"useVani2Session.ts:drainPlayback","message":"drainPlayback","data":{"hasCtx":true,"isPlaying":false,"queueLen":0},"hypothesisId":"H4","timestamp":1772178076684}
+{"sessionId":"0774b7","location":"Vani2SessionDO.ts:finalFlush","message":"Final sentence flush","data":{"len":5},"hypothesisId":"H2","timestamp":1772178080223}
+{"sessionId":"0774b7","location":"tts-adapter.ts:result","message":"TTS result type","data":{"resType":"object","hasArrayBuffer":false,"hasAudio":false,"hasBody":false,"hasGetReader":true,"textLen":5},"hypothesisId":"H1","timestamp":1772178080468}
+{"sessionId":"0774b7","location":"tts-adapter.ts:stream","message":"TTS returned stream read","data":{"byteLength":3888},"hypothesisId":"H1","timestamp":1772178080661}
+{"sessionId":"0774b7","location":"Vani2SessionDO.ts:sendBinaryFinal","message":"Sending final TTS binary","data":{"byteLength":3888},"hypothesisId":"H1","timestamp":1772178080661}
+{"sessionId":"0774b7","location":"useVani2Session.ts:binary","message":"Received binary","data":{"byteLength":3888},"hypothesisId":"H3","timestamp":1772178080673}
+{"sessionId":"0774b7","location":"useVani2Session.ts:decodeOk","message":"decodeAudioData ok","data":{"queueLen":1},"hypothesisId":"H3","timestamp":1772178080675}
+{"sessionId":"0774b7","location":"useVani2Session.ts:drainPlayback","message":"drainPlayback","data":{"hasCtx":true,"isPlaying":false,"queueLen":1},"hypothesisId":"H4","timestamp":1772178080676}
+{"sessionId":"0774b7","location":"useVani2Session.ts:sourceStart","message":"Audio source.start(0)","data":{},"hypothesisId":"H5","timestamp":1772178080677}
+{"sessionId":"0774b7","location":"useVani2Session.ts:drainPlayback","message":"drainPlayback","data":{"hasCtx":true,"isPlaying":false,"queueLen":0},"hypothesisId":"H4","timestamp":1772178081334}
+{"sessionId":"0774b7","location":"Vani2SessionDO.ts:finalFlush","message":"Final sentence flush","data":{"len":13},"hypothesisId":"H2","timestamp":1772178084846}
+{"sessionId":"0774b7","location":"tts-adapter.ts:result","message":"TTS result type","data":{"resType":"object","hasArrayBuffer":false,"hasAudio":false,"hasBody":false,"hasGetReader":true,"textLen":13},"hypothesisId":"H1","timestamp":1772178085087}
+{"sessionId":"0774b7","location":"tts-adapter.ts:stream","message":"TTS returned stream read","data":{"byteLength":7056},"hypothesisId":"H1","timestamp":1772178085467}
+{"sessionId":"0774b7","location":"Vani2SessionDO.ts:sendBinaryFinal","message":"Sending final TTS binary","data":{"byteLength":7056},"hypothesisId":"H1","timestamp":1772178085467}
+{"sessionId":"0774b7","location":"useVani2Session.ts:binary","message":"Received binary","data":{"byteLength":7056},"hypothesisId":"H3","timestamp":1772178085483}
+{"sessionId":"0774b7","location":"useVani2Session.ts:decodeOk","message":"decodeAudioData ok","data":{"queueLen":1},"hypothesisId":"H3","timestamp":1772178085487}
+{"sessionId":"0774b7","location":"useVani2Session.ts:drainPlayback","message":"drainPlayback","data":{"hasCtx":true,"isPlaying":false,"queueLen":1},"hypothesisId":"H4","timestamp":1772178085487}
+{"sessionId":"0774b7","location":"useVani2Session.ts:sourceStart","message":"Audio source.start(0)","data":{},"hypothesisId":"H5","timestamp":1772178085488}
+{"sessionId":"0774b7","location":"useVani2Session.ts:drainPlayback","message":"drainPlayback","data":{"hasCtx":true,"isPlaying":false,"queueLen":0},"hypothesisId":"H4","timestamp":1772178086664}
+{"sessionId":"0774b7","location":"Vani2SessionDO.ts:finalFlush","message":"Final sentence flush","data":{"len":25},"hypothesisId":"H2","timestamp":1772178091774}
+{"sessionId":"0774b7","location":"tts-adapter.ts:result","message":"TTS result type","data":{"resType":"object","hasArrayBuffer":false,"hasAudio":false,"hasBody":false,"hasGetReader":true,"textLen":25},"hypothesisId":"H1","timestamp":1772178092034}
+{"sessionId":"0774b7","location":"tts-adapter.ts:stream","message":"TTS returned stream read","data":{"byteLength":13968},"hypothesisId":"H1","timestamp":1772178092848}
+{"sessionId":"0774b7","location":"Vani2SessionDO.ts:sendBinaryFinal","message":"Sending final TTS binary","data":{"byteLength":13968},"hypothesisId":"H1","timestamp":1772178092848}
+{"sessionId":"0774b7","location":"useVani2Session.ts:binary","message":"Received binary","data":{"byteLength":13968},"hypothesisId":"H3","timestamp":1772178092863}
+{"sessionId":"0774b7","location":"useVani2Session.ts:decodeOk","message":"decodeAudioData ok","data":{"queueLen":1},"hypothesisId":"H3","timestamp":1772178092876}
+{"sessionId":"0774b7","location":"useVani2Session.ts:drainPlayback","message":"drainPlayback","data":{"hasCtx":true,"isPlaying":false,"queueLen":1},"hypothesisId":"H4","timestamp":1772178092876}
+{"sessionId":"0774b7","location":"useVani2Session.ts:sourceStart","message":"Audio source.start(0)","data":{},"hypothesisId":"H5","timestamp":1772178092877}
+{"sessionId":"0774b7","location":"useVani2Session.ts:drainPlayback","message":"drainPlayback","data":{"hasCtx":true,"isPlaying":false,"queueLen":0},"hypothesisId":"H4","timestamp":1772178095204}
+{"sessionId":"0774b7","location":"Vani2SessionDO.ts:finalFlush","message":"Final sentence flush","data":{"len":10},"hypothesisId":"H2","timestamp":1772178100205}
+{"sessionId":"0774b7","location":"tts-adapter.ts:result","message":"TTS result type","data":{"resType":"object","hasArrayBuffer":false,"hasAudio":false,"hasBody":false,"hasGetReader":true,"textLen":10},"hypothesisId":"H1","timestamp":1772178100455}
+{"sessionId":"0774b7","location":"tts-adapter.ts:stream","message":"TTS returned stream read","data":{"byteLength":8208},"hypothesisId":"H1","timestamp":1772178100930}
+{"sessionId":"0774b7","location":"Vani2SessionDO.ts:sendBinaryFinal","message":"Sending final TTS binary","data":{"byteLength":8208},"hypothesisId":"H1","timestamp":1772178100931}
+{"sessionId":"0774b7","location":"useVani2Session.ts:binary","message":"Received binary","data":{"byteLength":8208},"hypothesisId":"H3","timestamp":1772178100946}
+{"sessionId":"0774b7","location":"useVani2Session.ts:decodeOk","message":"decodeAudioData ok","data":{"queueLen":1},"hypothesisId":"H3","timestamp":1772178100951}
+{"sessionId":"0774b7","location":"useVani2Session.ts:drainPlayback","message":"drainPlayback","data":{"hasCtx":true,"isPlaying":false,"queueLen":1},"hypothesisId":"H4","timestamp":1772178100952}
+{"sessionId":"0774b7","location":"useVani2Session.ts:sourceStart","message":"Audio source.start(0)","data":{},"hypothesisId":"H5","timestamp":1772178100952}
+{"sessionId":"0774b7","location":"useVani2Session.ts:drainPlayback","message":"drainPlayback","data":{"hasCtx":true,"isPlaying":false,"queueLen":0},"hypothesisId":"H4","timestamp":1772178102320}
+{"sessionId":"0774b7","location":"Vani2SessionDO.ts:finalFlush","message":"Final sentence flush","data":{"len":5},"hypothesisId":"H2","timestamp":1772178106406}
+{"sessionId":"0774b7","location":"tts-adapter.ts:result","message":"TTS result type","data":{"resType":"object","hasArrayBuffer":false,"hasAudio":false,"hasBody":false,"hasGetReader":true,"textLen":5},"hypothesisId":"H1","timestamp":1772178106671}
+{"sessionId":"0774b7","location":"tts-adapter.ts:stream","message":"TTS returned stream read","data":{"byteLength":3888},"hypothesisId":"H1","timestamp":1772178106909}
+{"sessionId":"0774b7","location":"Vani2SessionDO.ts:sendBinaryFinal","message":"Sending final TTS binary","data":{"byteLength":3888},"hypothesisId":"H1","timestamp":1772178106909}
+{"sessionId":"0774b7","location":"useVani2Session.ts:binary","message":"Received binary","data":{"byteLength":3888},"hypothesisId":"H3","timestamp":1772178106923}
+{"sessionId":"0774b7","location":"useVani2Session.ts:decodeOk","message":"decodeAudioData ok","data":{"queueLen":1},"hypothesisId":"H3","timestamp":1772178106931}
+{"sessionId":"0774b7","location":"useVani2Session.ts:drainPlayback","message":"drainPlayback","data":{"hasCtx":true,"isPlaying":false,"queueLen":1},"hypothesisId":"H4","timestamp":1772178106931}
+{"sessionId":"0774b7","location":"useVani2Session.ts:sourceStart","message":"Audio source.start(0)","data":{},"hypothesisId":"H5","timestamp":1772178106932}
+{"sessionId":"0774b7","location":"useVani2Session.ts:drainPlayback","message":"drainPlayback","data":{"hasCtx":true,"isPlaying":false,"queueLen":0},"hypothesisId":"H4","timestamp":1772178107574}
+{"sessionId":"0774b7","location":"Vani2SessionDO.ts:finalFlush","message":"Final sentence flush","data":{"len":10},"hypothesisId":"H2","timestamp":1772178118719}
+{"sessionId":"0774b7","location":"tts-adapter.ts:result","message":"TTS result type","data":{"resType":"object","hasArrayBuffer":false,"hasAudio":false,"hasBody":false,"hasGetReader":true,"textLen":10},"hypothesisId":"H1","timestamp":1772178118998}
+{"sessionId":"0774b7","location":"tts-adapter.ts:stream","message":"TTS returned stream read","data":{"byteLength":8784},"hypothesisId":"H1","timestamp":1772178119456}
+{"sessionId":"0774b7","location":"Vani2SessionDO.ts:sendBinaryFinal","message":"Sending final TTS binary","data":{"byteLength":8784},"hypothesisId":"H1","timestamp":1772178119456}
+{"sessionId":"0774b7","location":"useVani2Session.ts:binary","message":"Received binary","data":{"byteLength":8784},"hypothesisId":"H3","timestamp":1772178119474}
+{"sessionId":"0774b7","location":"useVani2Session.ts:decodeOk","message":"decodeAudioData ok","data":{"queueLen":1},"hypothesisId":"H3","timestamp":1772178119479}
+{"sessionId":"0774b7","location":"useVani2Session.ts:drainPlayback","message":"drainPlayback","data":{"hasCtx":true,"isPlaying":false,"queueLen":1},"hypothesisId":"H4","timestamp":1772178119479}
+{"sessionId":"0774b7","location":"useVani2Session.ts:sourceStart","message":"Audio source.start(0)","data":{},"hypothesisId":"H5","timestamp":1772178119479}
+{"sessionId":"0774b7","location":"useVani2Session.ts:drainPlayback","message":"drainPlayback","data":{"hasCtx":true,"isPlaying":false,"queueLen":0},"hypothesisId":"H4","timestamp":1772178120944}
+{"sessionId":"0774b7","location":"Vani2SessionDO.ts:finalFlush","message":"Final sentence flush","data":{"len":5},"hypothesisId":"H2","timestamp":1772178127023}
+{"sessionId":"0774b7","location":"tts-adapter.ts:result","message":"TTS result type","data":{"resType":"object","hasArrayBuffer":false,"hasAudio":false,"hasBody":false,"hasGetReader":true,"textLen":5},"hypothesisId":"H1","timestamp":1772178127277}
+{"sessionId":"0774b7","location":"tts-adapter.ts:stream","message":"TTS returned stream read","data":{"byteLength":3888},"hypothesisId":"H1","timestamp":1772178127496}
+{"sessionId":"0774b7","location":"Vani2SessionDO.ts:sendBinaryFinal","message":"Sending final TTS binary","data":{"byteLength":3888},"hypothesisId":"H1","timestamp":1772178127496}
+{"sessionId":"0774b7","location":"useVani2Session.ts:binary","message":"Received binary","data":{"byteLength":3888},"hypothesisId":"H3","timestamp":1772178127497}
+{"sessionId":"0774b7","location":"useVani2Session.ts:decodeOk","message":"decodeAudioData ok","data":{"queueLen":1},"hypothesisId":"H3","timestamp":1772178127500}
+{"sessionId":"0774b7","location":"useVani2Session.ts:drainPlayback","message":"drainPlayback","data":{"hasCtx":true,"isPlaying":false,"queueLen":1},"hypothesisId":"H4","timestamp":1772178127501}
+{"sessionId":"0774b7","location":"useVani2Session.ts:sourceStart","message":"Audio source.start(0)","data":{},"hypothesisId":"H5","timestamp":1772178127501}
+{"sessionId":"0774b7","location":"useVani2Session.ts:drainPlayback","message":"drainPlayback","data":{"hasCtx":true,"isPlaying":false,"queueLen":0},"hypothesisId":"H4","timestamp":1772178127525}
+{"sessionId":"0774b7","location":"Vani2SessionDO.ts:finalFlush","message":"Final sentence flush","data":{"len":5},"hypothesisId":"H2","timestamp":1772178129161}
+{"sessionId":"0774b7","location":"tts-adapter.ts:result","message":"TTS result type","data":{"resType":"object","hasArrayBuffer":false,"hasAudio":false,"hasBody":false,"hasGetReader":true,"textLen":5},"hypothesisId":"H1","timestamp":1772178129365}
+{"sessionId":"0774b7","location":"tts-adapter.ts:stream","message":"TTS returned stream read","data":{"byteLength":3888},"hypothesisId":"H1","timestamp":1772178129544}
+{"sessionId":"0774b7","location":"Vani2SessionDO.ts:sendBinaryFinal","message":"Sending final TTS binary","data":{"byteLength":3888},"hypothesisId":"H1","timestamp":1772178129544}
+{"sessionId":"0774b7","location":"useVani2Session.ts:binary","message":"Received binary","data":{"byteLength":3888},"hypothesisId":"H3","timestamp":1772178129557}
+{"sessionId":"0774b7","location":"useVani2Session.ts:decodeOk","message":"decodeAudioData ok","data":{"queueLen":1},"hypothesisId":"H3","timestamp":1772178129559}
+{"sessionId":"0774b7","location":"useVani2Session.ts:drainPlayback","message":"drainPlayback","data":{"hasCtx":true,"isPlaying":false,"queueLen":1},"hypothesisId":"H4","timestamp":1772178129560}
+{"sessionId":"0774b7","location":"useVani2Session.ts:sourceStart","message":"Audio source.start(0)","data":{},"hypothesisId":"H5","timestamp":1772178129560}
+{"sessionId":"0774b7","location":"useVani2Session.ts:drainPlayback","message":"drainPlayback","data":{"hasCtx":true,"isPlaying":false,"queueLen":0},"hypothesisId":"H4","timestamp":1772178130214}

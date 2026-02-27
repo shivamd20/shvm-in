@@ -5,12 +5,18 @@
  */
 
 /** Client → Server JSON */
-export type ClientToServerJson = { type: "control.mute"; value: boolean };
+export type ClientToServerJson =
+  | { type: "control.mute"; value: boolean }
+  | { type: "control.interrupt" }
+  | { type: "transcript_final"; text: string };
 
 /** Server → Client JSON */
 export type ServerToClientJson =
   | { type: "state"; value: SessionState }
-  | { type: "error"; reason: string };
+  | { type: "error"; reason: string }
+  | { type: "llm_partial"; text: string }
+  | { type: "llm_complete"; text: string }
+  | { type: "llm_error"; reason: string };
 
 export type SessionState = "connected" | "streaming" | "closed";
 
@@ -92,9 +98,15 @@ export function payloadAfterTimestamp(buffer: ArrayBuffer): Uint8Array {
 
 export function parseClientJson(data: string): ClientToServerJson | null {
   try {
-    const obj = JSON.parse(data) as { type?: string; value?: boolean };
+    const obj = JSON.parse(data) as { type?: string; value?: boolean; text?: string };
     if (obj.type === "control.mute" && typeof obj.value === "boolean") {
       return { type: "control.mute", value: obj.value };
+    }
+    if (obj.type === "transcript_final" && typeof obj.text === "string") {
+      return { type: "transcript_final", text: obj.text };
+    }
+    if (obj.type === "control.interrupt") {
+      return { type: "control.interrupt" };
     }
     return null;
   } catch {

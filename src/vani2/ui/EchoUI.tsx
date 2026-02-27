@@ -1,6 +1,7 @@
-import { useState } from "react";
-import { Captions, Mic, MicOff, Circle } from "lucide-react";
+import { useState, useRef, useEffect } from "react";
+import { Captions, Mic, MicOff, Circle, MessageSquare } from "lucide-react";
 import { useVani2Transcription } from "./useVani2Transcription";
+import { useVani2Session } from "./useVani2Session";
 
 const FLUX_EVENT_LABELS: Record<string, { label: string; color: string }> = {
   StartOfTurn: { label: "Turn started", color: "bg-emerald-500/20 text-emerald-400 border-emerald-600/50" },
@@ -10,25 +11,73 @@ const FLUX_EVENT_LABELS: Record<string, { label: string; color: string }> = {
   EndOfTurn: { label: "Turn ended", color: "bg-rose-500/20 text-rose-400 border-rose-600/50" },
 };
 
+function useSessionId(): string {
+  const [id] = useState(
+    () => (typeof window !== "undefined" ? `v2-${Date.now()}-${Math.random().toString(36).slice(2, 9)}` : "v2")
+  );
+  return id;
+}
+
 export function EchoUI() {
   const [serverUrl, setServerUrl] = useState(
     typeof window !== "undefined" ? window.location.origin : ""
   );
   const [showOptions, setShowOptions] = useState(false);
+  const sessionId = useSessionId();
 
   const {
     status,
     error,
-    connect,
-    disconnect,
+    connect: connectTranscription,
+    disconnect: disconnectTranscription,
     liveTranscript,
     transcriptHistory,
     lastEvent,
     fluxState,
-  } = useVani2Transcription(serverUrl);
+  } = useVani2Transcription(serverUrl, sessionId);
+
+  const {
+    status: sessionStatus,
+    error: sessionError,
+    connect: connectSession,
+    disconnect: disconnectSession,
+    sendTranscriptFinal,
+    sendInterrupt,
+    llmText,
+    llmError,
+    assistantHistory,
+    isPlaying,
+  } = useVani2Session(serverUrl, sessionId);
+
+  const lastSentTranscriptRef = useRef<string | null>(null);
+
+  useEffect(() => {
+    if (lastEvent?.type !== "EndOfTurn" || !lastEvent.payload.transcript) return;
+    const t = lastEvent.payload.transcript.trim();
+    if (!t || t === lastSentTranscriptRef.current) return;
+    lastSentTranscriptRef.current = t;
+    sendTranscriptFinal(t);
+  }, [lastEvent, sendTranscriptFinal]);
+
+  useEffect(() => {
+    if (lastEvent?.type !== "StartOfTurn" && lastEvent?.type !== "TurnResumed") return;
+    if (llmText || isPlaying) sendInterrupt();
+  }, [lastEvent?.type, lastEvent?.payload, llmText, isPlaying, sendInterrupt]);
+
+  const start = () => {
+    connectSession();
+    connectTranscription();
+  };
+
+  const stop = () => {
+    disconnectTranscription();
+    disconnectSession();
+    lastSentTranscriptRef.current = null;
+  };
 
   const isTranscribing = status === "connected";
   const isConnecting = status === "connecting";
+  const isSessionConnected = sessionStatus === "connected";
 
   return (
     <div className="min-h-screen bg-zinc-950 text-zinc-100 flex flex-col items-center justify-center p-4">
@@ -80,12 +129,12 @@ export function EchoUI() {
         {!isTranscribing && !isConnecting && (
           <button
             type="button"
-            onClick={connect}
+            onClick={start}
             disabled={isConnecting}
             className="w-full py-3 rounded-xl bg-amber-600 hover:bg-amber-500 text-zinc-950 font-mono text-sm font-medium disabled:opacity-50 transition-colors mb-6 flex items-center justify-center gap-2"
           >
             <Mic className="w-5 h-5" />
-            Start transcription
+            Start (Flux + LLM)
           </button>
         )}
 
@@ -99,13 +148,27 @@ export function EchoUI() {
         {isTranscribing && (
           <>
             <div className="mb-4 flex items-center justify-between gap-2 py-2 px-3 rounded-xl bg-zinc-800/50 border border-zinc-700">
-              <div className="flex items-center gap-2">
-                <div className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse" />
-                <span className="text-xs font-mono text-zinc-400">Live</span>
+              <div className="flex items-center gap-3">
+                <div className="flex items-center gap-1.5">
+                  <div className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse" />
+                  <span className="text-xs font-mono text-zinc-400">Flux</span>
+                </div>
+                {isSessionConnected && (
+                  <div className="flex items-center gap-1.5 text-zinc-500">
+                    <span className="w-1.5 h-1.5 rounded-full bg-sky-500" />
+                    <span className="text-xs font-mono">Session</span>
+                  </div>
+                )}
+                {isPlaying && (
+                  <div className="flex items-center gap-1.5 text-amber-500/90">
+                    <span className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse" />
+                    <span className="text-xs font-mono">Playing</span>
+                  </div>
+                )}
               </div>
               <button
                 type="button"
-                onClick={disconnect}
+                onClick={stop}
                 className="flex items-center gap-1.5 py-1.5 px-2.5 rounded-lg bg-red-950/40 border border-red-800/50 text-red-400 hover:bg-red-950/60 text-xs font-mono"
               >
                 <MicOff className="w-3.5 h-3.5" />
@@ -139,10 +202,43 @@ export function EchoUI() {
           </>
         )}
 
-        {error && (
+        {(error || sessionError) && (
           <p className="text-xs font-mono text-amber-400 mb-4 px-3 py-2 rounded-lg bg-amber-950/30 border border-amber-900/50">
-            {error}
+            {error || sessionError}
           </p>
+        )}
+
+        {llmError && (
+          <p className="text-xs font-mono text-red-400 mb-4 px-3 py-2 rounded-lg bg-red-950/30 border border-red-900/50">
+            LLM: {llmError}
+          </p>
+        )}
+
+        {(llmText || assistantHistory.length > 0) && (
+          <div className="mb-4">
+            <label className="block text-xs font-mono text-zinc-500 uppercase tracking-wider mb-1.5 flex items-center gap-1.5">
+              <MessageSquare className="w-3.5 h-3.5" />
+              Assistant
+            </label>
+            <div className="max-h-48 w-full rounded-xl bg-zinc-950/80 border border-zinc-800 overflow-y-auto flex flex-col">
+              {llmText && (
+                <div className="px-3 py-2.5 text-sm font-mono text-sky-400/95 whitespace-pre-wrap break-words border-b border-zinc-800 shrink-0">
+                  {llmText}
+                  <span className="animate-pulse">▌</span>
+                </div>
+              )}
+              <div className="flex flex-col min-h-0">
+                {assistantHistory.map((text, i) => (
+                  <div
+                    key={i}
+                    className="px-3 py-2.5 text-sm font-mono text-zinc-300 whitespace-pre-wrap break-words border-b border-zinc-800/50 last:border-b-0"
+                  >
+                    {text}
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
         )}
 
         {/* Live + history */}
