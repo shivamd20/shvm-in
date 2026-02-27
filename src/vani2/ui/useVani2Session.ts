@@ -31,9 +31,6 @@ export function useVani2Session(serverBaseUrl?: string, sessionId?: string) {
   const drainPlayback = useCallback(() => {
     const ctx = audioContextRef.current;
     const queue = playbackQueueRef.current;
-    // #region agent log
-    fetch("http://127.0.0.1:7291/ingest/e6cf2584-6d8a-4079-a59c-682c51786aee",{method:"POST",headers:{"Content-Type":"application/json","X-Debug-Session-Id":"0774b7"},body:JSON.stringify({sessionId:"0774b7",location:"useVani2Session.ts:drainPlayback",message:"drainPlayback",data:{hasCtx:!!ctx,isPlaying:isPlayingRef.current,queueLen:queue.length},hypothesisId:"H4",timestamp:Date.now()})}).catch(()=>{});
-    // #endregion
     if (!ctx || isPlayingRef.current || queue.length === 0) return;
     const buffer = queue.shift()!;
     const source = ctx.createBufferSource();
@@ -42,9 +39,6 @@ export function useVani2Session(serverBaseUrl?: string, sessionId?: string) {
     currentSourceRef.current = source;
     isPlayingRef.current = true;
     setIsPlaying(true);
-    // #region agent log
-    fetch("http://127.0.0.1:7291/ingest/e6cf2584-6d8a-4079-a59c-682c51786aee",{method:"POST",headers:{"Content-Type":"application/json","X-Debug-Session-Id":"0774b7"},body:JSON.stringify({sessionId:"0774b7",location:"useVani2Session.ts:sourceStart",message:"Audio source.start(0)",data:{},hypothesisId:"H5",timestamp:Date.now()})}).catch(()=>{});
-    // #endregion
     source.onended = () => {
       isPlayingRef.current = false;
       currentSourceRef.current = null;
@@ -101,26 +95,16 @@ export function useVani2Session(serverBaseUrl?: string, sessionId?: string) {
       const getArrayBuffer = (): Promise<ArrayBuffer> =>
         data instanceof ArrayBuffer ? Promise.resolve(data) : (data as Blob).arrayBuffer();
       getArrayBuffer().then((ab) => {
-        // #region agent log
-        fetch("http://127.0.0.1:7291/ingest/e6cf2584-6d8a-4079-a59c-682c51786aee",{method:"POST",headers:{"Content-Type":"application/json","X-Debug-Session-Id":"0774b7"},body:JSON.stringify({sessionId:"0774b7",location:"useVani2Session.ts:binary",message:"Received binary",data:{byteLength:ab.byteLength},hypothesisId:"H3",timestamp:Date.now()})}).catch(()=>{});
-        // #endregion
         if (!audioContextRef.current) {
           audioContextRef.current = new AudioContext();
         }
         const ctx = audioContextRef.current;
         ctx.decodeAudioData(ab).then(
           (buffer) => {
-            // #region agent log
-            fetch("http://127.0.0.1:7291/ingest/e6cf2584-6d8a-4079-a59c-682c51786aee",{method:"POST",headers:{"Content-Type":"application/json","X-Debug-Session-Id":"0774b7"},body:JSON.stringify({sessionId:"0774b7",location:"useVani2Session.ts:decodeOk",message:"decodeAudioData ok",data:{queueLen:playbackQueueRef.current.length+1},hypothesisId:"H3",timestamp:Date.now()})}).catch(()=>{});
-            // #endregion
             playbackQueueRef.current.push(buffer);
             drainPlayback();
           },
-          (err) => {
-            // #region agent log
-            fetch("http://127.0.0.1:7291/ingest/e6cf2584-6d8a-4079-a59c-682c51786aee",{method:"POST",headers:{"Content-Type":"application/json","X-Debug-Session-Id":"0774b7"},body:JSON.stringify({sessionId:"0774b7",location:"useVani2Session.ts:decodeFail",message:"decodeAudioData failed",data:{err:String(err)},hypothesisId:"H3",timestamp:Date.now()})}).catch(()=>{});
-            // #endregion
-          }
+          () => {}
         );
       });
     };

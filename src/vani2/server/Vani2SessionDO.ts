@@ -109,31 +109,15 @@ export class Vani2SessionDO extends DurableObject {
               const sentence = sentenceBuffer.slice(0, end).trim();
               sentenceBuffer = sentenceBuffer.slice(end);
               if (sentence && !this.aborted) {
-                // #region agent log
-                fetch("http://127.0.0.1:7291/ingest/e6cf2584-6d8a-4079-a59c-682c51786aee",{method:"POST",headers:{"Content-Type":"application/json","X-Debug-Session-Id":"0774b7"},body:JSON.stringify({sessionId:"0774b7",location:"Vani2SessionDO.ts:sentence",message:"Sentence flush",data:{sentenceLen:sentence.length},hypothesisId:"H2",timestamp:Date.now()})}).catch(()=>{});
-                // #endregion
                 const audio = await runAura2(this.env as any, { text: sentence });
-                if (audio && !this.aborted) {
-                  // #region agent log
-                  fetch("http://127.0.0.1:7291/ingest/e6cf2584-6d8a-4079-a59c-682c51786aee",{method:"POST",headers:{"Content-Type":"application/json","X-Debug-Session-Id":"0774b7"},body:JSON.stringify({sessionId:"0774b7",location:"Vani2SessionDO.ts:sendBinary",message:"Sending TTS binary",data:{byteLength:audio.byteLength},hypothesisId:"H1",timestamp:Date.now()})}).catch(()=>{});
-                  // #endregion
-                  this.sendBinary(audio);
-                }
+                if (audio && !this.aborted) this.sendBinary(audio);
               }
             }
             SENTENCE_END.lastIndex = 0;
           }
           if (sentenceBuffer.trim() && !this.aborted) {
-            // #region agent log
-            fetch("http://127.0.0.1:7291/ingest/e6cf2584-6d8a-4079-a59c-682c51786aee",{method:"POST",headers:{"Content-Type":"application/json","X-Debug-Session-Id":"0774b7"},body:JSON.stringify({sessionId:"0774b7",location:"Vani2SessionDO.ts:finalFlush",message:"Final sentence flush",data:{len:sentenceBuffer.trim().length},hypothesisId:"H2",timestamp:Date.now()})}).catch(()=>{});
-            // #endregion
             const audio = await runAura2(this.env as any, { text: sentenceBuffer.trim() });
-            if (audio) {
-              // #region agent log
-              fetch("http://127.0.0.1:7291/ingest/e6cf2584-6d8a-4079-a59c-682c51786aee",{method:"POST",headers:{"Content-Type":"application/json","X-Debug-Session-Id":"0774b7"},body:JSON.stringify({sessionId:"0774b7",location:"Vani2SessionDO.ts:sendBinaryFinal",message:"Sending final TTS binary",data:{byteLength:audio.byteLength},hypothesisId:"H1",timestamp:Date.now()})}).catch(()=>{});
-              // #endregion
-              this.sendBinary(audio);
-            }
+            if (audio) this.sendBinary(audio);
           }
           if (!this.aborted) {
             this.messages.push({ role: "assistant", content: fullText });
