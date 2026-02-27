@@ -73,6 +73,10 @@ export function useVani2Session(serverBaseUrl?: string, sessionId?: string) {
     ws.onopen = () => {
       setStatus("connected");
       setError(null);
+      if (!audioContextRef.current) {
+        audioContextRef.current = new AudioContext();
+        audioContextRef.current.resume?.();
+      }
     };
     ws.onmessage = (event: MessageEvent) => {
       if (typeof event.data === "string") {

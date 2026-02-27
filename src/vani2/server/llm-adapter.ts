@@ -7,7 +7,7 @@ import { createWorkersAiChat } from "@cloudflare/tanstack-ai";
 
 const DEFAULT_LLM_MODEL = "@cf/meta/llama-3.1-8b-instruct";
 
-const VANI2_SYSTEM_PROMPT = `You are a helpful voice assistant. Reply in short, clear sentences. Be concise.`;
+const VANI2_SYSTEM_PROMPT = `You are a helpful voice assistant. Reply in short, clear sentences. Be concise. Start with a brief acknowledgment or one short phrase when appropriate.`;
 
 export interface LlmMessage {
   role: "user" | "assistant" | "system";
