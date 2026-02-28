@@ -59,5 +59,13 @@
 				"BlogStoreDO"
 			]
 		}
-	]
+	],
+	/**
+	 * Environment variables (and VITE_* for client build).
+	 * Replace placeholders with real values or use `wrangler secret put` for secrets.
+	 */
+	"vars": {
+		"VITE_MIXPANEL_TOKEN": "<YOUR_MIXPANEL_TOKEN>",
+		"VITE_CLARITY_PROJECT_ID": "<YOUR_CLARITY_PROJECT_ID>"
+	}
 }

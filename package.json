@@ -4,7 +4,7 @@
 	"packageManager": "yarn@1.22.22",
 	"type": "module",
 	"engines": {
-		"node": ">=22.13.0"
+		"node": ">=20.0.0"
 	},
 	"workspaces": [
 		"packages/*"
@@ -15,12 +15,12 @@
 		"prebuild": "node scripts/blog-generate.mjs",
 		"build": "WRANGLER_LOG_PATH=./.wrangler/logs vite build",
 		"preview": "npm run build && vite preview",
-"new-post": "node scripts/new-post.mjs",
+		"new-post": "node scripts/new-post.mjs",
 		"test": "vitest run",
-"test:vani2": "vitest run src/vani2",
+		"test:vani2": "vitest run src/vani2",
 		"test:vani2:integration": "vitest run --config vitest.integration.config.ts",
 		"build:vani-client": "npm -w @shvm/vani-client run build",
-"deploy": "npm run build && wrangler deploy",
+		"deploy": "npm run build && wrangler deploy",
 		"cf-typegen": "wrangler types",
 		"test:mcp": "node scripts/mcp-test.mjs"
 	},
@@ -35,13 +35,14 @@
 		"@shvm/vani-client": "^1.0.0",
 		"@tailwindcss/typography": "^0.5.19",
 		"@tanstack/ai": "^0.5.0",
+		"@tanstack/ai-gemini": "0.5",
 		"@tanstack/query-core": "^5.90.0",
 		"@tanstack/react-devtools": "^0.7.0",
 		"@tanstack/react-router": "^1.132.0",
-		"@tanstack/router-core": "^1.160.0",
 		"@tanstack/react-router-devtools": "^1.132.0",
 		"@tanstack/react-router-ssr-query": "^1.131.7",
 		"@tanstack/react-start": "^1.132.0",
+		"@tanstack/router-core": "^1.160.0",
 		"@tanstack/router-plugin": "^1.132.0",
 		"@xstate/react": "^6.0.0",
 		"agents": "^0.4.1",
@@ -62,10 +63,13 @@
 		"vite-tsconfig-paths": "^6.0.2",
 		"xstate": "^5.28.0",
 		"zod": "^4.3.6",
-		"zod-to-json-schema": "^3.25.1"
+		"zod-to-json-schema": "^3.25.1",
+		"@microsoft/clarity": "^1.0.2",
+		"mixpanel-browser": "^2.72.0"
 	},
 	"devDependencies": {
 		"@eslint/js": "^10.0.1",
+		"@types/mixpanel-browser": "^2.66.0",
 		"@tailwindcss/vite": "^4.1.18",
 		"@tanstack/devtools-vite": "^0.3.11",
 		"@testing-library/dom": "^10.4.0",

@@ -11,7 +11,7 @@ import {
   type BenchmarkEvent,
   type ClientToServerJson,
 } from "../protocol";
-import { streamLlmResponse, type LlmMessage } from "./llm-adapter";
+import { streamLlmResponse, type LlmMessage, type VaniLlmEnv } from "./llm-adapter";
 import { runAura2 } from "./tts-adapter";
 import {
   appendInterruptedAssistantMessage,
@@ -41,8 +41,6 @@ class AsyncQueue<T> {
 const RING_BUFFER_CAPACITY = 256;
 const DEFAULT_ECHO_DELAY_MS = 0;
 const SENTENCE_END = /[.!?]\s+|\n/g;
-/** Timeout for first LLM token (idea 7). */
-const LLM_FIRST_TOKEN_TIMEOUT_MS = 10_000;
 /** Timeout for first TTS chunk (idea 7). */
 const TTS_FIRST_CHUNK_TIMEOUT_MS = 10_000;
 
@@ -253,30 +251,22 @@ export class Vani2SessionDO extends DurableObject {
     this.sendStatus("thinking");
     try {
       const stream = streamLlmResponse({
-        binding: this.env.AI,
+        env: this.env as VaniLlmEnv,
         messages: this.messages,
         systemPrompt: this.systemPrompt ?? undefined,
       });
       const iter = stream[Symbol.asyncIterator]();
       const queue = this.messageQueue;
       const firstTokenPromise = iter.next();
-      const timeoutPromise = new Promise<never>((_, reject) =>
-        setTimeout(() => reject(new Error("LLM first token timeout")), LLM_FIRST_TOKEN_TIMEOUT_MS)
-      );
       const firstRace = queue
         ? Promise.race([
             firstTokenPromise.then((r) => ({ kind: "token" as const, value: r })),
             queue.get().then((m) => ({ kind: "msg" as const, value: m })),
-            timeoutPromise.then(() => ({ kind: "timeout" as const })),
           ])
-        : Promise.race([
-            firstTokenPromise.then((r) => ({ kind: "token" as const, value: r })),
-            timeoutPromise.then(() => ({ kind: "timeout" as const })),
-          ]);
+        : firstTokenPromise.then((r) => ({ kind: "token" as const, value: r }));
       let firstResult: IteratorResult<string, string>;
       try {
         const raced = await firstRace;
-        if (raced.kind === "timeout") throw new Error("LLM first token timeout");
         if (raced.kind === "msg") {
           if (raced.value.type === "control.interrupt") this.aborted = true;
           if (raced.value.type === "transcript_final") {

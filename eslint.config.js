@@ -3,6 +3,9 @@ import tseslint from "typescript-eslint";
 
 export default [
   {
+    ignores: ["dist/**", "node_modules/**", "packages/vani-client/**", "**/*.config.{ts,js,mjs}"],
+  },
+  {
     files: ["src/vani/**/*.{ts,tsx}"],
     ignores: ["src/vani/**/__boundary_fixtures__/**"],
     languageOptions: {

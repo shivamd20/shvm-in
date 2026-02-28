@@ -1,5 +1,6 @@
 import { HeadContent, Scripts, createRootRoute, Outlet } from '@tanstack/react-router'
 import appCss from '../styles.css?url'
+import { AnalyticsInit } from '@/components/AnalyticsInit'
 
 export const Route = createRootRoute({
   head: () => ({
@@ -36,6 +37,7 @@ function RootDocument() {
       </head>
       <body>
         <Outlet />
+        <AnalyticsInit />
         <Scripts />
       </body>
     </html>

@@ -340,13 +340,18 @@ Client unchanged.
 
 ---
 
-## 16. Provider Stack (Workers AI)
+## 16. Provider Stack (Workers AI + optional Gemini)
 
 | Layer   | Model / API | Notes |
 | ------- | ----------- | ----- |
 | STT+VAD | **@cf/deepgram/flux** | Streaming; turn events native; linear16 16 kHz. |
-| LLM     | Workers AI (fastest chat) | Streaming tokens; cancellation for barge-in. |
+| LLM     | Workers AI or **Gemini** (configurable) | Streaming tokens; cancellation for barge-in. See below. |
 | TTS     | **@cf/deepgram/aura-2-en** | Context-aware; natural pacing/expressiveness; text → audio (e.g. MPEG). |
+
+**LLM provider selection (env):**
+
+* **Workers AI (default):** Set `AI` binding (Workers AI). No first-token timeout; stream is consumed until done or interrupted.
+* **Gemini:** Set `GEMINI_API_KEY` (secret or env var) and optionally `LLM_PROVIDER=gemini`. Uses `gemini-2.0-flash` (same as Liva) via `@tanstack/ai-gemini`. When `GEMINI_API_KEY` is present and `LLM_PROVIDER` is not `workers-ai`, the session DO uses Gemini for chat.
 
 ---
 

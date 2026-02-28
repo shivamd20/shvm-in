@@ -19,7 +19,12 @@ function useSessionId(): string {
   return id;
 }
 
-export function EchoUI() {
+export interface EchoUIProps {
+  /** Optional system prompt sent on session connect (e.g. for home "digital twin"). */
+  systemPrompt?: string;
+}
+
+export function EchoUI({ systemPrompt }: EchoUIProps = {}) {
   const [serverUrl, setServerUrl] = useState(
     typeof window !== "undefined" ? window.location.origin : ""
   );
@@ -49,7 +54,7 @@ export function EchoUI() {
     llmError,
     assistantHistory,
     isPlaying,
-  } = useVani2Session(serverUrl, sessionId);
+  } = useVani2Session(serverUrl, sessionId, systemPrompt);
 
   const lastSentTranscriptRef = useRef<string | null>(null);
   const turnIdRef = useRef(0);
@@ -95,14 +100,14 @@ export function EchoUI() {
     <div className="min-h-screen bg-zinc-950 text-zinc-100 flex flex-col items-center justify-center p-4">
       <div className="w-full max-w-lg rounded-2xl border border-zinc-800 bg-zinc-900/50 backdrop-blur-sm p-6 shadow-xl">
         <div className="flex items-center justify-between mb-6">
-          <h1 className="text-lg font-semibold tracking-tight font-mono text-zinc-200 flex items-center gap-2">
+          <h1 className="text-lg font-semibold tracking-tight font-mono text-zinc-200 flex items-center gap-2 w-[200px]">
             <Captions className="w-5 h-5 text-amber-500" />
-            Flux transcription
+            SHVM.in
           </h1>
           <div className="flex items-center gap-3">
             <Link
               to="/vani2/benchmarks"
-              className="text-xs font-mono text-amber-500/80 hover:text-amber-400"
+              className="min-h-[44px] min-w-[44px] inline-flex items-center text-xs font-mono text-amber-500/80 hover:text-amber-400 rounded focus:outline-none focus:ring-2 focus:ring-amber-500/50 focus:ring-offset-2 focus:ring-offset-zinc-900"
             >
               Benchmarks
             </Link>
@@ -110,7 +115,7 @@ export function EchoUI() {
               <button
                 type="button"
                 onClick={() => setShowOptions(false)}
-                className="text-xs font-mono text-zinc-500 hover:text-zinc-300"
+                className="text-xs font-mono text-zinc-500 hover:text-zinc-300 min-h-[44px] min-w-[44px] inline-flex items-center justify-center rounded focus:outline-none focus:ring-2 focus:ring-amber-500/50 focus:ring-offset-2 focus:ring-offset-zinc-900"
               >
                 Hide options
               </button>
@@ -118,7 +123,7 @@ export function EchoUI() {
               <button
                 type="button"
                 onClick={() => setShowOptions(true)}
-                className="text-xs font-mono text-zinc-500 hover:text-zinc-300"
+                className="text-xs font-mono text-zinc-500 hover:text-zinc-300 min-h-[44px] min-w-[44px] inline-flex items-center justify-center rounded focus:outline-none focus:ring-2 focus:ring-amber-500/50 focus:ring-offset-2 focus:ring-offset-zinc-900"
               >
                 Options
               </button>
@@ -136,7 +141,7 @@ export function EchoUI() {
               value={serverUrl}
               onChange={(e) => setServerUrl(e.target.value)}
               placeholder={typeof window !== "undefined" ? window.location.origin : ""}
-              className="w-full bg-zinc-950 border border-zinc-700 rounded-lg px-3 py-2 text-sm font-mono text-zinc-200 placeholder:text-zinc-600 focus:border-zinc-500 focus:outline-none"
+              className="w-full bg-zinc-950 border border-zinc-700 rounded-lg px-3 py-2 text-sm font-mono text-zinc-200 placeholder:text-zinc-600 focus:border-zinc-500 focus:outline-none focus:ring-2 focus:ring-amber-500/50 focus:ring-offset-2 focus:ring-offset-zinc-900"
               spellCheck={false}
               autoComplete="off"
             />
@@ -151,7 +156,7 @@ export function EchoUI() {
             type="button"
             onClick={start}
             disabled={isConnecting}
-            className="w-full py-3 rounded-xl bg-amber-600 hover:bg-amber-500 text-zinc-950 font-mono text-sm font-medium disabled:opacity-50 transition-colors mb-6 flex items-center justify-center gap-2"
+            className="w-full min-h-[44px] py-3 rounded-xl bg-amber-600 hover:bg-amber-500 text-zinc-950 font-mono text-sm font-medium disabled:opacity-50 transition-colors mb-6 flex items-center justify-center gap-2 focus:outline-none focus:ring-2 focus:ring-amber-500 focus:ring-offset-2 focus:ring-offset-zinc-900"
           >
             <Mic className="w-5 h-5" />
             Start (Flux + LLM)
@@ -207,7 +212,7 @@ export function EchoUI() {
               <button
                 type="button"
                 onClick={stop}
-                className="flex items-center gap-1.5 py-1.5 px-2.5 rounded-lg bg-red-950/40 border border-red-800/50 text-red-400 hover:bg-red-950/60 text-xs font-mono"
+                className="flex items-center gap-1.5 min-h-[44px] min-w-[44px] py-1.5 px-2.5 rounded-lg bg-red-950/40 border border-red-800/50 text-red-400 hover:bg-red-950/60 text-xs font-mono focus:outline-none focus:ring-2 focus:ring-red-500/60 focus:ring-offset-2 focus:ring-offset-zinc-900"
               >
                 <MicOff className="w-3.5 h-3.5" />
                 Stop
@@ -262,7 +267,7 @@ export function EchoUI() {
               <MessageSquare className="w-3.5 h-3.5" />
               Assistant
             </label>
-            <div className="max-h-48 w-full rounded-xl bg-zinc-950/80 border border-zinc-800 overflow-y-auto flex flex-col">
+            <div className="max-h-48 w-full rounded-xl bg-zinc-950/80 border border-zinc-800 overflow-y-auto overflow-x-hidden flex flex-col min-w-0">
               {llmText && (
                 <div className="px-3 py-2.5 text-sm font-mono text-sky-400/95 whitespace-pre-wrap break-words border-b border-zinc-800 shrink-0">
                   {llmText}
@@ -289,7 +294,7 @@ export function EchoUI() {
             <label className="block text-xs font-mono text-zinc-500 uppercase tracking-wider mb-1.5">
               Transcripts
             </label>
-            <div className="max-h-64 w-full rounded-xl bg-zinc-950/80 border border-zinc-800 overflow-y-auto flex flex-col">
+            <div className="max-h-64 w-full rounded-xl bg-zinc-950/80 border border-zinc-800 overflow-y-auto overflow-x-hidden flex flex-col min-w-0">
               {(liveTranscript || (lastEvent && isTranscribing ? `[${lastEvent.type}]` : "")) && (
                 <div className="px-3 py-2.5 text-sm font-mono text-amber-400/95 whitespace-pre-wrap break-words border-b border-zinc-800 shrink-0">
                   {liveTranscript || (lastEvent ? `[${lastEvent.type}]` : "—")}

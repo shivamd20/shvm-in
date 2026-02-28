@@ -26,7 +26,6 @@ export function registerChatTool(
           binding: env.AI,
           systemPrompt,
           messages: history,
-          useFastModel: true,
         })) {
           text += delta;
         }
