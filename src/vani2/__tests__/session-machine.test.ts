@@ -1,16 +1,16 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { createActor } from "xstate";
-import { sessionMachine } from "../server/session-machine";
+import { sessionMachine, type SessionLifecycleState } from "../server/session-machine";
 
 describe("sessionMachine", () => {
-  let sessionState: { get(): string; setStreaming(): void; setClosed(): void };
+  let sessionState: { get(): SessionLifecycleState; setStreaming(): void; setClosed(): void };
   let ringBuffer: { push(chunk: ArrayBuffer): void; takeAll(): ArrayBuffer[] };
   let echoEngine: { push(chunk: ArrayBuffer): void; flush(): void };
   let cleanup: ReturnType<typeof vi.fn>;
 
   beforeEach(() => {
     sessionState = {
-      get: vi.fn(() => "connected"),
+      get: vi.fn((): SessionLifecycleState => "connected"),
       setStreaming: vi.fn(),
       setClosed: vi.fn(),
     };

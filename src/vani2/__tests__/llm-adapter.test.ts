@@ -24,7 +24,6 @@ describe("llm-adapter", () => {
 
     const messages: LlmMessage[] = [{ role: "user", content: "Hi" }];
     const chunks: string[] = [];
-    let final = "";
     for await (const delta of streamLlmResponse({ binding: {}, messages })) {
       chunks.push(delta);
     }

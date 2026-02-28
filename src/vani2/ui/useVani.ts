@@ -10,7 +10,7 @@
  * When the tab becomes visible again, the underlying transcription hook resumes the AudioContext
  * if it was suspended (e.g. after backgrounding the tab).
  */
-import { useRef, useState, useCallback, useEffect } from "react";
+import { useRef, useCallback, useEffect } from "react";
 import { useVani2Session } from "./useVani2Session";
 import { useVani2Transcription } from "./useVani2Transcription";
 import type { VaniStatus, VaniSession, VaniActions } from "../client/types";

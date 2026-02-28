@@ -5,7 +5,7 @@ import { createFileRoute, notFound, Link } from '@tanstack/react-router'
 
 export const Route = createFileRoute('/blogs/tags/$tag')({
   loader: async (ctx) => {
-    const { posts: allPosts } = await getBlogPosts({ publishedOnly: true, limit: 100, offset: 0 })
+    const { posts: allPosts } = await getBlogPosts({ data: { publishedOnly: true, limit: 100, offset: 0 } })
     const tag = ctx.params.tag
     const posts = allPosts.filter((p) => p.tags.includes(tag))
     if (posts.length === 0) throw notFound()

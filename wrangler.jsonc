@@ -65,7 +65,7 @@
 	 * Replace placeholders with real values or use `wrangler secret put` for secrets.
 	 */
 	"vars": {
-		"VITE_MIXPANEL_TOKEN": "<YOUR_MIXPANEL_TOKEN>",
-		"VITE_CLARITY_PROJECT_ID": "<YOUR_CLARITY_PROJECT_ID>"
+		"VITE_CLARITY_PROJECT_ID": "ugfupp7ocg",
+		"VITE_MIXPANEL_TOKEN": "ba88a4da68ad14e815b9a5195b6a6dcf",
 	}
 }

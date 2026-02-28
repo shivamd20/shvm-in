@@ -2,7 +2,6 @@
  * Simple concentric-rings visualization for the homepage Vani.
  * Status is shown only by ring color and subtle motion (no overlay text).
  */
-import { useRef } from "react";
 
 export type HomeVizStatus =
   | "idle"

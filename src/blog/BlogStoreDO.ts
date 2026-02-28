@@ -2,8 +2,6 @@ import { DurableObject } from "cloudflare:workers";
 import type { BlogPost, BlogPostMeta, BlogTocItem } from "@/lib/blog/types";
 import { renderMarkdown } from "./markdown";
 
-const BLOG_STORE_NAME = "blog-store";
-
 function todayISO(): string {
   const d = new Date();
   return d.toISOString().slice(0, 10);
@@ -152,7 +150,7 @@ export class BlogStoreDO extends DurableObject {
     const slugFinal = slug && /^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(slug) ? slug : slugFromTitle(title);
     const dateRaw = (body as any).date;
     const date = typeof dateRaw === "string" && /^\d{4}-\d{2}-\d{2}$/.test(dateRaw) ? dateRaw : todayISO();
-    const tags = Array.isArray((body as any).tags) ? (body as any).tags.filter((t): t is string => typeof t === "string").map((t) => t.toLowerCase().replace(/\s+/g, "-")) : [];
+    const tags = Array.isArray((body as any).tags) ? (body as any).tags.filter((t: unknown): t is string => typeof t === "string").map((t: string) => t.toLowerCase().replace(/\s+/g, "-")) : [];
     const published = (body as any).published !== false;
 
     const { summary, readingTime, html, toc } = renderMarkdown(markdown);

@@ -43,8 +43,10 @@ export function BlogNewEditor() {
     try {
       const history = [...messages, userMsg]
       const reply = await blogChat({
-        messages: history,
-        context: { title: title || undefined, draftSummary: markdown ? markdown.slice(0, 300) : undefined },
+        data: {
+          messages: history,
+          context: { title: title || undefined, draftSummary: markdown ? markdown.slice(0, 300) : undefined },
+        },
       })
       setMessages((prev) => [...prev, { role: 'assistant', content: reply }])
     } catch (e) {
@@ -67,7 +69,7 @@ export function BlogNewEditor() {
     setHumanizeLoading(true)
     setError(null)
     try {
-      const result = await humanizeDraft(markdown)
+      const result = await humanizeDraft({ data: markdown })
       setMarkdown(result ?? markdown)
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Humanize failed')
@@ -85,7 +87,7 @@ export function BlogNewEditor() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ markdown }),
       })
-      const data = await res.json()
+      const data = (await res.json()) as { error?: string; html?: string }
       if (!res.ok) throw new Error(data.error ?? 'Preview failed')
       setServerPreview(data.html ?? '')
     } catch (e) {
@@ -116,9 +118,9 @@ export function BlogNewEditor() {
             published,
           }),
         })
-        const data = await res.json()
+        const data = (await res.json()) as { error?: string; slug?: string }
         if (!res.ok) throw new Error(data.error ?? 'Save failed')
-        await router.navigate({ to: '/blogs/$slug', params: { slug: data.slug } })
+        await router.navigate({ to: '/blogs/$slug', params: { slug: data.slug! } })
       } catch (e) {
         setError(e instanceof Error ? e.message : 'Save failed')
       } finally {
@@ -129,31 +131,41 @@ export function BlogNewEditor() {
   )
 
   return (
-    <div className="blog-container blog-new-editor">
-      <div className="blog-new-editor__grid">
-        <div className="blog-new-editor__chat">
-          <h2 className="blog-new-editor__chat-title">Chat</h2>
-          <p className="blog-new-editor__chat-hint">Ask for intros, sections, or rewrites. Use the buttons below to apply the last reply to your draft.</p>
-          <div className="blog-new-editor__messages">
-            {messages.length === 0 && (
-              <p className="blog-new-editor__messages-empty">Say e.g. &ldquo;Write a short intro about rate limiting&rdquo; or &ldquo;Add a section on tradeoffs&rdquo;.</p>
-            )}
-            {messages.map((m, i) => (
-              <div key={i} className={`blog-new-editor__msg blog-new-editor__msg--${m.role}`}>
-                <span className="blog-new-editor__msg-role">{m.role === 'user' ? 'You' : 'AI'}</span>
-                <div className="blog-new-editor__msg-body">
-                  {m.role === 'assistant' ? <ReactMarkdown remarkPlugins={[remarkGfm]}>{m.content}</ReactMarkdown> : m.content}
-                </div>
+    <div className="blog-new-editor">
+      {/* Left: Chat sidebar (ChatGPT-style) */}
+      <aside className="blog-new-editor__sidebar">
+        <div className="blog-new-editor__sidebar-head">
+          <Link to="/blogs" className="blog-new-editor__back-link">
+            ← Back to blog
+          </Link>
+          <h2 className="blog-new-editor__sidebar-title">Chat</h2>
+          <p className="blog-new-editor__sidebar-hint">
+            Ask for intros, sections, or rewrites. Apply the last reply to your draft with the buttons below.
+          </p>
+        </div>
+        <div className="blog-new-editor__messages">
+          {messages.length === 0 && (
+            <p className="blog-new-editor__messages-empty">
+              e.g. &ldquo;Write a short intro about rate limiting&rdquo; or &ldquo;Add a section on tradeoffs&rdquo;
+            </p>
+          )}
+          {messages.map((m, i) => (
+            <div key={i} className={`blog-new-editor__msg blog-new-editor__msg--${m.role}`}>
+              <span className="blog-new-editor__msg-role">{m.role === 'user' ? 'You' : 'AI'}</span>
+              <div className="blog-new-editor__msg-body">
+                {m.role === 'assistant' ? <ReactMarkdown remarkPlugins={[remarkGfm]}>{m.content}</ReactMarkdown> : m.content}
               </div>
-            ))}
-            {chatLoading && (
-              <div className="blog-new-editor__msg blog-new-editor__msg--assistant">
-                <span className="blog-new-editor__msg-role">AI</span>
-                <div className="blog-new-editor__msg-body">…</div>
-              </div>
-            )}
-            <div ref={chatEndRef} />
-          </div>
+            </div>
+          ))}
+          {chatLoading && (
+            <div className="blog-new-editor__msg blog-new-editor__msg--assistant">
+              <span className="blog-new-editor__msg-role">AI</span>
+              <div className="blog-new-editor__msg-body">…</div>
+            </div>
+          )}
+          <div ref={chatEndRef} />
+        </div>
+        <div className="blog-new-editor__sidebar-footer">
           <div className="blog-new-editor__chat-input-row">
             <textarea
               value={chatInput}
@@ -169,55 +181,68 @@ export function BlogNewEditor() {
               rows={2}
               disabled={chatLoading}
             />
-            <button type="button" onClick={sendChat} disabled={chatLoading || !chatInput.trim()} className="blog-new-editor__btn blog-new-editor__btn--send">
+            <button
+              type="button"
+              onClick={sendChat}
+              disabled={chatLoading || !chatInput.trim()}
+              className="blog-new-editor__btn blog-new-editor__btn--send"
+            >
               Send
             </button>
           </div>
           {lastAssistantMessage && (
             <div className="blog-new-editor__chat-apply">
-              <button type="button" onClick={useLastAsDraft} className="blog-new-editor__btn blog-new-editor__btn--preview">
-                Use last reply as draft
+              <button type="button" onClick={useLastAsDraft} className="blog-new-editor__btn blog-new-editor__btn--secondary">
+                Use as draft
               </button>
-              <button type="button" onClick={appendLastToDraft} className="blog-new-editor__btn blog-new-editor__btn--preview">
-                Append last reply
+              <button type="button" onClick={appendLastToDraft} className="blog-new-editor__btn blog-new-editor__btn--secondary">
+                Append
               </button>
             </div>
           )}
         </div>
-        <div className="blog-new-editor__draft">
-          <h2 className="blog-new-editor__draft-title">Draft</h2>
-          <label className="blog-new-editor__label">
-            Title
-            <input type="text" value={title} onChange={(e) => setTitle(e.target.value)} placeholder="Post title" className="blog-new-editor__input" />
-          </label>
-          <label className="blog-new-editor__label">
-            Slug (optional)
-            <input type="text" value={slug} onChange={(e) => setSlug(e.target.value)} placeholder="url-slug" className="blog-new-editor__input" />
-          </label>
-          <label className="blog-new-editor__label">
-            Date
-            <input type="date" value={date} onChange={(e) => setDate(e.target.value)} className="blog-new-editor__input" />
-          </label>
-          <label className="blog-new-editor__label">
-            Tags (comma or space separated)
-            <input type="text" value={tags} onChange={(e) => setTags(e.target.value)} placeholder="system-design, meta" className="blog-new-editor__input" />
-          </label>
-          <label className="blog-new-editor__label">
-            Markdown
-            <textarea
-              value={markdown}
-              onChange={(e) => setMarkdown(e.target.value)}
-              placeholder="Write or paste content…"
-              className="blog-new-editor__textarea"
-              spellCheck={false}
+      </aside>
+
+      {/* Right: Canvas (markdown + preview) */}
+      <div className="blog-new-editor__canvas">
+        <div className="blog-new-editor__toolbar">
+          <div className="blog-new-editor__meta">
+            <input
+              type="text"
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
+              placeholder="Post title"
+              className="blog-new-editor__input blog-new-editor__input--title"
             />
-          </label>
+            <div className="blog-new-editor__meta-row">
+              <input
+                type="text"
+                value={slug}
+                onChange={(e) => setSlug(e.target.value)}
+                placeholder="url-slug"
+                className="blog-new-editor__input blog-new-editor__input--slug"
+              />
+              <input type="date" value={date} onChange={(e) => setDate(e.target.value)} className="blog-new-editor__input blog-new-editor__input--date" />
+              <input
+                type="text"
+                value={tags}
+                onChange={(e) => setTags(e.target.value)}
+                placeholder="tags"
+                className="blog-new-editor__input blog-new-editor__input--tags"
+              />
+            </div>
+          </div>
           <div className="blog-new-editor__actions">
-            <button type="button" onClick={runHumanize} disabled={humanizeLoading || !markdown.trim()} className="blog-new-editor__btn blog-new-editor__btn--preview">
-              {humanizeLoading ? 'Humanizing…' : 'Humanize draft'}
+            <button
+              type="button"
+              onClick={runHumanize}
+              disabled={humanizeLoading || !markdown.trim()}
+              className="blog-new-editor__btn blog-new-editor__btn--preview"
+            >
+              {humanizeLoading ? '…' : 'Humanize'}
             </button>
             <button type="button" onClick={fetchServerPreview} disabled={saveLoading} className="blog-new-editor__btn blog-new-editor__btn--preview">
-              Preview from server
+              Preview
             </button>
             <button type="button" onClick={() => save(false)} disabled={saveLoading} className="blog-new-editor__btn blog-new-editor__btn--draft">
               Save draft
@@ -226,12 +251,23 @@ export function BlogNewEditor() {
               Publish
             </button>
           </div>
-          {error && (
-            <p className="blog-new-editor__error" role="alert">
-              {error}
-            </p>
-          )}
-          <div className="blog-new-editor__preview-body blog-prose prose">
+        </div>
+        {error && (
+          <p className="blog-new-editor__error" role="alert">
+            {error}
+          </p>
+        )}
+        <div className="blog-new-editor__canvas-split">
+          <div className="blog-new-editor__editor-pane">
+            <textarea
+              value={markdown}
+              onChange={(e) => setMarkdown(e.target.value)}
+              placeholder="Write or paste markdown…"
+              className="blog-new-editor__textarea"
+              spellCheck={false}
+            />
+          </div>
+          <div className="blog-new-editor__preview-pane blog-prose prose">
             {serverPreview !== null ? (
               <article dangerouslySetInnerHTML={{ __html: serverPreview }} />
             ) : (
@@ -240,9 +276,6 @@ export function BlogNewEditor() {
           </div>
         </div>
       </div>
-      <p className="blog-new-editor__back">
-        <Link to="/blogs">← Back to blog</Link>
-      </p>
     </div>
   )
 }

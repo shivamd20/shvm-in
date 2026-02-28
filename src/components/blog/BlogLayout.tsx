@@ -31,9 +31,11 @@ function MoonIcon({ className }: { className?: string }) {
 export function BlogLayout({
   title,
   children,
+  fullBleed,
 }: {
   title?: string
   children: ReactNode
+  fullBleed?: boolean
 }) {
   const [headerVisible, setHeaderVisible] = useState(true)
   const lastScrollY = useRef(0)
@@ -117,7 +119,7 @@ export function BlogLayout({
         </div>
       </header>
 
-      <main className="blog-main">{children}</main>
+      <main className={fullBleed ? 'blog-main blog-main--full-bleed' : 'blog-main'}>{children}</main>
     </div>
   )
 }

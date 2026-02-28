@@ -5,7 +5,7 @@ import { getBlogPosts } from '@/lib/blog/server-fns'
 
 export const Route = createFileRoute('/blogs/')({
     loader: async () => {
-        const { posts } = await getBlogPosts({ publishedOnly: true, limit: 50, offset: 0 })
+        const { posts } = await getBlogPosts({ data: { publishedOnly: true, limit: 50, offset: 0 } })
         const tags = deriveTagsFromPosts(posts)
         return { posts, tags }
     },

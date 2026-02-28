@@ -14,7 +14,7 @@ export const Route = createFileRoute('/blogs/new')({
 
 function BlogsNewRoute() {
   return (
-    <BlogLayout title="New post">
+    <BlogLayout title="New post" fullBleed>
       <BlogNewEditor />
     </BlogLayout>
   )
